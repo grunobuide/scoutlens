@@ -1,6 +1,6 @@
 # ScoutLens — Feature Catalog v0 (SLS-013)
 
-31 event-derived features across 8 families. Every definition below is
+32 event-derived features across 8 families. Every definition below is
 grounded in tags/subevents empirically confirmed to exist and mean what
 they appear to mean — see the tag/subevent cross-reference in this
 session's exploration (co-occurrence counts against `eventName`), not
