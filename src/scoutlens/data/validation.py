@@ -227,6 +227,13 @@ def run_validation_suite() -> list[CheckResult]:
         matches, "competitionId", competitions, "wyId", "matches.competitionId -> competitions.wyId"
     ))
 
+    minutes_path = PROCESSED_DIR / "minutes.parquet"
+    if minutes_path.exists():
+        minutes = pl.read_parquet(minutes_path)
+        results.append(check_foreign_key(
+            minutes, "player_id", players, "wyId", "minutes.player_id -> players.wyId"
+        ))
+
     return results
 
 

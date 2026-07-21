@@ -13,11 +13,27 @@ sentinel-value patterns found during SLS-005 schema profiling (see
 [`data-dictionary.md`](data-dictionary.md)), and cross-table foreign-key
 integrity (event→match, event→player, event→team, match→competition).
 
-**Result: 33 ok, 5 warn, 0 fail (of 38 checks).** No structural or
-relational blocker for Gate 1 — every foreign key resolves 100% (well
-above the brief's ≥99.5% Gate 1 threshold). All 5 warnings were already
-known from SLS-005 — this run confirms nothing new broke and gives them a
+**Result (after SLS-011 added the `minutes.player_id -> players.wyId`
+check): 33 ok, 5 warn, 1 fail (of 39 checks).** The one fail is explained
+and does not block Gate 1 — see below. All 5 warnings were already known
+from SLS-005 — this run confirms nothing new broke and gives them a
 machine-checkable, re-runnable form instead of a one-off manual read.
+
+### The one FAIL, explained
+
+`foreign_key[minutes.player_id -> players.wyId]`: 15 distinct player ids
+appear in `matches.teamsData` bench lists but not in `players.json`.
+Checked directly: **every one of the 23 rows involving these 15 ids has
+`minutes_played == 0`** — they are bench players who were named in a squad
+but never entered the match. This is a genuine, previously-undocumented
+integrity gap between the Matches and Players artifacts (not caught by
+SLS-007, which only checked `events.playerId`), but it is fully explained
+and inconsequential: a player who never plays can never clear any
+eligible-minutes threshold, so this cannot distort SLS-011's population
+analysis. Per the brief's own Gate 1 language ("integridade dos joins
+principais ≥99,5%, ou exceções totalmente explicadas") — row-level
+integrity here is 74,075/74,098 = 99.97%, and the exception is explained,
+not just tolerated.
 
 | Status | Table | Check | Detail |
 |---|---|---|---|
