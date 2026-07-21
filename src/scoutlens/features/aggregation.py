@@ -19,8 +19,8 @@ from scoutlens.features.definitions import add_event_helper_columns
 # of fwd_delta filtered to is_acceleration, not a plain column sum.
 _SUM_COLUMNS = [
     "is_pass", "pass_accurate", "pass_not_accurate", "is_cross", "is_long_ball",
-    "is_smart_pass", "fwd_delta", "is_progressive_pass", "has_assist", "has_key_pass",
-    "is_through_ball", "is_box_entry", "is_shot", "shot_goal", "any_goal",
+    "is_smart_pass", "pass_progress_distance", "is_progressive_pass", "has_assist", "has_key_pass",
+    "is_through_ball", "is_box_entry", "is_shot", "shot_goal", "scorer_goal",
     "shot_on_target", "shot_blocked", "has_interception", "has_sliding_tackle",
     "is_clearance", "def_duel_won", "def_duel_decided", "is_touch", "is_duel",
     "duel_won", "duel_decided", "is_acceleration", "take_on_attempt", "take_on_success",
@@ -32,6 +32,14 @@ def _safe_ratio(numerator: pl.Expr, denominator: pl.Expr) -> pl.Expr:
     """Null (not 0) when the denominator is 0 — a player with zero
     attempts has no rate, not a 0% one. See feature-definitions.md."""
     return pl.when(denominator > 0).then(numerator / denominator).otherwise(None)
+
+
+def _per90(count_col: pl.Expr, minutes_col: pl.Expr) -> pl.Expr:
+    """Null (not NaN/inf) when minutes_played is 0. A per-90 rate is
+    undefined, not zero, for a player who didn't play — and dividing by 0
+    would otherwise silently produce NaN that propagates into any
+    downstream similarity computation (SLS-017)."""
+    return pl.when(minutes_col > 0).then(count_col / minutes_col * 90).otherwise(None)
 
 
 def compute_player_features(events: pl.DataFrame, player_minutes: pl.DataFrame) -> pl.DataFrame:
@@ -71,39 +79,39 @@ def compute_player_features(events: pl.DataFrame, player_minutes: pl.DataFrame) 
     minutes = pl.col("minutes_played")
 
     result = result.with_columns(
-        events_p90=(pl.col("n_events") / minutes * 90),
-        passes_p90=(pl.col("_sum_is_pass") / minutes * 90),
+        events_p90=_per90(pl.col("n_events"), minutes),
+        passes_p90=_per90(pl.col("_sum_is_pass"), minutes),
         pass_completion_pct=_safe_ratio(
             pl.col("_sum_pass_accurate"), pl.col("_sum_pass_accurate") + pl.col("_sum_pass_not_accurate")
         ),
-        crosses_p90=(pl.col("_sum_is_cross") / minutes * 90),
-        long_balls_p90=(pl.col("_sum_is_long_ball") / minutes * 90),
-        smart_passes_p90=(pl.col("_sum_is_smart_pass") / minutes * 90),
-        progressive_pass_distance_p90=(pl.col("_sum_fwd_delta") / minutes * 90),
-        progressive_passes_p90=(pl.col("_sum_is_progressive_pass") / minutes * 90),
-        assists_p90=(pl.col("_sum_has_assist") / minutes * 90),
-        key_passes_p90=(pl.col("_sum_has_key_pass") / minutes * 90),
-        through_balls_p90=(pl.col("_sum_is_through_ball") / minutes * 90),
-        box_entries_p90=(pl.col("_sum_is_box_entry") / minutes * 90),
-        shots_p90=(pl.col("_sum_is_shot") / minutes * 90),
-        goals_p90=(pl.col("_sum_any_goal") / minutes * 90),
+        crosses_p90=_per90(pl.col("_sum_is_cross"), minutes),
+        long_balls_p90=_per90(pl.col("_sum_is_long_ball"), minutes),
+        smart_passes_p90=_per90(pl.col("_sum_is_smart_pass"), minutes),
+        progressive_pass_distance_p90=_per90(pl.col("_sum_pass_progress_distance"), minutes),
+        progressive_passes_p90=_per90(pl.col("_sum_is_progressive_pass"), minutes),
+        assists_p90=_per90(pl.col("_sum_has_assist"), minutes),
+        key_passes_p90=_per90(pl.col("_sum_has_key_pass"), minutes),
+        through_balls_p90=_per90(pl.col("_sum_is_through_ball"), minutes),
+        box_entries_p90=_per90(pl.col("_sum_is_box_entry"), minutes),
+        shots_p90=_per90(pl.col("_sum_is_shot"), minutes),
+        goals_p90=_per90(pl.col("_sum_scorer_goal"), minutes),
         shot_conversion_pct=_safe_ratio(pl.col("_sum_shot_goal"), pl.col("_sum_is_shot")),
         shots_on_target_pct=_safe_ratio(pl.col("_sum_shot_on_target"), pl.col("_sum_is_shot")),
         blocked_shot_pct=_safe_ratio(pl.col("_sum_shot_blocked"), pl.col("_sum_is_shot")),
-        interceptions_p90=(pl.col("_sum_has_interception") / minutes * 90),
-        sliding_tackles_p90=(pl.col("_sum_has_sliding_tackle") / minutes * 90),
-        clearances_p90=(pl.col("_sum_is_clearance") / minutes * 90),
+        interceptions_p90=_per90(pl.col("_sum_has_interception"), minutes),
+        sliding_tackles_p90=_per90(pl.col("_sum_has_sliding_tackle"), minutes),
+        clearances_p90=_per90(pl.col("_sum_is_clearance"), minutes),
         defensive_duel_win_pct=_safe_ratio(pl.col("_sum_def_duel_won"), pl.col("_sum_def_duel_decided")),
         mean_x=pl.col("_mean_origin_x"),
         mean_y=pl.col("_mean_origin_y"),
         defensive_third_share=pl.col("_mean_in_defensive_third"),
         middle_third_share=pl.col("_mean_in_middle_third"),
         attacking_third_share=pl.col("_mean_in_attacking_third"),
-        touches_p90=(pl.col("_sum_is_touch") / minutes * 90),
-        duels_p90=(pl.col("_sum_is_duel") / minutes * 90),
+        touches_p90=_per90(pl.col("_sum_is_touch"), minutes),
+        duels_p90=_per90(pl.col("_sum_is_duel"), minutes),
         duel_win_pct=_safe_ratio(pl.col("_sum_duel_won"), pl.col("_sum_duel_decided")),
-        carry_proxy_p90=(pl.col("_sum_is_acceleration") / minutes * 90),
-        carry_distance_proxy_p90=(pl.col("_sum_carry_distance") / minutes * 90),
+        carry_proxy_p90=_per90(pl.col("_sum_is_acceleration"), minutes),
+        carry_distance_proxy_p90=_per90(pl.col("_sum_carry_distance"), minutes),
         take_on_success_pct=_safe_ratio(pl.col("_sum_take_on_success"), pl.col("_sum_take_on_attempt")),
     )
 

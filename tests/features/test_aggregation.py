@@ -54,6 +54,23 @@ def test_progressive_pass_distance_and_count():
     assert row["progressive_passes_p90"] == 1.0
 
 
+def test_progressive_distance_excludes_backward_passes_and_non_pass_events():
+    """Regression test for a real bug: the distance sum must be floored at
+    0 per pass (a backward pass contributes 0, not a negative number) and
+    restricted to Pass events (a Duel or Acceleration with a large forward
+    position delta must not leak into the passing metric)."""
+    events = _events_df(
+        _event(1, "Pass", positions=[{"x": 60, "y": 50}, {"x": 40, "y": 50}]),  # backward pass, -20
+        _event(1, "Duel", positions=[{"x": 10, "y": 50}, {"x": 90, "y": 50}]),  # +80, but not a pass
+        _event(1, "Others on the ball", "Acceleration", positions=[{"x": 10, "y": 50}, {"x": 50, "y": 50}]),  # +40, not a pass
+    )
+    minutes = _minutes_df((1, 90))
+    result = compute_player_features(events, minutes)
+    row = result.row(0, named=True)
+    assert row["progressive_pass_distance_p90"] == 0.0
+    assert row["progressive_passes_p90"] == 0.0
+
+
 def test_assist_key_pass_through_ball():
     events = _events_df(
         _event(1, "Pass", tags=[301]),
@@ -93,6 +110,28 @@ def test_shot_features():
     assert row["shot_conversion_pct"] == 1 / 3
     assert row["shots_on_target_pct"] == 2 / 3
     assert row["blocked_shot_pct"] == 1 / 3
+
+
+def test_goals_exclude_goalkeeper_conceding_and_include_set_pieces():
+    """Regression test for a real bug: the Goal tag [101] also appears on
+    the *conceding* goalkeeper's Save attempt event (verified: 5,279 real
+    occurrences, 5,274 on players with role Goalkeeper) — it must not be
+    counted as a goal scored. Legitimate scoring events are Shot and the
+    Free Kick subtypes a player can actually score direct from."""
+    events = _events_df(
+        _event(1, "Save attempt", "Reflexes", tags=[101]),  # keeper conceded — not this player's goal
+        _event(1, "Shot", tags=[101]),  # legitimate open-play goal
+        _event(1, "Free Kick", "Penalty", tags=[101]),  # legitimate penalty goal
+        _event(1, "Free Kick", "Free kick shot", tags=[101]),  # legitimate direct free kick goal
+        _event(1, "Free Kick", "Corner", tags=[101]),  # legitimate direct corner goal (rare but real)
+        _event(1, "Free Kick", "Free Kick", tags=[101]),  # indirect free kick — can't score direct, shouldn't count
+    )
+    minutes = _minutes_df((1, 90))
+    result = compute_player_features(events, minutes)
+    row = result.row(0, named=True)
+    # 4 legitimate scoring events: Shot, Penalty, Free kick shot, Corner —
+    # Save attempt (conceded) and indirect Free Kick are correctly excluded
+    assert row["goals_p90"] == 4.0
 
 
 def test_defensive_features():
@@ -162,6 +201,25 @@ def test_ratios_are_null_not_zero_when_denominator_is_zero():
     assert row["shots_p90"] == 0.0
     assert row["shot_conversion_pct"] is None
     assert row["take_on_success_pct"] is None
+
+
+def test_zero_minutes_produces_null_not_nan():
+    """Regression test for a real bug: dividing directly by minutes_played
+    produced NaN (not null) for a zero-minute row, which would silently
+    poison any downstream aggregate (e.g. a mean over a feature column)
+    without raising — NaN propagates instead of being filterable like
+    null. SLS-015's eligibility filtering makes this rare in practice, but
+    the contract itself must not produce NaN for any input."""
+    events = _events_df(_event(1, "Pass", tags=[1801]))
+    minutes = _minutes_df((1, 0))
+    result = compute_player_features(events, minutes)
+    row = result.row(0, named=True)
+    assert row["passes_p90"] is None
+    assert row["events_p90"] is None
+    import math
+    for key, value in row.items():
+        if isinstance(value, float):
+            assert not math.isnan(value), f"{key} is NaN, expected null"
 
 
 def test_player_with_minutes_but_zero_events_still_appears():
