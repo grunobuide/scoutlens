@@ -3,6 +3,7 @@ import polars as pl
 from scoutlens.data.validation import (
     check_coordinate_bounds,
     check_dual_null_sentinel,
+    check_foreign_key,
     check_mapping_coverage,
     check_primary_key_unique,
     check_required_not_null,
@@ -115,3 +116,33 @@ def test_tags_coverage_ok_when_fully_covered():
     tags2name = pl.DataFrame({"Tag": [101, 102]})
     result = check_tags_coverage(events, tags2name)
     assert result.status == "ok"
+
+
+def test_foreign_key_ok_when_all_resolve():
+    child = pl.DataFrame({"matchId": [1, 2, 1]})
+    parent = pl.DataFrame({"wyId": [1, 2, 3]})
+    result = check_foreign_key(child, "matchId", parent, "wyId", "test_fk")
+    assert result.status == "ok"
+
+
+def test_foreign_key_fails_on_orphan():
+    child = pl.DataFrame({"matchId": [1, 99]})
+    parent = pl.DataFrame({"wyId": [1, 2, 3]})
+    result = check_foreign_key(child, "matchId", parent, "wyId", "test_fk")
+    assert result.status == "fail"
+    assert result.count == 1
+
+
+def test_foreign_key_excludes_sentinel_values():
+    child = pl.DataFrame({"playerId": [1, 0, 0]})
+    parent = pl.DataFrame({"wyId": [1, 2]})
+    result = check_foreign_key(child, "playerId", parent, "wyId", "test_fk", sentinel_values=(0,))
+    assert result.status == "ok"
+
+
+def test_foreign_key_sentinel_does_not_hide_real_orphans():
+    child = pl.DataFrame({"playerId": [1, 0, 999]})
+    parent = pl.DataFrame({"wyId": [1, 2]})
+    result = check_foreign_key(child, "playerId", parent, "wyId", "test_fk", sentinel_values=(0,))
+    assert result.status == "fail"
+    assert result.count == 1

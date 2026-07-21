@@ -1,10 +1,10 @@
-"""Automated structural validation for the processed Wyscout Parquet files.
+"""Automated structural and relational validation for the processed
+Wyscout Parquet files.
 
-Scope is deliberately intra-table: primary-key uniqueness, required-field
-missingness, and known sentinel-value patterns found during SLS-005 schema
-profiling (see docs/data-dictionary.md). Cross-table foreign-key integrity
-(event->match, event->player, event->team, match->competition) is SLS-007,
-not here.
+Covers both SLS-006 (intra-table: primary-key uniqueness, required-field
+missingness, known sentinel-value patterns from SLS-005 schema profiling —
+see docs/data-dictionary.md) and SLS-007 (cross-table foreign-key
+integrity: event->match, event->player, event->team, match->competition).
 
 This module reports; it does not silently fix. A CheckResult with status
 "warn" documents something real about the data (e.g. a sentinel value) that
@@ -137,6 +137,33 @@ def check_mapping_coverage(
     )
 
 
+def check_foreign_key(
+    child: pl.DataFrame,
+    child_col: str,
+    parent: pl.DataFrame,
+    parent_col: str,
+    label: str,
+    sentinel_values: tuple = (),
+) -> CheckResult:
+    """Checks that every non-sentinel value in child[child_col] resolves to
+    a value in parent[parent_col]. `sentinel_values` (e.g. `(0,)` for
+    events.playerId's "no player" marker) are excluded before comparing —
+    they are a documented "not applicable" marker, not an orphan."""
+    child_values = child[child_col].drop_nulls()
+    if sentinel_values:
+        child_values = child_values.filter(~child_values.is_in(list(sentinel_values)))
+    child_set = set(child_values.unique().to_list())
+    parent_set = set(parent[parent_col].drop_nulls().unique().to_list())
+    orphans = child_set - parent_set
+    if not orphans:
+        return CheckResult(f"foreign_key[{label}]", "relational", "ok", f"all {len(child_set)} values resolve")
+    return CheckResult(
+        f"foreign_key[{label}]", "relational", "fail",
+        f"{len(orphans)} distinct orphaned values, e.g. {sorted(orphans)[:10]}",
+        count=len(orphans),
+    )
+
+
 def check_tags_coverage(events: pl.DataFrame, tags2name: pl.DataFrame) -> CheckResult:
     used = set(
         events.explode("tags").select(pl.col("tags").struct.field("id")).drop_nulls().to_series().unique().to_list()
@@ -188,6 +215,17 @@ def run_validation_suite() -> list[CheckResult]:
     results += check_coordinate_bounds(events)
     results.append(check_mapping_coverage(events, eventid2name, "eventId", "event", "event_id"))
     results.append(check_tags_coverage(events, tags2name))
+
+    # SLS-007 — cross-table foreign-key integrity
+    results.append(check_foreign_key(events, "matchId", matches, "wyId", "events.matchId -> matches.wyId"))
+    results.append(check_foreign_key(events, "teamId", teams, "wyId", "events.teamId -> teams.wyId"))
+    results.append(check_foreign_key(
+        events, "playerId", players, "wyId", "events.playerId -> players.wyId",
+        sentinel_values=(0,),
+    ))
+    results.append(check_foreign_key(
+        matches, "competitionId", competitions, "wyId", "matches.competitionId -> competitions.wyId"
+    ))
 
     return results
 
