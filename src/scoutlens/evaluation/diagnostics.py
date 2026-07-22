@@ -31,6 +31,29 @@ def compute_primary_team(minutes: pl.DataFrame, period_assignment: pl.DataFrame)
     )
 
 
+def identify_transferred_players(eligible: pl.DataFrame, primary_team: pl.DataFrame) -> pl.DataFrame:
+    """Of the `(player_id, competitionId)` pairs present in `eligible`
+    (typically `select_eligible_both_periods`'s output), returns the ones
+    whose primary team (see `compute_primary_team`) differs between period
+    A and period B — the population D010/robustness-checks.md's
+    team-continuity finding says the retrieval experiment should be
+    re-run on directly, since Baseline C's team-based advantage
+    structurally cannot apply to them.
+
+    Returns `player_id`, `competitionId`, `team_a`, `team_b`."""
+    pairs = eligible.select("player_id", "competitionId").unique()
+    team_a = primary_team.filter(pl.col("period") == "A").select(
+        "player_id", "competitionId", pl.col("team_id").alias("team_a")
+    )
+    team_b = primary_team.filter(pl.col("period") == "B").select(
+        "player_id", "competitionId", pl.col("team_id").alias("team_b")
+    )
+    merged = pairs.join(team_a, on=["player_id", "competitionId"], how="left").join(
+        team_b, on=["player_id", "competitionId"], how="left"
+    )
+    return merged.filter(pl.col("team_a") != pl.col("team_b"))
+
+
 def neighbor_concentration(
     top_k_neighbors: pl.DataFrame,
     query_attribute: pl.DataFrame,

@@ -256,3 +256,35 @@ signal from team-continuity is testing players who changed clubs between
 the two periods — where Baseline C's advantage structurally cannot apply.
 Until that's run, do not describe the retrieval result as proof of
 "stable individual playing style" without this caveat attached.
+
+---
+
+## D011 — 2026-07-22 — Transferred-players follow-up run the same day; caveat confirmed, not resolved
+
+**Decision:** treat D010's caveat as directly tested, with an honest
+small-sample qualifier — not as fully resolved, and not as still fully
+open either.
+
+**Why:** [`transfer-analysis.md`](transfer-analysis.md) isolated the 26
+of 1,257 eligible players (2.1%) whose primary team (per
+`compute_primary_team`) differs between period A and period B, and
+re-ran all three baselines with queries restricted to just them, against
+the same global period-B candidate pool used everywhere else. Result:
+Baseline C (role+team+minutes) collapsed from MRR 0.589 (best of the
+three baselines in the general population) to MRR 0.010 — statistically
+indistinguishable from Baseline A — direct confirmation the D010 root
+cause was correctly diagnosed. Baseline B's MRR for this subset (0.239)
+stayed close to its full-population value (0.254), and the Baseline B−A
+delta point estimate was, to three decimal places, identical for
+transferred players as for everyone else (+0.228 both), though the CI is
+far wider at n=26 (`[0.089, 0.393]` vs. `[0.210, 0.250]`).
+
+**How to apply:** this is real, direct, encouraging evidence that
+Baseline B's signal is not primarily a team-continuity artifact — a
+meaningfully stronger claim than D010 could make on its own (which only
+showed Baseline B doesn't *lean on* teammates being in the pool, not that
+it survives team change). But n=26 is small enough that this should be
+described as "confirms the direction, doesn't yet make it precise" — the
+wide CI is the honest summary. Do not round this up to "proven" in any
+future report; the natural way to tighten it is a larger transferred-player
+sample from another season (feasibility-report.md's next-experiment #1).

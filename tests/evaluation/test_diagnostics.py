@@ -1,6 +1,6 @@
 import polars as pl
 
-from scoutlens.evaluation.diagnostics import compute_primary_team, neighbor_concentration
+from scoutlens.evaluation.diagnostics import compute_primary_team, identify_transferred_players, neighbor_concentration
 
 
 def test_compute_primary_team_picks_team_with_most_minutes():
@@ -99,3 +99,36 @@ def test_neighbor_concentration_excludes_true_match_by_default():
         top_k, query_team, neighbor_team, "team_id", include_true_matches=True
     )
     assert including_true_match == 0.5  # both rows counted, one matches
+
+
+def test_identify_transferred_players_finds_team_changes():
+    eligible = pl.DataFrame({"player_id": [1, 2], "competitionId": [100, 100]})
+    primary_team = pl.DataFrame({
+        "player_id": [1, 1, 2, 2],
+        "competitionId": [100, 100, 100, 100],
+        "period": ["A", "B", "A", "B"],
+        "team_id": [500, 600, 500, 500],  # player 1 changed teams, player 2 did not
+    })
+    result = identify_transferred_players(eligible, primary_team)
+    assert result.height == 1
+    row = result.row(0, named=True)
+    assert row["player_id"] == 1
+    assert row["team_a"] == 500
+    assert row["team_b"] == 600
+
+
+def test_identify_transferred_players_ignores_players_not_in_eligible():
+    eligible = pl.DataFrame({"player_id": [1], "competitionId": [100]})
+    primary_team = pl.DataFrame({
+        "player_id": [1, 2],
+        "competitionId": [100, 100],
+        "period": ["A", "A"],
+        "team_id": [500, 500],
+    })
+    primary_team = pl.concat([
+        primary_team,
+        pl.DataFrame({"player_id": [1, 2], "competitionId": [100, 100], "period": ["B", "B"], "team_id": [600, 999]}),
+    ])
+    result = identify_transferred_players(eligible, primary_team)
+    # player 2 transferred too (500->999) but isn't in `eligible`, so must not appear
+    assert result["player_id"].to_list() == [1]

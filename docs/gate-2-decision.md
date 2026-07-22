@@ -102,9 +102,14 @@ framing, not an independently verified finding.
   eligible players essentially never change clubs within one season. Does
   not change this gate's verdict (Baseline B vs. A, the charter's actual
   criterion, is unaffected and confirmed not to depend on team-clustering
-  itself), but it means the retrieval result should be read as showing
-  event-derived stability *given* team continuity, not independent of it,
-  until transferred players are tested directly — now the top item in
+  itself). **Directly tested the same day**
+  ([`transfer-analysis.md`](transfer-analysis.md)): among the 26 eligible
+  players who *did* change clubs between periods, the team-based baseline
+  collapses to chance level while Baseline B's advantage over Baseline A
+  holds essentially unchanged — encouraging direct confirmation that the
+  retrieval result isn't just measuring team continuity, though n=26 is
+  small and a larger sample (another season) is still the natural
+  follow-up, now the top item in
   [`feasibility-report.md`](feasibility-report.md)'s next-experiment list.
 
 ## Next step
