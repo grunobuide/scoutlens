@@ -69,40 +69,63 @@ def select_eligible_both_periods(
     return eligible.join(both_periods, on=["player_id", "competitionId"], how="inner")
 
 
-def run_baseline_a_retrieval(query_profiles: pl.DataFrame, candidates: pl.DataFrame) -> pl.DataFrame:
+def run_baseline_a_retrieval(
+    query_profiles: pl.DataFrame, candidates: pl.DataFrame, scope_column: str | None = None
+) -> pl.DataFrame:
     """query_profiles/candidates need `player_id`, `competitionId`, `role`,
     `minutes_played`. Returns one row per query: `player_id`,
-    `competitionId`, `rank` (of that player's own row in `candidates`)."""
+    `competitionId`, `rank` (of that player's own row in `candidates`),
+    `pool_size` (candidates actually ranked against, after scoping).
+
+    `scope_column` (e.g. "role" for SLS-019's within-role condition), when
+    given, restricts each query's candidate pool to rows where
+    `candidates[scope_column] == query[scope_column]` before ranking."""
     rows = []
     for query in query_profiles.iter_rows(named=True):
-        ranked = baseline_a_rank(query["role"], query["minutes_played"], candidates)
+        pool = candidates
+        if scope_column is not None:
+            pool = pool.filter(pl.col(scope_column) == query[scope_column])
+        ranked = baseline_a_rank(query["role"], query["minutes_played"], pool)
         match = ranked.filter(pl.col("player_id") == query["player_id"])
         if match.height == 0:
             continue
         rows.append({
             "player_id": query["player_id"], "competitionId": query["competitionId"],
-            "rank": match.row(0, named=True)["rank"],
+            "rank": match.row(0, named=True)["rank"], "pool_size": pool.height,
         })
     return pl.DataFrame(rows)
 
 
 def run_baseline_b_retrieval(
-    query_profiles: pl.DataFrame, candidates: pl.DataFrame, feature_columns: list[str] = FEATURE_COLUMNS
+    query_profiles: pl.DataFrame,
+    candidates: pl.DataFrame,
+    feature_columns: list[str] = FEATURE_COLUMNS,
+    scope_column: str | None = None,
 ) -> pl.DataFrame:
     """query_profiles/candidates must already be standardized on the same
     fitted population (see impute_and_standardize) — this function only
-    ranks, it does not fit."""
+    ranks, it does not fit.
+
+    `scope_column` (e.g. "role" for SLS-019's within-role condition), when
+    given, restricts each query's candidate pool to rows where
+    `candidates[scope_column] == query[scope_column]` before ranking —
+    `candidates` must carry that column even though it isn't part of
+    `feature_columns` (it passes through `baseline_b_rank` untouched)."""
     rows = []
-    candidate_features = candidates.select(["player_id"] + feature_columns)
+    keep_cols = ["player_id"] + ([scope_column] if scope_column else []) + feature_columns
+    candidate_features = candidates.select(keep_cols)
     for query in query_profiles.iter_rows(named=True):
+        pool = candidate_features
+        if scope_column is not None:
+            pool = pool.filter(pl.col(scope_column) == query[scope_column])
         query_features = {c: query[c] for c in feature_columns}
-        ranked = baseline_b_rank(query_features, candidate_features, feature_columns)
+        ranked = baseline_b_rank(query_features, pool, feature_columns)
         match = ranked.filter(pl.col("player_id") == query["player_id"])
         if match.height == 0:
             continue
         rows.append({
             "player_id": query["player_id"], "competitionId": query["competitionId"],
-            "rank": match.row(0, named=True)["rank"],
+            "rank": match.row(0, named=True)["rank"], "pool_size": pool.height,
         })
     return pl.DataFrame(rows)
 
@@ -143,24 +166,30 @@ def run_global_retrieval_experiment(
     minutes_threshold: int,
     competition_ids: list[int],
     feature_columns: list[str] = FEATURE_COLUMNS,
+    scope_column: str | None = None,
 ) -> dict:
-    """End-to-end SLS-018 global retrieval run. Returns a dict with the
-    eligible population, both baselines' RetrievalMetrics, their raw rank
-    tables (for SLS-020/021 diagnostics), and the bootstrap CI on the MRR
-    delta."""
+    """End-to-end retrieval run (SLS-018 global condition when
+    `scope_column=None`; SLS-019's within-role condition when
+    `scope_column="role"` — see `run_within_role_retrieval_experiment`,
+    a thin wrapper for that case). Returns a dict with the eligible
+    population, both baselines' RetrievalMetrics, their raw rank tables
+    (for SLS-020/021 diagnostics, including `pool_size` when scoped —
+    a scoped pool can be smaller than the global one, which affects how
+    a given rank should be read), and the bootstrap CI on the MRR delta.
+    """
     eligible = select_eligible_both_periods(period_profiles, minutes_threshold, competition_ids)
     eligible = eligible.join(role_lookup, on="player_id", how="left")
 
     query_a = eligible.filter(pl.col("period") == "A")
     candidates_b = eligible.filter(pl.col("period") == "B")
 
-    ranks_a = run_baseline_a_retrieval(query_a, candidates_b)
+    ranks_a = run_baseline_a_retrieval(query_a, candidates_b, scope_column=scope_column)
     metrics_a = compute_metrics(ranks_a["rank"].to_list())
 
     combined_features = impute_and_standardize(eligible, feature_columns)
     query_a_std = combined_features.filter(pl.col("period") == "A")
     candidates_b_std = combined_features.filter(pl.col("period") == "B")
-    ranks_b = run_baseline_b_retrieval(query_a_std, candidates_b_std, feature_columns)
+    ranks_b = run_baseline_b_retrieval(query_a_std, candidates_b_std, feature_columns, scope_column=scope_column)
     metrics_b = compute_metrics(ranks_b["rank"].to_list())
 
     delta = bootstrap_mrr_delta(ranks_a, ranks_b)
@@ -174,3 +203,23 @@ def run_global_retrieval_experiment(
         "ranks_a": ranks_a,
         "ranks_b": ranks_b,
     }
+
+
+def run_within_role_retrieval_experiment(
+    period_profiles: pl.DataFrame,
+    role_lookup: pl.DataFrame,
+    minutes_threshold: int,
+    competition_ids: list[int],
+    feature_columns: list[str] = FEATURE_COLUMNS,
+) -> dict:
+    """SLS-019: identical to the global experiment (SLS-018) except each
+    query's candidate pool is restricted to players sharing its nominal
+    role. Standardization is still fit on the full (all-roles) eligible
+    population — only the *candidate pool at ranking time* is scoped, not
+    the feature scale — so this tests "does the signal survive once role
+    stops resolving the problem," per the brief's H4, rather than
+    re-normalizing away cross-role variance that might itself be
+    meaningful."""
+    return run_global_retrieval_experiment(
+        period_profiles, role_lookup, minutes_threshold, competition_ids, feature_columns, scope_column="role"
+    )
