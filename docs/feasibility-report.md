@@ -8,7 +8,11 @@ with post-spike follow-ups — a robustness battery
 transferred-players analysis ([`transfer-analysis.md`](transfer-analysis.md))
 that directly addressed a team-continuity caveat it raised; the gate
 decision is unchanged throughout, now with a more precisely qualified and
-better-supported account of what it showed.
+better-supported account of what it showed. **Follow-up work paused here**
+(D012): the natural next step, extending to another season, requires a
+new external dataset (this collection has exactly one season per
+competition) — scoped in Recommended Next Experiment #1 but not started,
+pending feedback and a deliberately separate next project.
 
 ---
 
@@ -474,6 +478,47 @@ confirmed the signal survives that confound.
    suggestive, not conclusive — a few hundred would make the CI in
    `transfer-analysis.md` genuinely tight), and check the domestic-league
    results generalize beyond this single 2017/18 snapshot at all.
+
+   **Scoping check (2026-07-22):** the current Pappalardo/Wyscout
+   collection has exactly one season per competition — confirmed
+   empirically (every `competitionId` maps to a single `seasonId`), not
+   assumed. There is no second season available within this same
+   collection; "extend to another season" requires a *new* external data
+   source, not a parameter change to the existing pipeline, which reopens
+   Gate-0-style work (source discovery, per-artifact license
+   verification, schema audit) before any acquisition code can be
+   written.
+
+   Researched one candidate: **StatsBomb Open Data**
+   (github.com/statsbomb/open-data), free, custom attribution license
+   (not yet verified in the same per-artifact detail as
+   `data-provenance.md` did for Wyscout — only a surface-level check was
+   done here). Two real obstacles found:
+   - **Uneven per-league coverage.** La Liga has extensive coverage (18
+     seasons, including 2018/19 — the season immediately after this
+     spike's data), but the other four leagues are sparse: Premier League
+     only 2015/16 and 2003/04, Serie A only 2015/16 and 1986/87,
+     Bundesliga only 2023/24 and 2015/16, Ligue 1 only 2015/16, 2021/22,
+     2022/23. **No single season has all five leagues at full depth** —
+     any StatsBomb-based extension would have to either drop to
+     fewer leagues or mix different seasons per league, complicating the
+     "same season, two halves" design this spike used throughout.
+   - **A structurally different schema.** StatsBomb's event taxonomy,
+     coordinate system, and file structure are not compatible with
+     `scoutlens.data.ingestion`/`validation`/`minutes` as built — this
+     would mean re-doing the equivalent of SLS-005 through SLS-014's work
+     for a new source, not reusing the existing pipeline with new input
+     files. A multi-day undertaking, not a rerun.
+
+   **Recommendation, if/when this is picked back up:** if only one
+   league needs to be tested for generalization, La Liga 2018/19 via
+   StatsBomb is the best-supported single-league option found so far —
+   but a full license audit (per-artifact, matching the rigor of
+   `data-provenance.md`) and a real match-count check (StatsBomb's public
+   data has historically included selected matches rather than guaranteed
+   full seasons for some competitions — not confirmed either way here)
+   should happen before any acquisition code is written, the same
+   discipline Gate 0 applied to the original source.
 2. **A genuinely different validation methodology for the recruitment
    claim itself**, since same-player retrieval cannot speak to it: blind
    expert scout review of shortlists, or a downstream-task validation —

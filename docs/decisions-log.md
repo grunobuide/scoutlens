@@ -288,3 +288,39 @@ described as "confirms the direction, doesn't yet make it precise" — the
 wide CI is the honest summary. Do not round this up to "proven" in any
 future report; the natural way to tighten it is a larger transferred-player
 sample from another season (feasibility-report.md's next-experiment #1).
+
+---
+
+## D012 — 2026-07-22 — "Extend to another season" requires a new external dataset; work paused here pending feedback
+
+**Decision:** stop follow-up work at this point (post-D011) rather than
+start a new-dataset integration without confirming it's the right next
+project. Documented the scoping research in
+`feasibility-report.md`'s next-experiment #1 so it isn't re-derived from
+scratch whenever this is picked back up.
+
+**Why:** confirmed empirically — not assumed — that the Pappalardo/Wyscout
+collection this entire spike is built on has exactly one season per
+competition (`competitionId` → single `seasonId`, no exceptions). There is
+no second season hiding in the same collection; getting one requires a new
+external source entirely, which reopens Gate-0-style work (source
+discovery, per-artifact license verification, schema audit) before any
+acquisition code exists. Researched StatsBomb Open Data as the most
+likely candidate: free, but (a) no single season covers all five leagues
+at full depth — La Liga alone has deep multi-season coverage (18
+seasons, including 2018/19), the other four leagues are sparse — and (b)
+a structurally different event schema, meaning integration would mean
+re-doing the equivalent of SLS-005–SLS-014's work for a new source, not
+reusing the existing pipeline with new input files. Real, multi-day
+scope, not a rerun. The user asked to pause here, gather feedback, and
+open a separate project when ready to continue rather than commit to that
+scope unilaterally mid-session.
+
+**How to apply:** the next session picking this up should start from
+`feasibility-report.md`'s next-experiment #1 (which already has the
+StatsBomb findings and a recommendation — La Liga 2018/19 as the
+narrowest viable single-league test, if a full license/match-count audit
+confirms it holds up) rather than re-researching dataset options from
+zero. Treat this as a new mini-Gate-0, with its own provenance/license
+documentation, not as a continuation of the existing acquisition
+pipeline.
