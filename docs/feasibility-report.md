@@ -2,11 +2,17 @@
 
 **Spike duration:** 2026-07-20 to 2026-07-22 (accelerated from the
 charter's 10-working-day estimate — see note on pacing in the closing
-section). **Status: complete. Both gates GO.** Updated 2026-07-22 with a
-post-spike robustness battery — see the callout after Temporal Stability
-Results and [`robustness-checks.md`](robustness-checks.md); the gate
-decision is unchanged but one framing below is now more precisely
-qualified.
+section). **Status: complete. Both gates GO.** Updated 2026-07-22 twice
+with post-spike follow-ups — a robustness battery
+([`robustness-checks.md`](robustness-checks.md)) that found and then a
+transferred-players analysis ([`transfer-analysis.md`](transfer-analysis.md))
+that directly addressed a team-continuity caveat it raised; the gate
+decision is unchanged throughout, now with a more precisely qualified and
+better-supported account of what it showed. **Follow-up work paused here**
+(D012): the natural next step, extending to another season, requires a
+new external dataset (this collection has exactly one season per
+competition) — scoped in Recommended Next Experiment #1 but not started,
+pending feedback and a deliberately separate next project.
 
 ---
 
@@ -33,8 +39,14 @@ within one season, so team continuity is a very strong prior for "same
 player" in this experimental design specifically. This doesn't change the
 gate decision (the charter's actual criterion, Baseline B vs. Baseline A,
 is unaffected), but it sharpens what "10x better than trivial" should be
-understood to mean, and makes testing transferred players the clearest
-next validation step. See the full discussion below.
+understood to mean. **That next validation step was run the same day:**
+restricting the retrieval experiment to the 26 eligible players who did
+change clubs between the two periods — where the team-based baseline's
+advantage cannot structurally apply — shows the team-based baseline
+collapsing to chance-level performance while the feature-based method's
+advantage over the trivial baseline holds essentially unchanged. Small
+sample (n=26), but a clean, direct, encouraging result. See the full
+discussion below.
 
 **Maximum permitted claim, per the charter, now supported by evidence:**
 
@@ -244,6 +256,35 @@ disappears — from a nice-to-have to the single most important remaining
 validation of what event-derived features are worth on their own. See
 Limitations and Recommended Next Experiment, both updated accordingly.
 
+### Direct follow-up: transferred players confirm the signal isn't team continuity
+
+The obvious next check was run the same day: of the 1,257 eligible
+players, 26 (2.1%) have a different primary team in period B than period
+A. Re-running all three baselines with queries restricted to just this
+subset (same global candidate pool otherwise) — full writeup:
+[`transfer-analysis.md`](transfer-analysis.md):
+
+| | Full population (n=1,257) | Transferred only (n=26) |
+|---|---|---|
+| Baseline B MRR | 0.2539 | **0.2387** |
+| Baseline C MRR | 0.5893 | **0.0101** |
+| Baseline B − A delta | +0.228, CI [0.210, 0.250] | +0.228, CI [0.089, 0.393] |
+
+**Baseline C's team-based advantage completely collapses for transferred
+players** (0.589 → 0.010, statistically indistinguishable from Baseline
+A) — direct confirmation, not just inference, that its strength was
+entirely about team continuity. **Baseline B holds up**: MRR for
+transferred players is close to the full-population value, and the
+Baseline B − A delta point estimate is, to three decimal places,
+identical for transferred players as for everyone else (the CI is far
+wider at n=26, as expected, but still clears 0 comfortably). This is
+direct evidence — not just the absence-of-evidence teammates-excluded
+check above — that Baseline B's signal is not an artifact of team
+continuity, for exactly the population (players who change clubs) a
+recruitment tool would care about most. Read with the sample-size caveat
+in `transfer-analysis.md`: n=26 is real evidence, not proof, and a larger
+sample from another season is still the natural follow-up.
+
 ## Position / Minutes / League Diagnostics
 
 **Correction to the original analysis:** the first pass measured
@@ -307,14 +348,18 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
 2c. **The eligible population (≥450 min in *both* periods) has a real
    survivorship bias.** It selects for players who were continuously
    good enough to keep playing throughout the season — by construction it
-   excludes breakout youngsters, players returning from injury, players
-   losing their starting spot, and mid-season transfers, which are
-   precisely the cases a recruitment tool would most need to handle well.
-   The minutes-threshold sensitivity curve (D006) does not address this:
-   every threshold tested still required both-periods eligibility, so it
-   varies the bar for "established," not whether the established-player
-   restriction itself holds. The result here is a statement about
-   established players specifically, not players in general.
+   excludes breakout youngsters, players returning from injury, and
+   players losing their starting spot. Transferred players are a partial
+   exception: [`transfer-analysis.md`](transfer-analysis.md) found and
+   tested 26 of them within the existing eligible population, with
+   encouraging results — but 26 is small, and the youngster/injury/
+   lost-starting-spot cases remain completely untested. The
+   minutes-threshold sensitivity curve (D006) does not address this
+   either: every threshold tested still required both-periods
+   eligibility, so it varies the bar for "established," not whether the
+   established-player restriction itself holds. The result here is a
+   statement about established players specifically, not players in
+   general.
 3. **Carrying features are explicit proxies** (`carry_proxy_p90`,
    `carry_distance_proxy_p90`, `take_on_success_pct`) — no native carry
    event exists in this dataset.
@@ -367,8 +412,10 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
     ([`run_report.py`](../src/scoutlens/evaluation/run_report.py)); `uv
     run python -m scoutlens.evaluation.run_robustness` does the same for
     [`robustness-checks.md`](robustness-checks.md), writing
-    `artifacts/robustness_results.json`. Still missing, and still real
-    future work: an externally versioned
+    `artifacts/robustness_results.json`; `uv run python -m
+    scoutlens.evaluation.run_transfer_analysis` does the same for
+    [`transfer-analysis.md`](transfer-analysis.md). Still missing, and
+    still real future work: an externally versioned
     config (today's threshold/competition-set/seed are inlined constants,
     not a separate file), a run-manifest recording the git commit and
     data checksums the numbers were produced from, and an automated test
@@ -400,61 +447,98 @@ established but the recruitment-search claim explicitly not yet tested.
 
 ## Recommended Next Experiment
 
-**Revised twice.** The original version prioritized testing learned
-representations first; that was reordered (2026-07-22) to harden the
-baseline and build reproducibility tooling first, per the charter's
-"complexity must earn its place" principle. That hardening pass is now
-done — see [`robustness-checks.md`](robustness-checks.md) — and it
-surfaced the team-continuity finding above, which reorders the list
-again: testing transferred players is no longer just good practice, it's
-the direct test of what the current headline number actually measures.
+**Revised three times.** Originally: test learned representations first.
+Reordered (2026-07-22) to harden the baseline and build reproducibility
+tooling first, per the charter's "complexity must earn its place"
+principle — done, and it surfaced the team-continuity finding. Reordered
+again the same day once the direct transferred-players follow-up
+confirmed the signal survives that confound.
 
 **Done:**
-- ~~Make the current baseline unimpeachable~~ — 5 robustness checks run
-  (standardization fit, distance metric, role+team+minutes baseline,
-  teammates-excluded sensitivity, per-family ablation). Result: 3 of 5
-  confirm robustness; 1 (the team-continuity baseline) is the important
-  finding above; family ablation confirmed the signal is genuinely
-  distributed, not one dominant family.
-- ~~Build the reproducible runner~~ — `run_report.py` and
-  `run_robustness.py` now regenerate every number in this report and in
-  `robustness-checks.md` in one command each.
+- ~~Make the current baseline unimpeachable~~ — 5 robustness checks
+  ([`robustness-checks.md`](robustness-checks.md)): 3 of 5 confirm
+  robustness (standardization fit, distance metric, teammates-excluded
+  sensitivity); 1 (role+team+minutes baseline) is the team-continuity
+  finding; family ablation confirmed the signal is genuinely distributed.
+- ~~Build the reproducible runner~~ — `run_report.py`,
+  `run_robustness.py`, and `run_transfer_analysis.py` now regenerate
+  every number in this report and its two follow-up docs in one command
+  each.
+- ~~Test transferred players~~ — [`transfer-analysis.md`](transfer-analysis.md):
+  the 26 eligible players who changed clubs between periods show
+  Baseline C collapsing to chance-level (MRR 0.010) while Baseline B's
+  advantage over Baseline A holds essentially unchanged (delta identical
+  to three decimal places, though the CI is wide at this sample size).
+  Direct, encouraging confirmation — not proof at n=26.
 
 **Remaining, in priority order:**
 
-1. **Test transferred players specifically — now the single highest-value
-   next step.** Baseline C's >2x advantage over Baseline B depends
-   entirely on players staying at the same club across the split.
-   Isolating a population of players who changed clubs mid-season (or
-   between two consecutive seasons) and re-running the same retrieval
-   experiment on *just* them directly answers: does event-derived style
-   similarity hold up once the team-continuity confound is structurally
-   removed, not just measured within a team-stable population? This is
-   the true test of the "role/style stability" claim, as opposed to the
-   "which club is this roughly" claim Baseline C shows is otherwise doing
-   most of the work.
-2. **Extend to another season**, both to get a larger transferred-player
-   sample for (1) and to check the domestic-league results generalize
-   beyond this single 2017/18 snapshot.
-3. **A genuinely different validation methodology for the recruitment
+1. **Extend to another season** — now the clearest highest-value next
+   step. Two purposes: get a larger transferred-player sample (n=26 is
+   suggestive, not conclusive — a few hundred would make the CI in
+   `transfer-analysis.md` genuinely tight), and check the domestic-league
+   results generalize beyond this single 2017/18 snapshot at all.
+
+   **Scoping check (2026-07-22):** the current Pappalardo/Wyscout
+   collection has exactly one season per competition — confirmed
+   empirically (every `competitionId` maps to a single `seasonId`), not
+   assumed. There is no second season available within this same
+   collection; "extend to another season" requires a *new* external data
+   source, not a parameter change to the existing pipeline, which reopens
+   Gate-0-style work (source discovery, per-artifact license
+   verification, schema audit) before any acquisition code can be
+   written.
+
+   Researched one candidate: **StatsBomb Open Data**
+   (github.com/statsbomb/open-data), free, custom attribution license
+   (not yet verified in the same per-artifact detail as
+   `data-provenance.md` did for Wyscout — only a surface-level check was
+   done here). Two real obstacles found:
+   - **Uneven per-league coverage.** La Liga has extensive coverage (18
+     seasons, including 2018/19 — the season immediately after this
+     spike's data), but the other four leagues are sparse: Premier League
+     only 2015/16 and 2003/04, Serie A only 2015/16 and 1986/87,
+     Bundesliga only 2023/24 and 2015/16, Ligue 1 only 2015/16, 2021/22,
+     2022/23. **No single season has all five leagues at full depth** —
+     any StatsBomb-based extension would have to either drop to
+     fewer leagues or mix different seasons per league, complicating the
+     "same season, two halves" design this spike used throughout.
+   - **A structurally different schema.** StatsBomb's event taxonomy,
+     coordinate system, and file structure are not compatible with
+     `scoutlens.data.ingestion`/`validation`/`minutes` as built — this
+     would mean re-doing the equivalent of SLS-005 through SLS-014's work
+     for a new source, not reusing the existing pipeline with new input
+     files. A multi-day undertaking, not a rerun.
+
+   **Recommendation, if/when this is picked back up:** if only one
+   league needs to be tested for generalization, La Liga 2018/19 via
+   StatsBomb is the best-supported single-league option found so far —
+   but a full license audit (per-artifact, matching the rigor of
+   `data-provenance.md`) and a real match-count check (StatsBomb's public
+   data has historically included selected matches rather than guaranteed
+   full seasons for some competitions — not confirmed either way here)
+   should happen before any acquisition code is written, the same
+   discipline Gate 0 applied to the original source.
+2. **A genuinely different validation methodology for the recruitment
    claim itself**, since same-player retrieval cannot speak to it: blind
    expert scout review of shortlists, or a downstream-task validation —
-   only after (1) and (2), not before.
-4. **Only then, test whether added model complexity earns its place** —
+   only after (1), not before.
+3. **Only then, test whether added model complexity earns its place** —
    a learned representation, metric learning, or feature reweighting,
    compared against Baseline B *and* Baseline C, not today's version of
    either.
-5. **Goalkeeper-specific features** (positioning, distribution under
+4. **Goalkeeper-specific features** (positioning, distribution under
    pressure, claim/punch tendencies — none currently captured) — the
    clearest specific gap in the feature catalog, addressable in parallel
    with the above.
-6. **Resolve the players-count discrepancy** against the source paper —
+5. **Resolve the players-count discrepancy** against the source paper —
    low cost, closes a standing question rather than carrying it forward
    indefinitely.
-7. **Still open from the robustness pass itself:** a versioned config
-   file and a run-manifest (git commit + data checksums) for both
-   `run_report.py` and `run_robustness.py`, and an automated test that
-   diffs published report numbers against a freshly-generated artifact.
+6. **Still open from the robustness pass itself:** a versioned config
+   file and a run-manifest (git commit + data checksums) for
+   `run_report.py`, `run_robustness.py`, and `run_transfer_analysis.py`,
+   and an automated test that diffs published report numbers against a
+   freshly-generated artifact.
 
 ## Note on Pacing
 

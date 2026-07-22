@@ -17,7 +17,7 @@ the charter, gates, and the maximum claim this spike is allowed to make.
 |---|---|
 | Gate 0 — Provenance | **GO** — [`docs/data-provenance.md`](docs/data-provenance.md) |
 | Gate 1 — Data | **GO** — [`docs/gate-1-decision.md`](docs/gate-1-decision.md). 1,969 eligible players at ≥450 min/season, 99.72% clean minutes derivation, 99.97% join integrity. |
-| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. **Follow-up caveat:** a team-aware baseline beats Baseline B by 2x+ — see [`robustness-checks.md`](docs/robustness-checks.md). |
+| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. **Follow-up caveat:** a team-aware baseline beats Baseline B by 2x+ ([`robustness-checks.md`](docs/robustness-checks.md)) — **directly tested and held up** on the 26 players who changed clubs ([`transfer-analysis.md`](docs/transfer-analysis.md)), though that sample is small. |
 
 Task-by-task progress against the backlog (SLS-001…023, defined in the
 brief) is tracked in-session, not duplicated here as a static checklist —
@@ -36,6 +36,7 @@ see recent commit history for what's landed. Post-spike follow-up work
 7. [`docs/feature-definitions.md`](docs/feature-definitions.md) · [`chronological-split.md`](docs/chronological-split.md) · [`baseline-b-standardization.md`](docs/baseline-b-standardization.md) — modeling setup.
 8. [`docs/temporal-retrieval-global.md`](docs/temporal-retrieval-global.md) · [`temporal-retrieval-within-role.md`](docs/temporal-retrieval-within-role.md) · [`context-diagnostics.md`](docs/context-diagnostics.md) · [`error-analysis.md`](docs/error-analysis.md) · [`gate-2-decision.md`](docs/gate-2-decision.md) — results and Gate 2.
 9. [`docs/robustness-checks.md`](docs/robustness-checks.md) — post-spike follow-up: standardization/metric ablations, and the team-continuity finding that qualifies the headline result.
+10. [`docs/transfer-analysis.md`](docs/transfer-analysis.md) — direct follow-up on (9): retrieval restricted to players who changed clubs between periods.
 
 ## Setup
 
@@ -67,6 +68,11 @@ uv run python -m scoutlens.evaluation.run_report
 # ablations, role+team+minutes baseline, feature-family ablation) --
 # writes artifacts/robustness_results.json
 uv run python -m scoutlens.evaluation.run_robustness
+
+# Regenerate every number in transfer-analysis.md (retrieval restricted to
+# players who changed clubs between periods) -- writes
+# artifacts/transfer_analysis_results.json
+uv run python -m scoutlens.evaluation.run_transfer_analysis
 
 # Run the test suite
 uv run pytest
