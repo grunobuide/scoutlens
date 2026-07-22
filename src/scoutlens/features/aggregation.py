@@ -27,6 +27,20 @@ _SUM_COLUMNS = [
 ]
 _MEAN_COLUMNS = ["origin_x", "origin_y", "in_defensive_third", "in_middle_third", "in_attacking_third"]
 
+# The 32 feature names from feature-definitions.md, in the order
+# compute_player_features() returns them. Exposed so downstream modules
+# (e.g. evaluation/similarity.py) don't have to duplicate this list.
+FEATURE_COLUMNS = [
+    "events_p90", "passes_p90", "pass_completion_pct", "crosses_p90", "long_balls_p90",
+    "smart_passes_p90", "progressive_pass_distance_p90", "progressive_passes_p90",
+    "assists_p90", "key_passes_p90", "through_balls_p90", "box_entries_p90",
+    "shots_p90", "goals_p90", "shot_conversion_pct", "shots_on_target_pct", "blocked_shot_pct",
+    "interceptions_p90", "sliding_tackles_p90", "clearances_p90", "defensive_duel_win_pct",
+    "mean_x", "mean_y", "defensive_third_share", "middle_third_share", "attacking_third_share",
+    "touches_p90", "duels_p90", "duel_win_pct",
+    "carry_proxy_p90", "carry_distance_proxy_p90", "take_on_success_pct",
+]
+
 
 def _safe_ratio(numerator: pl.Expr, denominator: pl.Expr) -> pl.Expr:
     """Null (not 0) when the denominator is 0 — a player with zero
@@ -115,15 +129,4 @@ def compute_player_features(events: pl.DataFrame, player_minutes: pl.DataFrame) 
         take_on_success_pct=_safe_ratio(pl.col("_sum_take_on_success"), pl.col("_sum_take_on_attempt")),
     )
 
-    feature_columns = [
-        "player_id", "minutes_played",
-        "events_p90", "passes_p90", "pass_completion_pct", "crosses_p90", "long_balls_p90",
-        "smart_passes_p90", "progressive_pass_distance_p90", "progressive_passes_p90",
-        "assists_p90", "key_passes_p90", "through_balls_p90", "box_entries_p90",
-        "shots_p90", "goals_p90", "shot_conversion_pct", "shots_on_target_pct", "blocked_shot_pct",
-        "interceptions_p90", "sliding_tackles_p90", "clearances_p90", "defensive_duel_win_pct",
-        "mean_x", "mean_y", "defensive_third_share", "middle_third_share", "attacking_third_share",
-        "touches_p90", "duels_p90", "duel_win_pct",
-        "carry_proxy_p90", "carry_distance_proxy_p90", "take_on_success_pct",
-    ]
-    return result.select(feature_columns)
+    return result.select(["player_id", "minutes_played"] + FEATURE_COLUMNS)

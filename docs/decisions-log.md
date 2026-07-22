@@ -142,9 +142,14 @@ not to change SLS-014 itself.
 
 ---
 
-## D008 — 2026-07-22 — Feature normalization/null-handling strategy: open, must be resolved before SLS-017
+## D008 — 2026-07-22 — Feature normalization/null-handling strategy
 
-**Decision:** not yet made. Flagged here so it isn't skipped by default.
+**Decision (resolved 2026-07-22, SLS-017):** per-feature z-score
+standardization, fit on the full combined query+candidate population for
+a given comparison (not per-period separately). Null ratio features are
+mean-imputed *before* standardizing, which makes them land at exactly
+z=0 ("average, uninformative") rather than a fabricated extreme. Full
+writeup: [`baseline-b-standardization.md`](baseline-b-standardization.md).
 
 **Why:** flagged in code review — `docs/feature-definitions.md`'s features
 mix very different scales and shapes: `progressive_pass_distance_p90` runs

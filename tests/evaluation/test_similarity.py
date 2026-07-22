@@ -1,6 +1,8 @@
+import math
+
 import polars as pl
 
-from scoutlens.evaluation.similarity import baseline_a_rank
+from scoutlens.evaluation.similarity import baseline_a_rank, baseline_b_rank, impute_and_standardize
 
 
 def _candidates(*rows):
@@ -55,3 +57,82 @@ def test_query_own_player_id_can_appear_in_candidates_and_rank_first_if_identica
     candidates = _candidates((1, "Forward", 1000), (2, "Forward", 500))
     result = baseline_a_rank(query_role="Forward", query_minutes=1000, candidates=candidates)
     assert result.sort("rank")["player_id"].to_list()[0] == 1
+
+
+def test_impute_and_standardize_produces_zero_mean_unit_std():
+    profiles = pl.DataFrame({"f": [10.0, 20.0, 30.0]})
+    result = impute_and_standardize(profiles, ["f"])
+    assert abs(result["f"].mean()) < 1e-9
+    assert abs(result["f"].std() - 1.0) < 1e-9
+
+
+def test_impute_and_standardize_null_becomes_exactly_zero():
+    """Mean-imputation preserves the population mean, so a null's z-score
+    must come out to exactly 0 -- "average, uninformative," not a
+    fabricated extreme."""
+    profiles = pl.DataFrame({"f": [10.0, 20.0, None]})
+    result = impute_and_standardize(profiles, ["f"])
+    null_row_value = result["f"][2]
+    assert null_row_value == 0.0
+
+
+def test_impute_and_standardize_constant_column_becomes_zero_not_nan():
+    profiles = pl.DataFrame({"f": [5.0, 5.0, 5.0]})
+    result = impute_and_standardize(profiles, ["f"])
+    assert result["f"].to_list() == [0.0, 0.0, 0.0]
+
+
+def test_impute_and_standardize_all_null_column_becomes_zero():
+    profiles = pl.DataFrame({"f": [None, None, None]}, schema={"f": pl.Float64})
+    result = impute_and_standardize(profiles, ["f"])
+    assert result["f"].to_list() == [0.0, 0.0, 0.0]
+
+
+def _b_candidates(*rows):
+    """rows of (player_id, f1, f2)."""
+    return pl.DataFrame({
+        "player_id": [r[0] for r in rows],
+        "f1": [r[1] for r in rows],
+        "f2": [r[2] for r in rows],
+    })
+
+
+def test_baseline_b_identical_vector_ranks_first_with_similarity_one():
+    candidates = _b_candidates((1, 1.0, 0.0), (2, 0.0, 1.0))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"])
+    top = result.sort("rank").row(0, named=True)
+    assert top["player_id"] == 1
+    assert abs(top["cosine_similarity"] - 1.0) < 1e-9
+
+
+def test_baseline_b_orthogonal_vector_has_zero_similarity():
+    candidates = _b_candidates((1, 0.0, 1.0))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"])
+    assert abs(result.row(0, named=True)["cosine_similarity"]) < 1e-9
+
+
+def test_baseline_b_opposite_vector_has_negative_similarity():
+    candidates = _b_candidates((1, -1.0, 0.0))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"])
+    assert abs(result.row(0, named=True)["cosine_similarity"] - (-1.0)) < 1e-9
+
+
+def test_baseline_b_zero_norm_candidate_does_not_crash_and_scores_zero():
+    candidates = _b_candidates((1, 0.0, 0.0), (2, 1.0, 0.0))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"])
+    by_player = {r["player_id"]: r for r in result.to_dicts()}
+    assert by_player[1]["cosine_similarity"] == 0.0
+    assert not math.isnan(by_player[1]["cosine_similarity"])
+    assert by_player[2]["rank"] == 1
+
+
+def test_baseline_b_ties_broken_deterministically_by_player_id():
+    candidates = _b_candidates((5, 1.0, 0.0), (2, 1.0, 0.0))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"])
+    assert result.sort("rank")["player_id"].to_list() == [2, 5]
+
+
+def test_baseline_b_ranks_more_similar_candidate_first():
+    candidates = _b_candidates((1, 0.9, 0.1), (2, 0.1, 0.9))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"])
+    assert result.sort("rank")["player_id"].to_list() == [1, 2]
