@@ -1,21 +1,23 @@
 # ScoutLens — Feasibility Spike
 
-**Decision question (fixed for the duration of the spike):**
+**Decision question:**
 
 > Is there enough signal in the available event data to justify ScoutLens
 > as a flagship project?
 
-10-working-day timebox. Outcome is `GO`, `PIVOT`, or `KILL` — see
-[`docs/project-charter.md`](docs/project-charter.md) for the full charter,
-gates, and the maximum claim this spike is allowed to make.
+**Answer: yes — GO.** The spike is complete; see
+[`docs/feasibility-report.md`](docs/feasibility-report.md) for the full
+executive summary, results, limitations, and recommended next
+experiment. See [`docs/project-charter.md`](docs/project-charter.md) for
+the charter, gates, and the maximum claim this spike is allowed to make.
 
 ## Status
 
 | Gate | Status |
 |---|---|
-| Gate 0 — Provenance | **GO** — license verified per-artifact, see [`docs/data-provenance.md`](docs/data-provenance.md) |
-| Gate 1 — Data | **GO** — see [`docs/gate-1-decision.md`](docs/gate-1-decision.md). 1,969 eligible players at ≥450 min/season, 99.72% clean minutes derivation, 99.97% join integrity — all well past threshold. |
-| Gate 2 — Analytical signal | In progress. Feature catalog v0 (32 features, [`docs/feature-definitions.md`](docs/feature-definitions.md)) and player-period aggregation implemented; chronological split and baselines not done yet. |
+| Gate 0 — Provenance | **GO** — [`docs/data-provenance.md`](docs/data-provenance.md) |
+| Gate 1 — Data | **GO** — [`docs/gate-1-decision.md`](docs/gate-1-decision.md). 1,969 eligible players at ≥450 min/season, 99.72% clean minutes derivation, 99.97% join integrity. |
+| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. |
 
 Task-by-task progress against the backlog (SLS-001…023, defined in the
 brief) is tracked in-session, not duplicated here as a static checklist —
@@ -23,16 +25,14 @@ see recent commit history for what's landed.
 
 ## Start here
 
-1. [`docs/00_ScoutLens_Project_Brief_v1.md`](docs/00_ScoutLens_Project_Brief_v1.md) — the frozen original brief. Source of truth for scope; never edited.
-2. [`docs/project-charter.md`](docs/project-charter.md) — operational charter derived from the brief.
-3. [`docs/decisions-log.md`](docs/decisions-log.md) — every adjustment made to the brief during execution, with the reasoning (append-only).
-4. [`docs/data-provenance.md`](docs/data-provenance.md) — where the data comes from, license verification, redistribution stance.
-5. [`docs/data-dictionary.md`](docs/data-dictionary.md) — what's actually in each processed table, empirically profiled (not just the source's documented schema).
-6. [`docs/data-quality-report.md`](docs/data-quality-report.md) — automated validation results, regenerable.
-7. [`docs/minutes-derivation.md`](docs/minutes-derivation.md) — formation/substitution audit and minutes-played derivation.
-8. [`docs/eligible-population.md`](docs/eligible-population.md) — population sizing against Gate 1 thresholds.
-9. [`docs/gate-1-decision.md`](docs/gate-1-decision.md) — the recorded Gate 1 GO decision and its evidence.
-10. [`docs/feature-definitions.md`](docs/feature-definitions.md) — the 32-feature catalog v0, each definition grounded in verified tag/subevent evidence.
+1. **[`docs/feasibility-report.md`](docs/feasibility-report.md) — the final report. Start here if you only read one document.**
+2. [`docs/00_ScoutLens_Project_Brief_v1.md`](docs/00_ScoutLens_Project_Brief_v1.md) — the frozen original brief. Source of truth for scope; never edited.
+3. [`docs/project-charter.md`](docs/project-charter.md) — operational charter derived from the brief.
+4. [`docs/decisions-log.md`](docs/decisions-log.md) — every adjustment made to the brief during execution, with the reasoning (append-only).
+5. [`docs/data-provenance.md`](docs/data-provenance.md) · [`data-dictionary.md`](docs/data-dictionary.md) · [`data-quality-report.md`](docs/data-quality-report.md) — data acquisition, schema, and validation.
+6. [`docs/minutes-derivation.md`](docs/minutes-derivation.md) · [`eligible-population.md`](docs/eligible-population.md) · [`gate-1-decision.md`](docs/gate-1-decision.md) — minutes reconstruction and Gate 1.
+7. [`docs/feature-definitions.md`](docs/feature-definitions.md) · [`chronological-split.md`](docs/chronological-split.md) · [`baseline-b-standardization.md`](docs/baseline-b-standardization.md) — modeling setup.
+8. [`docs/temporal-retrieval-global.md`](docs/temporal-retrieval-global.md) · [`temporal-retrieval-within-role.md`](docs/temporal-retrieval-within-role.md) · [`context-diagnostics.md`](docs/context-diagnostics.md) · [`error-analysis.md`](docs/error-analysis.md) · [`gate-2-decision.md`](docs/gate-2-decision.md) — results and Gate 2.
 
 ## Setup
 
