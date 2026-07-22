@@ -1,8 +1,16 @@
 import math
 
 import polars as pl
+import pytest
 
-from scoutlens.evaluation.similarity import baseline_a_rank, baseline_b_rank, impute_and_standardize
+from scoutlens.evaluation.similarity import (
+    apply_scaler,
+    baseline_a_rank,
+    baseline_b_rank,
+    baseline_c_rank,
+    fit_scaler,
+    impute_and_standardize,
+)
 
 
 def _candidates(*rows):
@@ -136,3 +144,82 @@ def test_baseline_b_ranks_more_similar_candidate_first():
     candidates = _b_candidates((1, 0.9, 0.1), (2, 0.1, 0.9))
     result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"])
     assert result.sort("rank")["player_id"].to_list() == [1, 2]
+
+
+def test_baseline_b_euclidean_ranks_nearest_candidate_first():
+    candidates = _b_candidates((1, 1.1, 0.0), (2, 5.0, 5.0))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"], metric="euclidean")
+    assert result.sort("rank")["player_id"].to_list() == [1, 2]
+
+
+def test_baseline_b_euclidean_zero_distance_ranks_first():
+    candidates = _b_candidates((1, 1.0, 0.0), (2, 2.0, 2.0))
+    result = baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"], metric="euclidean")
+    top = result.sort("rank").row(0, named=True)
+    assert top["player_id"] == 1
+    assert top["euclidean_distance"] == 0.0
+
+
+def test_baseline_b_unknown_metric_raises():
+    candidates = _b_candidates((1, 1.0, 0.0))
+    try:
+        baseline_b_rank({"f1": 1.0, "f2": 0.0}, candidates, ["f1", "f2"], metric="manhattan")
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+
+
+def test_fit_and_apply_scaler_matches_impute_and_standardize_on_same_population():
+    profiles = pl.DataFrame({"f": [10.0, 20.0, None]})
+    scaler = fit_scaler(profiles, ["f"])
+    applied = apply_scaler(profiles, ["f"], scaler)
+    direct = impute_and_standardize(profiles, ["f"])
+    assert applied["f"].to_list() == direct["f"].to_list()
+
+
+def test_apply_scaler_transforms_a_different_population_using_the_fitted_one():
+    """The whole point of splitting fit/apply: a scaler fit on period A
+    should be usable to transform period B without B's own values leaking
+    into the mean/std -- this is what the A-only-fit robustness check
+    needs."""
+    fit_population = pl.DataFrame({"f": [0.0, 10.0]})  # mean=5, std=~7.07
+    scaler = fit_scaler(fit_population, ["f"])
+    other_population = pl.DataFrame({"f": [5.0]})  # should land at z=0 (equals fit_population's mean)
+    result = apply_scaler(other_population, ["f"], scaler)
+    assert result["f"][0] == pytest.approx(0.0)
+
+
+def test_apply_scaler_handles_degenerate_column_from_fit_population():
+    fit_population = pl.DataFrame({"f": [5.0, 5.0]})  # zero variance
+    scaler = fit_scaler(fit_population, ["f"])
+    other_population = pl.DataFrame({"f": [100.0]})  # would be a huge z-score if not degenerate-guarded
+    result = apply_scaler(other_population, ["f"], scaler)
+    assert result["f"][0] == 0.0
+
+
+def _c_candidates(*rows):
+    """rows of (player_id, role, team_id, minutes_played)."""
+    return pl.DataFrame({
+        "player_id": [r[0] for r in rows],
+        "role": [r[1] for r in rows],
+        "team_id": [r[2] for r in rows],
+        "minutes_played": [r[3] for r in rows],
+    })
+
+
+def test_baseline_c_same_role_and_team_ranks_above_same_role_only():
+    candidates = _c_candidates(
+        (1, "Forward", 500, 200),  # same role, different team, close minutes
+        (2, "Forward", 999, 1000),  # same role AND same team, far minutes
+    )
+    result = baseline_c_rank("Forward", 999, 1000, candidates)
+    assert result.sort("rank")["player_id"].to_list() == [2, 1]
+
+
+def test_baseline_c_same_role_only_ranks_above_same_team_only():
+    candidates = _c_candidates(
+        (1, "Defender", 999, 1000),  # same team only
+        (2, "Forward", 500, 1000),  # same role only
+    )
+    result = baseline_c_rank("Forward", 999, 1000, candidates)
+    assert result.sort("rank")["player_id"].to_list() == [2, 1]

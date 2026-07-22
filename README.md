@@ -17,11 +17,13 @@ the charter, gates, and the maximum claim this spike is allowed to make.
 |---|---|
 | Gate 0 — Provenance | **GO** — [`docs/data-provenance.md`](docs/data-provenance.md) |
 | Gate 1 — Data | **GO** — [`docs/gate-1-decision.md`](docs/gate-1-decision.md). 1,969 eligible players at ≥450 min/season, 99.72% clean minutes derivation, 99.97% join integrity. |
-| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. |
+| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. **Follow-up caveat:** a team-aware baseline beats Baseline B by 2x+ — see [`robustness-checks.md`](docs/robustness-checks.md). |
 
 Task-by-task progress against the backlog (SLS-001…023, defined in the
 brief) is tracked in-session, not duplicated here as a static checklist —
-see recent commit history for what's landed.
+see recent commit history for what's landed. Post-spike follow-up work
+(bug fixes, robustness checks) continues past SLS-023 — see
+[`decisions-log.md`](docs/decisions-log.md) D009/D010.
 
 ## Start here
 
@@ -33,6 +35,7 @@ see recent commit history for what's landed.
 6. [`docs/minutes-derivation.md`](docs/minutes-derivation.md) · [`eligible-population.md`](docs/eligible-population.md) · [`gate-1-decision.md`](docs/gate-1-decision.md) — minutes reconstruction and Gate 1.
 7. [`docs/feature-definitions.md`](docs/feature-definitions.md) · [`chronological-split.md`](docs/chronological-split.md) · [`baseline-b-standardization.md`](docs/baseline-b-standardization.md) — modeling setup.
 8. [`docs/temporal-retrieval-global.md`](docs/temporal-retrieval-global.md) · [`temporal-retrieval-within-role.md`](docs/temporal-retrieval-within-role.md) · [`context-diagnostics.md`](docs/context-diagnostics.md) · [`error-analysis.md`](docs/error-analysis.md) · [`gate-2-decision.md`](docs/gate-2-decision.md) — results and Gate 2.
+9. [`docs/robustness-checks.md`](docs/robustness-checks.md) — post-spike follow-up: standardization/metric ablations, and the team-continuity finding that qualifies the headline result.
 
 ## Setup
 
@@ -59,6 +62,11 @@ uv run python -m scoutlens.data.validation
 # (retrieval experiments, diagnostics, minutes sensitivity curve) --
 # writes artifacts/gate2_results.json
 uv run python -m scoutlens.evaluation.run_report
+
+# Regenerate every number in robustness-checks.md (standardization/metric
+# ablations, role+team+minutes baseline, feature-family ablation) --
+# writes artifacts/robustness_results.json
+uv run python -m scoutlens.evaluation.run_robustness
 
 # Run the test suite
 uv run pytest

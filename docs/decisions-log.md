@@ -223,3 +223,36 @@ test simulating a player in two competitions. `assign_periods` sorts by
 (verified by re-running) — it made the *diagnostic* conclusion stronger
 (smaller, more defensible confounds) and closed a latent correctness gap
 that hadn't yet been exercised by real data. Gate 2 remains GO.
+
+---
+
+## D010 — 2026-07-22 — Team continuity dominates a trivial role+team+minutes baseline; reframe, don't retract
+
+**Decision:** report this prominently rather than treat it as a footnote,
+and reorder the next-experiment priorities around it (testing transferred
+players moves to #1) — without reopening Gate 2.
+
+**Why:** the robustness battery's Baseline C (same role AND same primary
+team first, then role only, then team only, minutes as tiebreak — no
+event data at all) scored MRR 0.589, beating Baseline B's 0.254 by more
+than 2x. Root cause: the eligible population requires ≥450 minutes in
+both halves of the *same season*, and players essentially never change
+clubs mid-season, so a club's specific-role sub-roster is small enough
+(often 2–4 eligible players) that "closest minutes within this club's
+same-role players" nearly solves same-player retrieval on its own. This
+is a genuine limitation of the *experimental design* — team continuity
+was always implicitly available as a shortcut the current population
+never controls for — not evidence that Baseline B's own result is
+fabricated or that Gate 2 was wrong: Baseline B still clearly beats
+Baseline A (the charter's actual criterion), and a teammates-excluded
+sensitivity check (robustness-checks.md, Check 4) confirms Baseline B's
+own performance doesn't depend on team-clustering.
+
+**How to apply:** every MRR/Recall number in `feasibility-report.md` and
+`gate-2-decision.md` should now be read with the qualifier "given team
+continuity across the split," not as evidence of individual stability
+independent of it. The next experiment that actually isolates individual
+signal from team-continuity is testing players who changed clubs between
+the two periods — where Baseline C's advantage structurally cannot apply.
+Until that's run, do not describe the retrieval result as proof of
+"stable individual playing style" without this caveat attached.

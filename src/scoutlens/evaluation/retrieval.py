@@ -21,7 +21,7 @@ import statistics
 
 import polars as pl
 
-from scoutlens.evaluation.similarity import baseline_a_rank, baseline_b_rank, impute_and_standardize
+from scoutlens.evaluation.similarity import baseline_a_rank, baseline_b_rank, baseline_c_rank, impute_and_standardize
 from scoutlens.features.aggregation import FEATURE_COLUMNS
 
 
@@ -105,11 +105,39 @@ def run_baseline_a_retrieval(
     return pl.DataFrame(rows)
 
 
+def run_baseline_c_retrieval(query_profiles: pl.DataFrame, candidates: pl.DataFrame) -> pl.DataFrame:
+    """Robustness-check baseline (see robustness-checks.md): `same role
+    AND same team -> same role only -> same team only -> neither`, minutes
+    proximity as the tiebreak within each tier. Isolates how much
+    Baseline B's advantage over Baseline A survives once a cheap
+    same-team signal is added to the trivial baseline too — if Baseline C
+    closes most of the gap to Baseline B, team membership (not
+    event-derived playing style) would be doing most of the work.
+
+    `query_profiles`/`candidates` need `player_id`, `competitionId`,
+    `role`, `team_id`, `minutes_played`. Same D007-correct
+    `(player_id, competitionId)` matching as the other two baselines."""
+    rows = []
+    for query in query_profiles.iter_rows(named=True):
+        ranked = baseline_c_rank(query["role"], query["team_id"], query["minutes_played"], candidates)
+        match = ranked.filter(
+            (pl.col("player_id") == query["player_id"]) & (pl.col("competitionId") == query["competitionId"])
+        )
+        if match.height == 0:
+            continue
+        rows.append({
+            "player_id": query["player_id"], "competitionId": query["competitionId"],
+            "rank": match.row(0, named=True)["rank"], "pool_size": candidates.height,
+        })
+    return pl.DataFrame(rows)
+
+
 def run_baseline_b_retrieval(
     query_profiles: pl.DataFrame,
     candidates: pl.DataFrame,
     feature_columns: list[str] = FEATURE_COLUMNS,
     scope_column: str | None = None,
+    metric: str = "cosine",
 ) -> pl.DataFrame:
     """query_profiles/candidates must already be standardized on the same
     fitted population (see impute_and_standardize) — this function only
@@ -121,6 +149,9 @@ def run_baseline_b_retrieval(
     `candidates` must carry that column even though it isn't part of
     `feature_columns` (it passes through `baseline_b_rank` untouched).
 
+    `metric`: forwarded to `baseline_b_rank` — `"cosine"` (default) or
+    `"euclidean"`, a robustness comparison point (see robustness-checks.md).
+
     The true match is identified by `(player_id, competitionId)` together,
     per D007 — see the same note on `run_baseline_a_retrieval`."""
     rows = []
@@ -131,7 +162,7 @@ def run_baseline_b_retrieval(
         if scope_column is not None:
             pool = pool.filter(pl.col(scope_column) == query[scope_column])
         query_features = {c: query[c] for c in feature_columns}
-        ranked = baseline_b_rank(query_features, pool, feature_columns)
+        ranked = baseline_b_rank(query_features, pool, feature_columns, metric=metric)
         match = ranked.filter(
             (pl.col("player_id") == query["player_id"]) & (pl.col("competitionId") == query["competitionId"])
         )
