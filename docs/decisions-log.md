@@ -181,3 +181,45 @@ default silently to "fill nulls with 0" without writing down why that's
 the right choice — a 0%-filled `shot_conversion_pct` for a player who
 never shot is a different claim than "no signal," and cosine similarity
 will treat it as real information either way.
+
+---
+
+## D009 — 2026-07-22 — Post-publication review: two correctness bugs found and fixed after Gate 2 was recorded
+
+**Decision:** fix both immediately rather than treat the already-recorded
+GO decision as final; keep Gate 2's verdict (GO) but correct the evidence
+behind it.
+
+**Why:** an external review of the merged spike found two real issues:
+
+1. `neighbor_concentration`'s team/league confound measurement included a
+   query's own correctly-retrieved true match as a "neighbor." A player's
+   team essentially never changes within one season split, so a correct
+   retrieval trivially "shares the query's team" — this measured
+   retrieval *success*, not a confound, and inflated the apparent team
+   effect from a real ~1.24x to a reported ~4.6x.
+2. `run_baseline_a_retrieval`/`run_baseline_b_retrieval` identified the
+   true match by `player_id` alone, not `(player_id, competitionId)` as
+   D007 requires. Harmless today (no player appears in two domestic
+   competitions in this single-season dataset) but would silently
+   misbehave the moment that stopped being true — exactly the kind of bug
+   D007 was written to prevent, that slipped past because SLS-018/019/020
+   never exercised the case it guards against.
+
+Both were confirmed against real data before fixing (not just taken on
+the reviewer's word) — see
+[`context-diagnostics.md`](context-diagnostics.md) for the corrected
+numbers. A third, lower-severity issue (the chronological split's sort
+had no explicit tiebreak, and Euro 2016 genuinely has two matches tied on
+`dateutc` straddling the split boundary) was fixed the same way, with a
+regression test proving the split is now independent of input row order.
+
+**How to apply:** `neighbor_concentration` now excludes true matches by
+default (`include_true_matches=True` opts back into the old, inflated
+behavior, kept only for explicit before/after comparison). Retrieval
+matching now requires `(player_id, competitionId)`, with a regression
+test simulating a player in two competitions. `assign_periods` sorts by
+`(dateutc, wyId)`. None of this changed the headline MRR/CI numbers
+(verified by re-running) — it made the *diagnostic* conclusion stronger
+(smaller, more defensible confounds) and closed a latent correctness gap
+that hadn't yet been exercised by real data. Gate 2 remains GO.

@@ -16,13 +16,30 @@ and limitations.
 | Baseline B beats Baseline A materially | yes | MRR 0.0256 → 0.2539 (global, ~10x); 0.0256 → 0.2787 (within-role) | [`temporal-retrieval-global.md`](temporal-retrieval-global.md), [`temporal-retrieval-within-role.md`](temporal-retrieval-within-role.md) |
 | Gain has a consistent confidence interval | yes | CI excludes 0 at every minutes threshold tested, 225–1,350 min | [`context-diagnostics.md`](context-diagnostics.md) |
 | Signal holds up within-role | yes | Within-role delta (+0.253, CI [0.232, 0.274]) is at least as large as the global delta (+0.228, CI [0.208, 0.248]) — structurally can't be explained by Baseline A's free role-matching, since Baseline A's own numbers didn't move | [`temporal-retrieval-within-role.md`](temporal-retrieval-within-role.md) |
-| No collapse in the main strata | yes, with a noted exception | Team confound ~4.6x enriched but still a small minority (95.2% of neighbors are a different team); league confound ~1.25x, close to negligible. Goalkeeper is the weakest role stratum (MRR 0.129) but still clearly positive, plausibly because the feature catalog (SLS-013) is built almost entirely around outfield actions | [`context-diagnostics.md`](context-diagnostics.md) |
+| No collapse in the main strata | yes, with a noted exception | Team confound ~1.24x enriched, league ~1.08x — both small (see correction below). Goalkeeper is the weakest role stratum (MRR 0.129) but still clearly positive, plausibly because the feature catalog (SLS-013) is built almost entirely around outfield actions | [`context-diagnostics.md`](context-diagnostics.md) |
 | Errors are investigable and explicable | yes | Worst cases have identifiable, heterogeneous causes (genuine profile change at 3 of 4 top misses; sample-size noise at 1 of 4) rather than being unexplained; close misses are football-coherent (attacking-fullback and defensive-midfielder sub-clusters), not arbitrary | [`error-analysis.md`](error-analysis.md) |
 
 Every criterion clears, several with considerable margin. This is a
 notably cleaner Gate 2 outcome than the charter's own framing anticipated
 as the default case — the brief treated "Baseline B beats Baseline A" as
 a real open question, not a foregone conclusion.
+
+**Correction (2026-07-22, post-publication review):** the team/league
+confound numbers above were recomputed after finding the original
+analysis counted a query's own correctly-retrieved true match as a
+"neighbor" — which trivially shares the query's team, inflating the
+apparent team effect roughly 4x. Fixed (`diagnostics.py` now excludes
+true matches from concentration calculations by default) and re-run; the
+corrected numbers (~1.24x team, ~1.08x league) are smaller than
+originally reported, which *strengthens* this row's conclusion rather
+than weakening it. Full before/after: [`context-diagnostics.md`](context-diagnostics.md).
+A second, independent bug was found and fixed in the same review: the
+retrieval matching logic identified the true match by `player_id` alone
+rather than `(player_id, competitionId)` per D007 — currently harmless
+(no player appears in two domestic competitions in this dataset) but
+would silently misbehave with multi-season or multi-competition data.
+Fixed with regression tests; headline MRR/CI numbers are unchanged by
+this fix (verified by re-running).
 
 ## What Gate 2 does — and does not — license
 
@@ -41,6 +58,16 @@ meaningful, not proof that such a search produces good recruitment
 outcomes. This distinction must appear in the final report's limitations
 section (SLS-023), not just here.
 
+A second, narrower wording caution: "stable player-*role* representation"
+is this decision's own phrasing, inherited from the charter — what the
+within-role experiment (H4) actually establishes is that the signal isn't
+explained by the 4 nominal role categories, not that the extra signal is
+specifically role information as opposed to individual quality, set-piece
+duties, or team system. "Stable player statistical fingerprint" is the
+more precise claim the evidence supports; treat "role representation" as
+a plausible interpretation carried forward from the charter's original
+framing, not an independently verified finding.
+
 ## Standing limitations carried into the final report
 
 - **Population scope:** quantitative results are reported on the five
@@ -49,6 +76,13 @@ section (SLS-023), not just here.
   eligible population is near-zero once split into two periods
   ([`chronological-split.md`](chronological-split.md)) — not part of the
   headline numbers.
+- **Survivorship bias:** requiring ≥450 minutes in *both* periods selects
+  for players who stayed established and available all season — it
+  structurally excludes breakout players, injury returns, players losing
+  their starting spot, and mid-season transfers, which are exactly the
+  cases a recruitment-oriented tool would most need to handle. The
+  result here is about established players specifically, not players in
+  general — see [`feasibility-report.md`](feasibility-report.md).
 - **Carrying features are proxies**, not ground truth (no native carry
   event in this dataset — [`feature-definitions.md`](feature-definitions.md)).
 - **Sequence involvement** was cut from the feature catalog v0 entirely

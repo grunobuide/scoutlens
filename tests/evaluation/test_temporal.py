@@ -55,6 +55,28 @@ def test_assign_periods_odd_match_count_gives_extra_to_b():
     assert by_period["B"] == 2
 
 
+def test_assign_periods_ties_broken_deterministically_by_match_id():
+    """Regression test: European Championship 2016 has two real matches
+    sharing an identical dateutc straddling the split boundary. Without an
+    explicit tiebreak, which one lands in A vs B depends on incoming row
+    order rather than a value in the data. wyId as a secondary sort key
+    makes the result independent of input row order."""
+    # two matches tied on dateutc, in each of two different input orders
+    forward_order = _matches_df(
+        (10, 100, "2020-01-01"), (20, 100, "2020-01-02"), (30, 100, "2020-01-02"), (40, 100, "2020-01-03"),
+    )
+    reversed_order = _matches_df(
+        (40, 100, "2020-01-03"), (30, 100, "2020-01-02"), (20, 100, "2020-01-02"), (10, 100, "2020-01-01"),
+    )
+    result_forward = assign_periods(forward_order).sort("match_id")
+    result_reversed = assign_periods(reversed_order).sort("match_id")
+    assert result_forward["period"].to_list() == result_reversed["period"].to_list()
+    # deterministic outcome: lower wyId (20) wins the tie and lands in A
+    by_match = dict(result_forward.select("match_id", "period").iter_rows())
+    assert by_match[20] == "A"
+    assert by_match[30] == "B"
+
+
 def _event(player_id, match_id, event_name="Pass", tags=None):
     return {
         "playerId": player_id, "matchId": match_id, "eventName": event_name, "subEventName": "",

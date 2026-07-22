@@ -36,9 +36,21 @@ def neighbor_concentration(
     query_attribute: pl.DataFrame,
     neighbor_attribute: pl.DataFrame,
     attribute_name: str,
+    include_true_matches: bool = False,
 ) -> float:
     """Fraction of (query, neighbor) pairs in `top_k_neighbors` where the
     neighbor shares the query's value of `attribute_name` (e.g. team_id).
+
+    By default (`include_true_matches=False`), rows where the "neighbor"
+    is actually the query's own correctly-retrieved period-B profile
+    (`top_k_neighbors.is_true_match`, from `get_top_k_neighbors`) are
+    excluded first. A player's team essentially never changes within a
+    single season split, so a correct retrieval trivially "shares the
+    query's team" — counting it would measure retrieval *success*, not a
+    confound, and inflate the apparent team/league effect. Pass
+    `include_true_matches=True` only if `top_k_neighbors` has no
+    `is_true_match` column (older data) or the inflated figure is wanted
+    deliberately for comparison.
 
     `query_attribute`/`neighbor_attribute`: `player_id` -> `attribute_name`,
     each pre-filtered by the caller to the relevant period (queries are
@@ -48,6 +60,9 @@ def neighbor_concentration(
     two different domestic leagues in the same season, so this doesn't
     need `competitionId` disambiguation in practice.
     """
+    if not include_true_matches and "is_true_match" in top_k_neighbors.columns:
+        top_k_neighbors = top_k_neighbors.filter(~pl.col("is_true_match"))
+
     joined = top_k_neighbors.join(
         query_attribute.rename({"player_id": "query_player_id", attribute_name: "query_attr"}),
         on="query_player_id", how="left",

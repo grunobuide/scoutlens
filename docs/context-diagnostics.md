@@ -18,26 +18,42 @@ queries — 12,570 query-neighbor pairs).
 
 ## Team and league concentration in the top-10 neighbors
 
-| Confound | Observed | Expected under uniform-random neighbor selection | Enrichment |
+**Correction (2026-07-22, post-publication review):** the first version
+of this analysis measured concentration over *all* top-10 neighbors,
+including cases where the "neighbor" was the query's own correctly-
+retrieved true match. A player's primary team essentially never changes
+within one season split, so a correct retrieval trivially "shares the
+query's team" — counting those rows measures retrieval *success*, not a
+confound, and inflated the apparent team effect roughly 4x. Fixed in
+`neighbor_concentration` (now excludes true matches by default — see
+[`diagnostics.py`](../src/scoutlens/evaluation/diagnostics.py) and its
+regression test). The corrected numbers below only count neighbors that
+are genuinely *someone else*.
+
+Of the 12,570 (query, neighbor) pairs, 544 (4.3%) were the true match
+itself, retrieved into its own top-10 — a data point about retrieval
+quality, not about confounds, and excluded from the table below.
+
+| Confound | Observed (excluding true matches) | Expected under random neighbor selection | Enrichment |
 |---|---|---|---|
-| Same primary team as query | 4.79% | 1.05% (98 teams, actual squad-size-weighted) | ~4.6x |
-| Same league as query | 25.04% | 20.06% (actual league-size-weighted, leagues are near-equal size) | ~1.25x |
+| Same primary team as query | 1.30% | 1.05% (98 teams, actual squad-size-weighted) | ~1.24x |
+| Same league as query | 21.64% | 20.06% (actual league-size-weighted, leagues are near-equal size) | ~1.08x |
 
 "Expected under random" is computed from the *actual* team/league size
 distribution in the period-B candidate pool (sum of squared population
 shares), not a naive `1/n` — teams and leagues aren't equal size, so a
 naive uniform assumption would be wrong.
 
-**Reading:** there is a real, non-trivial team effect — a query's
-neighbors are about 4.6x more likely to share their team than pure
-chance would predict, meaning shared tactical system/teammates does
-leak into the similarity to some degree. But it's still a small minority
-of neighbors overall: **95.2% of top-10 neighbors play for a different
-team than the query.** The league effect is close to negligible — 25%
-observed vs. 20% expected is a mild enrichment, not "the model mostly
-just learned league style." Neither confound comes close to explaining
-Baseline B's retrieval performance; the bulk of the signal is not
-"teammate-finding" or "league-style-finding" in disguise.
+**Reading:** once retrieval successes are correctly excluded, *both*
+confounds are small — team enrichment drops from an apparent ~4.6x to a
+real ~1.24x, and league enrichment is close to negligible at ~1.08x. This
+is a **stronger** result for Gate 2 than the uncorrected numbers
+suggested, not a weaker one: among the genuine "wrong" or exploratory
+neighbors Baseline B surfaces, there is barely more team/league
+clustering than pure chance would produce. The bulk of the retrieval
+signal is not teammate-finding or league-style-finding in disguise — it
+was never strongly that even under the inflated original measurement,
+and is even less so once measured correctly.
 
 ## Minimum-minutes → population → stability curve (resolves D006)
 

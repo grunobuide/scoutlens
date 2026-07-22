@@ -186,16 +186,31 @@ writeup: [`temporal-retrieval-within-role.md`](temporal-retrieval-within-role.md
 over a method that gets role-matching for free does not shrink, and if
 anything grows slightly, once role stops being able to explain any of
 it. The signal is not merely "finding another player in the same
-position."
+nominal position." **A caution on wording, though:** this shows the
+extra signal isn't explained by the 4 nominal role categories — it does
+not by itself prove the extra signal *is specifically a finer-grained
+role/sub-position representation*, as opposed to individual quality,
+set-piece duties, team style, or some other idiosyncratic but stable
+statistical trait. "Stable player statistical fingerprint" is the claim
+this experiment actually supports; "stable player-*role* representation"
+is a plausible but not yet proven interpretation of it — see Limitations.
 
 ## Position / Minutes / League Diagnostics
 
-- **Team confound:** 4.79% of top-10 neighbors share the query's primary
-  team, vs. 1.05% expected under squad-size-weighted random selection
-  (~4.6x enrichment) — real, but still a small minority: 95.2% of
-  neighbors play for a different team.
-- **League confound:** 25.0% observed vs. 20.1% expected
-  (league-size-weighted) — close to negligible.
+**Correction to the original analysis:** the first pass measured
+team/league concentration over every top-10 neighbor, including cases
+where the "neighbor" was simply the query's own correctly-retrieved true
+match — which trivially shares the query's team (players rarely change
+clubs mid-split) and therefore measured retrieval *success*, not a
+confound. Fixed and re-run excluding true matches; see
+[`context-diagnostics.md`](context-diagnostics.md) for the full
+before/after. The correction **strengthens** the diagnostic conclusion.
+
+- **Team confound:** 1.30% of genuinely-other-player top-10 neighbors
+  share the query's primary team, vs. 1.05% expected under squad-size-
+  weighted random selection (~1.24x enrichment) — small.
+- **League confound:** 21.64% observed vs. 20.06% expected
+  (league-size-weighted) — close to negligible (~1.08x).
 - **Minutes sensitivity** (resolves [D006](decisions-log.md#d006--2026-07-20--450-minute-threshold-flagged-as-a-known-noise-risk-not-just-a-parameter)):
   ran the full experiment at six thresholds from 225 to 1,350 min/period.
   The B−A delta's CI stays clear of 0 at **every** threshold and
@@ -232,6 +247,25 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
    recruitment-oriented similarity search to make sense — it is not
    evidence that such a search would produce good recruitment decisions.
    This is the single most important boundary on the claim above.
+2b. **"Stable statistical fingerprint" is proven; "stable role
+   representation" is an interpretation, not yet a separately-tested
+   claim.** Within-role retrieval (H4) shows the signal isn't explained
+   by the 4 nominal role categories, but doesn't establish that the extra
+   signal specifically encodes finer sub-role/positional information as
+   opposed to individual quality, set-piece duties, team system, or other
+   stable-but-not-role traits. Distinguishing these needs sub-role labels,
+   expert evaluation, or a downstream task — none attempted here.
+2c. **The eligible population (≥450 min in *both* periods) has a real
+   survivorship bias.** It selects for players who were continuously
+   good enough to keep playing throughout the season — by construction it
+   excludes breakout youngsters, players returning from injury, players
+   losing their starting spot, and mid-season transfers, which are
+   precisely the cases a recruitment tool would most need to handle well.
+   The minutes-threshold sensitivity curve (D006) does not address this:
+   every threshold tested still required both-periods eligibility, so it
+   varies the bar for "established," not whether the established-player
+   restriction itself holds. The result here is a statement about
+   established players specifically, not players in general.
 3. **Carrying features are explicit proxies** (`carry_proxy_p90`,
    `carry_distance_proxy_p90`, `take_on_success_pct`) — no native carry
    event exists in this dataset.
@@ -253,6 +287,44 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
 9. **Code license for this repository is still undecided** (independent
    of the CC BY 4.0 data license), deferred by the user pending public
    positioning of the project.
+10. **Standardization is fit on the combined A+B population** (D008) —
+    defensible for a transductive, retrieval-style evaluation where both
+    periods are known in advance, but not yet compared against fitting
+    the scaler on period A alone (closer to how a production system would
+    actually operate on a genuinely-unseen period B). Worth a direct
+    ablation before relying on the exact magnitude of the reported MRR.
+11. **Ratio features computed from very few attempts can be extreme and
+    over-trusted** — a player with 1 shot and 1 goal gets
+    `shot_conversion_pct = 1.0`, the same numeric value as a striker who
+    converted 20 of 20, with no attempt-count-based confidence weighting.
+    No shrinkage or minimum-attempts floor was applied in this catalog.
+12. **The bootstrap treats queries as independent draws**, though they
+    share teams, leagues, and the same period-B candidate pool — some
+    correlation between queries is plausible (e.g. two teammates'
+    retrieval difficulty could move together). The reported effect size
+    is large enough to likely survive a more conservative
+    cluster-aware interval, but the exact CI bounds should be read as
+    approximate, not exact, for that reason.
+13. **The specific causal explanations offered in the qualitative error
+    analysis** (e.g. "tactical role shift," "squad rotation" for the
+    non-sample-noise misses) **are plausible hypotheses, not verified
+    facts** — [`error-analysis.md`](error-analysis.md) establishes that 3
+    of the 4 worst cases are *not* explained by low minutes or a club
+    change; it does not establish *what* did change.
+14. **Partially resolved (2026-07-22):** `uv run python -m
+    scoutlens.evaluation.run_report` now regenerates every number in this
+    report's Temporal Stability Results and Diagnostics sections in one
+    command, writing `artifacts/gate2_results.json`
+    ([`run_report.py`](../src/scoutlens/evaluation/run_report.py)).
+    Still missing, and still real future work: an externally versioned
+    config (today's threshold/competition-set/seed are inlined constants,
+    not a separate file), a run-manifest recording the git commit and
+    data checksums the numbers were produced from, and an automated test
+    that diffs the report's published numbers against a freshly-generated
+    artifact so drift is caught automatically rather than by manual
+    review. `data/processed/period_profiles.parquet` and the raw data it's
+    built from remain local and gitignored, as intended — only the results
+    artifact is meant to be inspectable without re-running anything.
 
 ## GO / PIVOT / KILL Decision
 
@@ -276,28 +348,49 @@ established but the recruitment-search claim explicitly not yet tested.
 
 ## Recommended Next Experiment
 
-In priority order:
+**Revised (2026-07-22) after post-publication review.** The original
+version of this section prioritized testing learned representations
+next. On reflection — and per the charter's own gating principle, "added
+complexity isn't earning its place unless it beats the baseline" — that
+was premature: the simple baseline turned out to be strong enough that it
+deserves to be made genuinely hard to beat, and the pipeline that
+produced it deserves to be trivially reproducible, *before* reaching for
+more sophistication. Revised priority order:
 
-1. **Test whether added model complexity earns its place**, per the
-   charter's own gating principle. Baseline B (standardized features +
-   cosine) is now the standard to beat — the next legitimate question is
-   whether a learned representation (e.g. a simple learned embedding,
-   metric learning, or feature reweighting) meaningfully outperforms it,
-   not whether it's more sophisticated-sounding. Given how strong the
-   simple baseline already is, the burden of proof is real.
-2. **Goalkeeper-specific features.** The weakest-signal role by a clear
-   margin, and the most obvious gap in the current feature catalog
-   (positioning, distribution under pressure, claim/punch tendencies —
-   none currently captured).
-3. **A genuinely different validation methodology for the recruitment
-   claim**, since same-player retrieval cannot speak to it: expert
-   scout review of shortlists, or a downstream-task validation, before
-   any product surface is built on top of the similarity search.
-4. **Extend to more seasons and leagues** before generalizing beyond this
-   single 2017/18 snapshot — particularly before drawing conclusions
-   about the two international competitions, whose population was too
-   small here to support any quantitative claim at all.
-5. **Resolve the players-count discrepancy** against the source paper —
+1. **Make the current baseline unimpeachable.** Add the robustness checks
+   this spike didn't run: a scaler fit on period A alone (vs. today's
+   combined-A+B fit); cosine vs. Euclidean distance; a `role + team +
+   minutes` baseline (to isolate exactly how much team, not just role,
+   explains); dropping same-team candidates entirely as a sensitivity
+   check; per-feature-family ablation to see which families are actually
+   carrying the signal. This is cheap relative to everything below it and
+   directly hardens the number the rest of the program would be built on.
+2. **Build the reproducible runner this report currently lacks.** A
+   single documented command that regenerates `period_profiles.parquet`,
+   runs both retrieval experiments and the diagnostics, and writes a
+   versioned, checked-in results artifact (config: threshold, competition
+   set, feature list, seed, resample count) — so every number in this
+   report can be regenerated and diffed by someone who hasn't read the
+   source, not just by re-running functions from memory.
+3. **Test another season, and specifically players who changed clubs
+   mid-split.** This spike's population is single-season and, per the
+   survivorship-bias limitation above, skews toward continuously-selected
+   players. Deliberately including transferred players is the direct
+   test of whether the "stability" result is about the player or about
+   their team/system.
+4. **A genuinely different validation methodology for the recruitment
+   claim itself**, since same-player retrieval cannot speak to it: blind
+   expert scout review of shortlists, or a downstream-task validation —
+   only after 1–3 above, not before.
+5. **Only then, test whether added model complexity earns its place** —
+   a learned representation, metric learning, or feature reweighting,
+   compared against the now-hardened Baseline B, not today's version of
+   it.
+6. **Goalkeeper-specific features** (positioning, distribution under
+   pressure, claim/punch tendencies — none currently captured) — the
+   clearest specific gap in the feature catalog, addressable in parallel
+   with the above.
+7. **Resolve the players-count discrepancy** against the source paper —
    low cost, closes a standing question rather than carrying it forward
    indefinitely.
 

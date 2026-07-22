@@ -49,8 +49,16 @@ uv sync
 # Download the 7 core Wyscout artifacts, verify checksums, convert to Parquet
 uv run python -m scoutlens.data.ingestion
 
+# Reconstruct minutes played per player x match (writes minutes.parquet)
+uv run python -m scoutlens.data.minutes
+
 # Run structural + relational validation against the processed data
 uv run python -m scoutlens.data.validation
+
+# Regenerate every number in feasibility-report.md's results sections
+# (retrieval experiments, diagnostics, minutes sensitivity curve) --
+# writes artifacts/gate2_results.json
+uv run python -m scoutlens.evaluation.run_report
 
 # Run the test suite
 uv run pytest

@@ -28,13 +28,21 @@ def assign_periods(matches: pl.DataFrame) -> pl.DataFrame:
 
     Within each competition, matches are sorted by `dateutc` (lexically
     sortable — confirmed `YYYY-MM-DD hh:mm:ss` format, see
-    data-dictionary.md) and split by match count at the midpoint: the
-    first half chronologically is period A, the rest is period B. A
-    competition with an odd match count gives the extra match to B.
+    data-dictionary.md), with `wyId` as an explicit tiebreak, and split by
+    match count at the midpoint: the first half chronologically is period
+    A, the rest is period B. A competition with an odd match count gives
+    the extra match to B.
+
+    The `wyId` tiebreak matters in practice, not just in theory: European
+    Championship 2016 has two matches sharing the exact same `dateutc`
+    straddling its split boundary. Relying on `dateutc` alone would leave
+    which of the two lands in A vs. B dependent on incoming row order /
+    sort-stability details rather than a value actually in the data —
+    `wyId` makes the split reproducible regardless.
     """
     parts = []
     for competition_id in sorted(matches["competitionId"].unique().to_list()):
-        comp_matches = matches.filter(pl.col("competitionId") == competition_id).sort("dateutc")
+        comp_matches = matches.filter(pl.col("competitionId") == competition_id).sort(["dateutc", "wyId"])
         n = comp_matches.height
         split_idx = n // 2
         periods = [PERIOD_A] * split_idx + [PERIOD_B] * (n - split_idx)
