@@ -90,3 +90,44 @@ def test_bootstrap_mrr_delta_positive_when_b_strictly_better():
     result = bootstrap_mrr_delta(ranks_a, ranks_b, n_resamples=200, seed=1)
     assert result["point_estimate"] > 0
     assert result["ci_low"] > 0
+
+
+def test_baseline_a_scope_column_excludes_other_scope_candidates():
+    query = pl.DataFrame({
+        "player_id": [1], "competitionId": [100], "role": ["Forward"], "minutes_played": [1000],
+    })
+    candidates = pl.DataFrame({
+        "player_id": [1, 2, 3],
+        "role": ["Forward", "Forward", "Defender"],
+        "minutes_played": [1000, 500, 999],
+    })
+    result = run_baseline_a_retrieval(query, candidates, scope_column="role")
+    row = result.row(0, named=True)
+    assert row["rank"] == 1
+    assert row["pool_size"] == 2  # the Defender candidate is excluded from the pool entirely
+
+
+def test_baseline_b_scope_column_excludes_other_scope_candidates():
+    query = pl.DataFrame({
+        "player_id": [1], "competitionId": [100], "role": ["Forward"], "f1": [1.0], "f2": [0.0],
+    })
+    candidates = pl.DataFrame({
+        "player_id": [1, 2, 3],
+        "role": ["Forward", "Forward", "Defender"],
+        "f1": [1.0, 0.5, 1.0], "f2": [0.0, 0.0, 0.0],
+    })
+    result = run_baseline_b_retrieval(query, candidates, feature_columns=["f1", "f2"], scope_column="role")
+    row = result.row(0, named=True)
+    assert row["rank"] == 1
+    assert row["pool_size"] == 2
+
+
+def test_scope_column_none_is_unaffected_and_omits_no_candidates():
+    query = pl.DataFrame({
+        "player_id": [1], "competitionId": [100], "role": ["Forward"], "minutes_played": [1000],
+    })
+    candidates = pl.DataFrame({
+        "player_id": [1, 2], "role": ["Forward", "Defender"], "minutes_played": [1000, 999],
+    })
+    result = run_baseline_a_retrieval(query, candidates)
+    assert result.row(0, named=True)["pool_size"] == 2
