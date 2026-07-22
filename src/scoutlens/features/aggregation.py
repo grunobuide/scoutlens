@@ -41,6 +41,24 @@ FEATURE_COLUMNS = [
     "carry_proxy_p90", "carry_distance_proxy_p90", "take_on_success_pct",
 ]
 
+# The same 32 features grouped into the 8 families from
+# feature-definitions.md — used for the per-family ablation robustness
+# check (robustness-checks.md), not by compute_player_features() itself.
+FEATURE_FAMILIES: dict[str, list[str]] = {
+    "passing": ["passes_p90", "pass_completion_pct", "crosses_p90", "long_balls_p90", "smart_passes_p90"],
+    "progression": ["progressive_pass_distance_p90", "progressive_passes_p90"],
+    "chance_creation": ["assists_p90", "key_passes_p90", "through_balls_p90", "box_entries_p90"],
+    "shooting": ["shots_p90", "goals_p90", "shot_conversion_pct", "shots_on_target_pct", "blocked_shot_pct"],
+    "defensive": ["interceptions_p90", "sliding_tackles_p90", "clearances_p90", "defensive_duel_win_pct"],
+    "spatial": ["mean_x", "mean_y", "defensive_third_share", "middle_third_share", "attacking_third_share"],
+    "possession": ["events_p90", "touches_p90", "duels_p90", "duel_win_pct"],
+    "carrying_proxy": ["carry_proxy_p90", "carry_distance_proxy_p90", "take_on_success_pct"],
+}
+
+assert sorted(sum(FEATURE_FAMILIES.values(), [])) == sorted(FEATURE_COLUMNS), (
+    "FEATURE_FAMILIES must partition FEATURE_COLUMNS exactly"
+)
+
 
 def _safe_ratio(numerator: pl.Expr, denominator: pl.Expr) -> pl.Expr:
     """Null (not 0) when the denominator is 0 — a player with zero

@@ -2,7 +2,11 @@
 
 **Spike duration:** 2026-07-20 to 2026-07-22 (accelerated from the
 charter's 10-working-day estimate — see note on pacing in the closing
-section). **Status: complete. Both gates GO.**
+section). **Status: complete. Both gates GO.** Updated 2026-07-22 with a
+post-spike robustness battery — see the callout after Temporal Stability
+Results and [`robustness-checks.md`](robustness-checks.md); the gate
+decision is unchanged but one framing below is now more precisely
+qualified.
 
 ---
 
@@ -21,6 +25,16 @@ Reciprocal Rank, holding up (if anything strengthening) when the
 comparison is restricted to players who already share a nominal
 position, and not substantially explained by shared team or league. Both
 formal gates in the charter were cleared with margin, not marginally.
+**One important qualifier, found in follow-up robustness testing:** an
+even more trivial baseline that also knows a player's *team* (role + team
++ minutes, no event data) outperforms the full feature-based method by
+more than 2x — because eligible players essentially never change clubs
+within one season, so team continuity is a very strong prior for "same
+player" in this experimental design specifically. This doesn't change the
+gate decision (the charter's actual criterion, Baseline B vs. Baseline A,
+is unaffected), but it sharpens what "10x better than trivial" should be
+understood to mean, and makes testing transferred players the clearest
+next validation step. See the full discussion below.
 
 **Maximum permitted claim, per the charter, now supported by evidence:**
 
@@ -195,6 +209,41 @@ statistical trait. "Stable player statistical fingerprint" is the claim
 this experiment actually supports; "stable player-*role* representation"
 is a plausible but not yet proven interpretation of it — see Limitations.
 
+### Follow-up (2026-07-22): a cheap team-based baseline beats Baseline B by 2x+
+
+Per the revised Recommended Next Experiment's robustness battery (full
+writeup: [`robustness-checks.md`](robustness-checks.md)), a Baseline C —
+same role **and** same primary team first, then role only, then team
+only, minutes as the tiebreak — was tested. Result:
+
+| | MRR | Median rank | Recall@5 |
+|---|---|---|---|
+| Baseline A (role + minutes) | 0.0256 | 128 | 2.7% |
+| Baseline B (32 features + cosine) | 0.2539 | 16 | 34.5% |
+| **Baseline C (role + team + minutes)** | **0.5893** | **2** | **94.7%** |
+
+**Baseline C — using nothing but role, team, and minutes, no event data
+at all — outperforms the full 32-feature Baseline B by more than 2x.**
+Why: the eligible population requires ≥450 minutes in both halves of the
+*same season*, and players essentially never change clubs mid-season —
+so a club's specific-role sub-roster (often just 2–4 eligible players)
+already narrows the field to almost nothing before any statistics are
+consulted. **Team continuity within one season is a far stronger prior
+for "same player" in this experimental design than event-derived playing
+style turned out to be.**
+
+This does not overturn Gate 2 — Baseline B still clearly, confidently
+beats Baseline A (the charter's actual gating question), and a
+teammates-excluded sensitivity check confirms Baseline B's own result
+doesn't depend on team-clustering (robustness-checks.md, Check 4). But it
+means the "10x better than a trivial baseline" framing needs a sharper
+caveat: an even more trivial baseline, using information Baseline B never
+sees, does much better. It also elevates **testing transferred
+players** — where Baseline C's team-continuity advantage structurally
+disappears — from a nice-to-have to the single most important remaining
+validation of what event-derived features are worth on their own. See
+Limitations and Recommended Next Experiment, both updated accordingly.
+
 ## Position / Minutes / League Diagnostics
 
 **Correction to the original analysis:** the first pass measured
@@ -315,8 +364,11 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
     scoutlens.evaluation.run_report` now regenerates every number in this
     report's Temporal Stability Results and Diagnostics sections in one
     command, writing `artifacts/gate2_results.json`
-    ([`run_report.py`](../src/scoutlens/evaluation/run_report.py)).
-    Still missing, and still real future work: an externally versioned
+    ([`run_report.py`](../src/scoutlens/evaluation/run_report.py)); `uv
+    run python -m scoutlens.evaluation.run_robustness` does the same for
+    [`robustness-checks.md`](robustness-checks.md), writing
+    `artifacts/robustness_results.json`. Still missing, and still real
+    future work: an externally versioned
     config (today's threshold/competition-set/seed are inlined constants,
     not a separate file), a run-manifest recording the git commit and
     data checksums the numbers were produced from, and an automated test
@@ -348,51 +400,61 @@ established but the recruitment-search claim explicitly not yet tested.
 
 ## Recommended Next Experiment
 
-**Revised (2026-07-22) after post-publication review.** The original
-version of this section prioritized testing learned representations
-next. On reflection — and per the charter's own gating principle, "added
-complexity isn't earning its place unless it beats the baseline" — that
-was premature: the simple baseline turned out to be strong enough that it
-deserves to be made genuinely hard to beat, and the pipeline that
-produced it deserves to be trivially reproducible, *before* reaching for
-more sophistication. Revised priority order:
+**Revised twice.** The original version prioritized testing learned
+representations first; that was reordered (2026-07-22) to harden the
+baseline and build reproducibility tooling first, per the charter's
+"complexity must earn its place" principle. That hardening pass is now
+done — see [`robustness-checks.md`](robustness-checks.md) — and it
+surfaced the team-continuity finding above, which reorders the list
+again: testing transferred players is no longer just good practice, it's
+the direct test of what the current headline number actually measures.
 
-1. **Make the current baseline unimpeachable.** Add the robustness checks
-   this spike didn't run: a scaler fit on period A alone (vs. today's
-   combined-A+B fit); cosine vs. Euclidean distance; a `role + team +
-   minutes` baseline (to isolate exactly how much team, not just role,
-   explains); dropping same-team candidates entirely as a sensitivity
-   check; per-feature-family ablation to see which families are actually
-   carrying the signal. This is cheap relative to everything below it and
-   directly hardens the number the rest of the program would be built on.
-2. **Build the reproducible runner this report currently lacks.** A
-   single documented command that regenerates `period_profiles.parquet`,
-   runs both retrieval experiments and the diagnostics, and writes a
-   versioned, checked-in results artifact (config: threshold, competition
-   set, feature list, seed, resample count) — so every number in this
-   report can be regenerated and diffed by someone who hasn't read the
-   source, not just by re-running functions from memory.
-3. **Test another season, and specifically players who changed clubs
-   mid-split.** This spike's population is single-season and, per the
-   survivorship-bias limitation above, skews toward continuously-selected
-   players. Deliberately including transferred players is the direct
-   test of whether the "stability" result is about the player or about
-   their team/system.
-4. **A genuinely different validation methodology for the recruitment
+**Done:**
+- ~~Make the current baseline unimpeachable~~ — 5 robustness checks run
+  (standardization fit, distance metric, role+team+minutes baseline,
+  teammates-excluded sensitivity, per-family ablation). Result: 3 of 5
+  confirm robustness; 1 (the team-continuity baseline) is the important
+  finding above; family ablation confirmed the signal is genuinely
+  distributed, not one dominant family.
+- ~~Build the reproducible runner~~ — `run_report.py` and
+  `run_robustness.py` now regenerate every number in this report and in
+  `robustness-checks.md` in one command each.
+
+**Remaining, in priority order:**
+
+1. **Test transferred players specifically — now the single highest-value
+   next step.** Baseline C's >2x advantage over Baseline B depends
+   entirely on players staying at the same club across the split.
+   Isolating a population of players who changed clubs mid-season (or
+   between two consecutive seasons) and re-running the same retrieval
+   experiment on *just* them directly answers: does event-derived style
+   similarity hold up once the team-continuity confound is structurally
+   removed, not just measured within a team-stable population? This is
+   the true test of the "role/style stability" claim, as opposed to the
+   "which club is this roughly" claim Baseline C shows is otherwise doing
+   most of the work.
+2. **Extend to another season**, both to get a larger transferred-player
+   sample for (1) and to check the domestic-league results generalize
+   beyond this single 2017/18 snapshot.
+3. **A genuinely different validation methodology for the recruitment
    claim itself**, since same-player retrieval cannot speak to it: blind
    expert scout review of shortlists, or a downstream-task validation —
-   only after 1–3 above, not before.
-5. **Only then, test whether added model complexity earns its place** —
+   only after (1) and (2), not before.
+4. **Only then, test whether added model complexity earns its place** —
    a learned representation, metric learning, or feature reweighting,
-   compared against the now-hardened Baseline B, not today's version of
-   it.
-6. **Goalkeeper-specific features** (positioning, distribution under
+   compared against Baseline B *and* Baseline C, not today's version of
+   either.
+5. **Goalkeeper-specific features** (positioning, distribution under
    pressure, claim/punch tendencies — none currently captured) — the
    clearest specific gap in the feature catalog, addressable in parallel
    with the above.
-7. **Resolve the players-count discrepancy** against the source paper —
+6. **Resolve the players-count discrepancy** against the source paper —
    low cost, closes a standing question rather than carrying it forward
    indefinitely.
+7. **Still open from the robustness pass itself:** a versioned config
+   file and a run-manifest (git commit + data checksums) for both
+   `run_report.py` and `run_robustness.py`, and an automated test that
+   diffs published report numbers against a freshly-generated artifact.
 
 ## Note on Pacing
 

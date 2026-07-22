@@ -6,6 +6,7 @@ from scoutlens.evaluation.retrieval import (
     compute_metrics,
     run_baseline_a_retrieval,
     run_baseline_b_retrieval,
+    run_baseline_c_retrieval,
     select_eligible_both_periods,
 )
 
@@ -170,3 +171,37 @@ def test_scope_column_none_is_unaffected_and_omits_no_candidates():
     })
     result = run_baseline_a_retrieval(query, candidates)
     assert result.row(0, named=True)["pool_size"] == 2
+
+
+def test_run_baseline_c_retrieval_finds_own_rank():
+    query = pl.DataFrame({
+        "player_id": [1], "competitionId": [100], "role": ["Forward"], "team_id": [500], "minutes_played": [1000],
+    })
+    candidates = pl.DataFrame({
+        "player_id": [1, 2, 3],
+        "competitionId": [100, 100, 100],
+        "role": ["Forward", "Forward", "Defender"],
+        "team_id": [500, 600, 500],
+        "minutes_played": [1000, 999, 998],
+    })
+    result = run_baseline_c_retrieval(query, candidates)
+    row = result.row(0, named=True)
+    assert row["rank"] == 1  # same role AND same team beats same-role-only and same-team-only
+    assert row["pool_size"] == 3
+
+
+def test_run_baseline_c_retrieval_disambiguates_same_player_id_across_competitions():
+    query = pl.DataFrame({
+        "player_id": [1], "competitionId": [200], "role": ["Forward"], "team_id": [500], "minutes_played": [1000],
+    })
+    candidates = pl.DataFrame({
+        "player_id": [1, 1],
+        "competitionId": [100, 200],
+        "role": ["Forward", "Forward"],
+        "team_id": [999, 500],
+        "minutes_played": [1, 1000],
+    })
+    result = run_baseline_c_retrieval(query, candidates)
+    row = result.row(0, named=True)
+    assert row["competitionId"] == 200
+    assert row["rank"] == 1

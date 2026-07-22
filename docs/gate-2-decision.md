@@ -95,6 +95,17 @@ framing, not an independently verified finding.
   still unexplained ([`data-provenance.md`](data-provenance.md)).
 - **Code license** for this repository (independent of the CC BY 4.0 data
   license) remains an open decision, deferred by the user.
+- **Team continuity is a stronger predictor than event-derived features
+  in this experimental design** (found 2026-07-22 in a post-spike
+  robustness battery — [`robustness-checks.md`](robustness-checks.md)): a
+  trivial role+team+minutes baseline beats Baseline B by >2x, because
+  eligible players essentially never change clubs within one season. Does
+  not change this gate's verdict (Baseline B vs. A, the charter's actual
+  criterion, is unaffected and confirmed not to depend on team-clustering
+  itself), but it means the retrieval result should be read as showing
+  event-derived stability *given* team continuity, not independent of it,
+  until transferred players are tested directly — now the top item in
+  [`feasibility-report.md`](feasibility-report.md)'s next-experiment list.
 
 ## Next step
 
