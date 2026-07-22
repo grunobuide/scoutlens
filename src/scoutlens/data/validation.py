@@ -60,6 +60,39 @@ def check_required_not_null(df: pl.DataFrame, table: str, columns: list[str]) ->
     return results
 
 
+def check_composite_key_unique(df: pl.DataFrame, table: str, key_columns: list[str]) -> CheckResult:
+    n_total = df.height
+    n_unique = df.select(key_columns).unique().height
+    n_dupes = n_total - n_unique
+    label = "+".join(key_columns)
+    if n_dupes == 0:
+        return CheckResult(f"pk_unique[{label}]", table, "ok", f"{n_unique}/{n_total} unique")
+    return CheckResult(
+        f"pk_unique[{label}]", table, "fail",
+        f"{n_dupes} duplicate ({label}) combinations", count=n_dupes,
+    )
+
+
+def check_no_negative(df: pl.DataFrame, table: str, column: str) -> CheckResult:
+    n_negative = (df[column] < 0).sum()
+    if n_negative == 0:
+        return CheckResult(f"no_negative[{column}]", table, "ok", "no negative values")
+    return CheckResult(
+        f"no_negative[{column}]", table, "fail",
+        f"{n_negative} rows have {column} < 0", count=n_negative,
+    )
+
+
+def check_value_range(df: pl.DataFrame, table: str, column: str, lo: float, hi: float) -> CheckResult:
+    n_out = ((df[column] < lo) | (df[column] > hi)).sum()
+    if n_out == 0:
+        return CheckResult(f"value_range[{column}]", table, "ok", f"all values within [{lo},{hi}]")
+    return CheckResult(
+        f"value_range[{column}]", table, "fail",
+        f"{n_out} rows have {column} outside [{lo},{hi}]", count=n_out,
+    )
+
+
 def check_row_count_min(df: pl.DataFrame, table: str, minimum: int) -> CheckResult:
     if df.height >= minimum:
         return CheckResult("row_count_min", table, "ok", f"{df.height} rows (>= {minimum})")
@@ -106,7 +139,7 @@ def check_coordinate_bounds(events: pl.DataFrame, lo: float = 0, hi: float = 100
     for axis in ("x", "y"):
         values = (
             events.select(pl.col("positions").list.eval(pl.element().struct.field(axis)).alias("v"))
-            .explode("v")
+            .explode("v", empty_as_null=True)
             .drop_nulls()["v"]
         )
         n_out = ((values < lo) | (values > hi)).sum()
@@ -166,7 +199,12 @@ def check_foreign_key(
 
 def check_tags_coverage(events: pl.DataFrame, tags2name: pl.DataFrame) -> CheckResult:
     used = set(
-        events.explode("tags").select(pl.col("tags").struct.field("id")).drop_nulls().to_series().unique().to_list()
+        events.explode("tags", empty_as_null=True)
+        .select(pl.col("tags").struct.field("id"))
+        .drop_nulls()
+        .to_series()
+        .unique()
+        .to_list()
     )
     known = set(tags2name["Tag"].unique().to_list())
     unmapped = used - known
@@ -230,8 +268,22 @@ def run_validation_suite() -> list[CheckResult]:
     minutes_path = PROCESSED_DIR / "minutes.parquet"
     if minutes_path.exists():
         minutes = pl.read_parquet(minutes_path)
+        results.append(check_row_count_min(minutes, "minutes", 1))
+        results.append(check_composite_key_unique(minutes, "minutes", ["player_id", "match_id"]))
+        results.append(check_no_negative(minutes, "minutes", "minutes_played"))
+        # 130 = generous stoppage allowance above the 120-minute ExtraTime
+        # ceiling used in minutes.py's own derivation guard — this is a
+        # defense-in-depth check on the output, independent of that
+        # module's internal logic, not a duplicate of it.
+        results.append(check_value_range(minutes, "minutes", "minutes_played", 0, 130))
         results.append(check_foreign_key(
             minutes, "player_id", players, "wyId", "minutes.player_id -> players.wyId"
+        ))
+        results.append(check_foreign_key(
+            minutes, "match_id", matches, "wyId", "minutes.match_id -> matches.wyId"
+        ))
+        results.append(check_foreign_key(
+            minutes, "team_id", teams, "wyId", "minutes.team_id -> teams.wyId"
         ))
 
     return results

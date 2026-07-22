@@ -1,15 +1,18 @@
 import polars as pl
 
 from scoutlens.data.validation import (
+    check_composite_key_unique,
     check_coordinate_bounds,
     check_dual_null_sentinel,
     check_foreign_key,
     check_mapping_coverage,
+    check_no_negative,
     check_primary_key_unique,
     check_required_not_null,
     check_row_count_min,
     check_sentinel_zero,
     check_tags_coverage,
+    check_value_range,
 )
 
 
@@ -144,5 +147,44 @@ def test_foreign_key_sentinel_does_not_hide_real_orphans():
     child = pl.DataFrame({"playerId": [1, 0, 999]})
     parent = pl.DataFrame({"wyId": [1, 2]})
     result = check_foreign_key(child, "playerId", parent, "wyId", "test_fk", sentinel_values=(0,))
+    assert result.status == "fail"
+    assert result.count == 1
+
+
+def test_composite_key_unique_ok_when_no_duplicate_combinations():
+    df = pl.DataFrame({"player_id": [1, 1, 2], "match_id": [10, 11, 10]})
+    result = check_composite_key_unique(df, "minutes", ["player_id", "match_id"])
+    assert result.status == "ok"
+
+
+def test_composite_key_unique_fails_on_duplicate_combination():
+    df = pl.DataFrame({"player_id": [1, 1, 2], "match_id": [10, 10, 10]})
+    result = check_composite_key_unique(df, "minutes", ["player_id", "match_id"])
+    assert result.status == "fail"
+    assert result.count == 1
+
+
+def test_no_negative_ok_when_all_non_negative():
+    df = pl.DataFrame({"minutes_played": [0, 45, 90]})
+    result = check_no_negative(df, "minutes", "minutes_played")
+    assert result.status == "ok"
+
+
+def test_no_negative_fails_on_negative_value():
+    df = pl.DataFrame({"minutes_played": [0, -5, 90]})
+    result = check_no_negative(df, "minutes", "minutes_played")
+    assert result.status == "fail"
+    assert result.count == 1
+
+
+def test_value_range_ok_within_bounds():
+    df = pl.DataFrame({"minutes_played": [0, 90, 120]})
+    result = check_value_range(df, "minutes", "minutes_played", 0, 130)
+    assert result.status == "ok"
+
+
+def test_value_range_fails_outside_bounds():
+    df = pl.DataFrame({"minutes_played": [0, 90, 200]})
+    result = check_value_range(df, "minutes", "minutes_played", 0, 130)
     assert result.status == "fail"
     assert result.count == 1
