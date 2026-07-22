@@ -117,6 +117,14 @@ population size → temporal stability curve, already planned) and called
 out explicitly in the final report's limitations section, not just implied
 by the presence of the curve.
 
+**Resolved (2026-07-22, SLS-020):** the risk did not materialize. The
+Baseline B−A MRR delta's confidence interval stays clear of 0 across
+every threshold tested from 225 to 1,350 minutes, strengthening (not
+weakening or reversing) as the threshold rises. ≥450 minutes sits
+comfortably inside the range where the signal is both strong and
+precisely estimated. Full curve:
+[`context-diagnostics.md`](context-diagnostics.md).
+
 ---
 
 ## D007 — 2026-07-22 — SLS-015 temporal split must key on player × competition × period

@@ -130,6 +130,41 @@ def run_baseline_b_retrieval(
     return pl.DataFrame(rows)
 
 
+def get_top_k_neighbors(
+    query_profiles: pl.DataFrame,
+    candidates: pl.DataFrame,
+    feature_columns: list[str] = FEATURE_COLUMNS,
+    k: int = 10,
+    scope_column: str | None = None,
+) -> pl.DataFrame:
+    """Like `run_baseline_b_retrieval`, but returns every query's top `k`
+    neighbors (not just the true match's rank) — SLS-020's context
+    diagnostics need the actual neighbor identities to check what they
+    have in common (team, league), not just how well-ranked the true
+    match was. `query_profiles`/`candidates` must already be standardized
+    on the same fitted population, same contract as `baseline_b_rank`.
+
+    Returns one row per (query, neighbor): `query_player_id`,
+    `competitionId`, `neighbor_rank`, `neighbor_player_id`.
+    """
+    rows = []
+    keep_cols = ["player_id"] + ([scope_column] if scope_column else []) + feature_columns
+    candidate_features = candidates.select(keep_cols)
+    for query in query_profiles.iter_rows(named=True):
+        pool = candidate_features
+        if scope_column is not None:
+            pool = pool.filter(pl.col(scope_column) == query[scope_column])
+        query_features = {c: query[c] for c in feature_columns}
+        ranked = baseline_b_rank(query_features, pool, feature_columns)
+        top_k = ranked.sort("rank").head(k)
+        for neighbor in top_k.iter_rows(named=True):
+            rows.append({
+                "query_player_id": query["player_id"], "competitionId": query["competitionId"],
+                "neighbor_rank": neighbor["rank"], "neighbor_player_id": neighbor["player_id"],
+            })
+    return pl.DataFrame(rows)
+
+
 def bootstrap_mrr_delta(
     ranks_a: pl.DataFrame, ranks_b: pl.DataFrame, n_resamples: int = 1000, seed: int = 0
 ) -> dict:
