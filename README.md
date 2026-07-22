@@ -14,8 +14,8 @@ gates, and the maximum claim this spike is allowed to make.
 | Gate | Status |
 |---|---|
 | Gate 0 — Provenance | **GO** — license verified per-artifact, see [`docs/data-provenance.md`](docs/data-provenance.md) |
-| Gate 1 — Data | In progress. Structural + relational validation clean (33 ok, 5 warn, 0 fail — see [`docs/data-quality-report.md`](docs/data-quality-report.md)). Minutes reconstruction and eligible-population sizing not done yet. |
-| Gate 2 — Analytical signal | Not started. |
+| Gate 1 — Data | **GO** — see [`docs/gate-1-decision.md`](docs/gate-1-decision.md). 1,969 eligible players at ≥450 min/season, 99.72% clean minutes derivation, 99.97% join integrity — all well past threshold. |
+| Gate 2 — Analytical signal | In progress. Feature catalog v0 (32 features, [`docs/feature-definitions.md`](docs/feature-definitions.md)) and player-period aggregation implemented; chronological split and baselines not done yet. |
 
 Task-by-task progress against the backlog (SLS-001…023, defined in the
 brief) is tracked in-session, not duplicated here as a static checklist —
@@ -29,6 +29,10 @@ see recent commit history for what's landed.
 4. [`docs/data-provenance.md`](docs/data-provenance.md) — where the data comes from, license verification, redistribution stance.
 5. [`docs/data-dictionary.md`](docs/data-dictionary.md) — what's actually in each processed table, empirically profiled (not just the source's documented schema).
 6. [`docs/data-quality-report.md`](docs/data-quality-report.md) — automated validation results, regenerable.
+7. [`docs/minutes-derivation.md`](docs/minutes-derivation.md) — formation/substitution audit and minutes-played derivation.
+8. [`docs/eligible-population.md`](docs/eligible-population.md) — population sizing against Gate 1 thresholds.
+9. [`docs/gate-1-decision.md`](docs/gate-1-decision.md) — the recorded Gate 1 GO decision and its evidence.
+10. [`docs/feature-definitions.md`](docs/feature-definitions.md) — the 32-feature catalog v0, each definition grounded in verified tag/subevent evidence.
 
 ## Setup
 

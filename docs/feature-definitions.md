@@ -22,8 +22,10 @@ turn out insufficient.
 
 - **Per-90 normalization:** `rate = (raw_count / minutes_played) * 90`,
   computed per player per temporal period (SLS-014), only for players
-  meeting the period's minutes threshold. Never computed for
-  `minutes_played == 0`.
+  meeting the period's minutes threshold. `minutes_played == 0` must
+  produce `null` for every per-90 feature, not `NaN` — the aggregation
+  contract guards every division explicitly rather than relying on
+  callers to pre-filter perfectly.
 - **Ratio features** (completion %, win %, conversion %) return `null`
   when the denominator is 0 — never fabricated as 0%. A player with zero
   shot attempts has no shot conversion rate, not a 0% one.
@@ -69,7 +71,7 @@ turn out insufficient.
 | Feature | Definition | Grounding |
 |---|---|---|
 | `shots_p90` | count(`eventName == "Shot"`, includes open-play only — `Free kick shot` and `Penalty` are separate Free Kick subtypes, not summed in here to keep "shot" meaning open play) per 90 | 43,078 Shot events |
-| `goals_p90` | count(any event with tag `Goal` [101]) per 90 | Goal tag observed on Save attempt (opponent's, i.e. the goal beat a keeper — 5,281), Shot (4,492), Free Kick (617); summed regardless of eventName since a goal can come from open play or a set piece |
+| `goals_p90` | count(tag `Goal` [101] on `eventName == "Shot"`, or on a Free Kick with `subEventName` in {Penalty, Free kick shot, Corner}) per 90 | Goal tag also appears on the **conceding** goalkeeper's `Save attempt` event (5,279 occurrences, 5,274 on players with role Goalkeeper — verified; marks "a goal happened during this action," not "this player scored") and must be excluded. Of the 617 Goal-tagged Free Kick events, only Penalty (477), Free kick shot (137), and Corner (3) are events a player can actually score from directly; plain `Free Kick` (indirect), `Goal kick`, and `Throw in` cannot legally produce a direct goal |
 | `shot_conversion_pct` | goals (from Shot events specifically) / shots_p90's raw count | Standard definition; null if 0 shots |
 | `shots_on_target_pct` | count(Shot with a goal-mouth tag, i.e. any of tags 1201–1209 [`gb`…`gtr`], or tag `Goal`) / count(Shot) | Goal-mouth zone tags observed 149–4,269 times each on Shot/Save attempt/Free Kick — see data-dictionary; on-target = reached the goal frame |
 | `blocked_shot_pct` | count(Shot with tag `blocked` [2101]) / count(Shot) | 10,222 blocked-tagged Shot events |

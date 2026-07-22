@@ -32,6 +32,13 @@ BOX_MAX_Y = 81
 THIRD_BOUNDARY_LOW = 33.3
 THIRD_BOUNDARY_HIGH = 66.7
 
+# subEventNames (within eventName == "Free Kick") a player can actually
+# score from — excludes "Free Kick" itself (indirect, can't score direct),
+# "Goal kick" and "Throw in" (can't score direct under the laws of the
+# game). "Corner" is included because a direct corner goal, while rare,
+# is legal and does occur in this data (3 occurrences — verified).
+GOAL_SCORING_SET_PIECES = {"Free kick shot", "Penalty", "Corner"}
+
 
 def tag_ids(tags_col: pl.Expr = pl.col("tags")) -> pl.Expr:
     return tags_col.list.eval(pl.element().struct.field("id"))
@@ -76,6 +83,13 @@ def add_event_helper_columns(events: pl.DataFrame) -> pl.DataFrame:
     has_won = has_any_tag({TAG_WON})
     has_lost = has_any_tag({TAG_LOST})
     has_goal = has_any_tag({TAG_GOAL})
+    # The Goal tag [101] also appears on the *conceding* goalkeeper's
+    # "Save attempt" event (5,279 occurrences, 5,274 of them on players
+    # with role Goalkeeper — verified) — it marks "a goal happened during
+    # this action," not "this player scored." A scorer's own goal is only
+    # ever recorded on their Shot event or one of these Free Kick subtypes.
+    is_scoring_event = is_shot | pl.col("subEventName").is_in(list(GOAL_SCORING_SET_PIECES))
+    scorer_goal = has_goal & is_scoring_event
 
     return events.with_columns(
         origin_x=ox, origin_y=oy,
@@ -87,13 +101,18 @@ def add_event_helper_columns(events: pl.DataFrame) -> pl.DataFrame:
         is_long_ball=pl.col("subEventName") == "Launch",
         is_smart_pass=pl.col("subEventName") == "Smart pass",
         is_progressive_pass=is_pass & (fwd_delta >= PROGRESSIVE_PASS_MIN_DELTA_X),
+        # Progressive distance is a Pass-only metric, floored at 0 per the
+        # spec (a backward pass contributes 0, not a negative number, and
+        # non-Pass events with a position delta — e.g. a Duel or
+        # Acceleration — must not contribute at all).
+        pass_progress_distance=pl.when(is_pass).then(fwd_delta.clip(lower_bound=0)).otherwise(0.0),
         has_assist=has_any_tag({TAG_ASSIST}),
         has_key_pass=has_any_tag({TAG_KEY_PASS}),
         is_through_ball=is_pass & has_any_tag({TAG_THROUGH}),
         is_box_entry=is_pass & (dx >= BOX_MIN_X) & (dy >= BOX_MIN_Y) & (dy <= BOX_MAX_Y),
         is_shot=is_shot,
         shot_goal=is_shot & has_goal,
-        any_goal=has_goal,
+        scorer_goal=scorer_goal,
         shot_on_target=is_shot & (has_any_tag(TAG_GOAL_ZONES) | has_goal),
         shot_blocked=is_shot & has_any_tag({TAG_BLOCKED}),
         has_interception=has_any_tag({TAG_INTERCEPTION}),

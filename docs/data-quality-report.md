@@ -13,11 +13,15 @@ sentinel-value patterns found during SLS-005 schema profiling (see
 [`data-dictionary.md`](data-dictionary.md)), and cross-table foreign-key
 integrity (event→match, event→player, event→team, match→competition).
 
-**Result (after SLS-011 added the `minutes.player_id -> players.wyId`
-check): 33 ok, 5 warn, 1 fail (of 39 checks).** The one fail is explained
-and does not block Gate 1 — see below. All 5 warnings were already known
-from SLS-005 — this run confirms nothing new broke and gives them a
-machine-checkable, re-runnable form instead of a one-off manual read.
+**Result (after review feedback expanded `minutes.parquet` coverage:
+composite-key uniqueness, non-negative/range checks on `minutes_played`,
+and `match_id`/`team_id` foreign keys, in addition to SLS-011's original
+`player_id` check): 39 ok, 5 warn, 1 fail (of 45 checks).** The one fail is
+explained and does not block Gate 1 — see below. None of the new minutes
+checks found anything beyond the already-known, already-explained
+player_id gap. All 5 warnings were already known from SLS-005 — this run
+confirms nothing new broke and gives them a machine-checkable, re-runnable
+form instead of a one-off manual read.
 
 ### The one FAIL, explained
 
@@ -75,6 +79,13 @@ not just tolerated.
 | OK | relational | foreign_key[events.teamId -> teams.wyId] | all 142 values resolve |
 | OK | relational | foreign_key[events.playerId -> players.wyId] | all 3,035 non-zero values resolve (0 = "no player" sentinel, excluded) |
 | OK | relational | foreign_key[matches.competitionId -> competitions.wyId] | all 7 values resolve |
+| OK | minutes | row_count_min | 74,098 rows (>= 1) |
+| OK | minutes | pk_unique[player_id+match_id] | 74,098/74,098 unique |
+| OK | minutes | no_negative[minutes_played] | no negative values |
+| OK | minutes | value_range[minutes_played] | all within [0,130] |
+| FAIL | relational | foreign_key[minutes.player_id -> players.wyId] | 15 distinct orphaned values — explained below |
+| OK | relational | foreign_key[minutes.match_id -> matches.wyId] | all 1,941 values resolve |
+| OK | relational | foreign_key[minutes.team_id -> teams.wyId] | all 142 values resolve |
 
 ## Decisions deliberately deferred, not made here
 
@@ -87,7 +98,7 @@ visible here rather than being silently resolved, in case that changes.
 
 ## Test coverage
 
-18 unit tests in
+24 unit tests in
 [`tests/data/test_validation.py`](../tests/data/test_validation.py) cover
 every check function — including the foreign-key checks, with a case that
 confirms the `sentinel_values` exclusion (e.g. `playerId == 0`) doesn't

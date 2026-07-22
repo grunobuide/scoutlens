@@ -116,3 +116,55 @@ needs to be visible in the sensitivity analysis (minimum minutes →
 population size → temporal stability curve, already planned) and called
 out explicitly in the final report's limitations section, not just implied
 by the presence of the curve.
+
+---
+
+## D007 — 2026-07-22 — SLS-015 temporal split must key on player × competition × period
+
+**Decision:** the chronological split (SLS-015) and every downstream
+temporal-retrieval step key each profile on `(player_id, competitionId,
+period)`, not `(player_id, period)`.
+
+**Why:** flagged in code review — a player who appears in both a domestic
+league and an international tournament (Euro 2016 / World Cup 2018, per
+[`eligible-population.md`](eligible-population.md)) would otherwise
+produce two profiles for the same `(player_id, period)` key, silently
+colliding into one retrieval target. This is a real, not hypothetical,
+scenario in this dataset (SLS-011's population cascade shows multiple
+player×competition rows for the same player).
+
+**How to apply:** `compute_player_features` (SLS-014) is already agnostic
+to this — it takes whatever events/minutes scope it's given and returns
+one row per `player_id` in that scope. The obligation is on SLS-015's
+split logic to call it once per `(competitionId, period)` combination and
+carry `competitionId` through as part of the retrieval unit's identity,
+not to change SLS-014 itself.
+
+---
+
+## D008 — 2026-07-22 — Feature normalization/null-handling strategy: open, must be resolved before SLS-017
+
+**Decision:** not yet made. Flagged here so it isn't skipped by default.
+
+**Why:** flagged in code review — `docs/feature-definitions.md`'s features
+mix very different scales and shapes: `progressive_pass_distance_p90` runs
+into the hundreds, ratio features (`pass_completion_pct`,
+`duel_win_pct`, ...) are bounded in [0,1], and several ratio features can
+be `null` for a player who never attempted the underlying action (e.g.
+`shot_conversion_pct` for a center-back). Baseline B (SLS-017) computes
+cosine similarity over these features — without an explicit
+standardization step, high-variance/high-magnitude features like
+progressive distance and event volume will dominate the similarity
+score purely by scale, and `null`s will break the computation outright if
+not handled before the similarity step.
+
+**How to apply:** before implementing SLS-017, decide and document: (a)
+the standardization method (z-score per feature, computed over which
+population — within-period, within-role, or global?), (b) what happens to
+`null` ratio features — impute (to what value, and is that defensible?),
+drop the player from that feature's contribution, or drop the feature
+entirely for players below some attempt-count floor. Do not let this
+default silently to "fill nulls with 0" without writing down why that's
+the right choice — a 0%-filled `shot_conversion_pct` for a player who
+never shot is a different claim than "no signal," and cosine similarity
+will treat it as real information either way.
