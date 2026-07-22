@@ -79,14 +79,23 @@ def run_baseline_a_retrieval(
 
     `scope_column` (e.g. "role" for SLS-019's within-role condition), when
     given, restricts each query's candidate pool to rows where
-    `candidates[scope_column] == query[scope_column]` before ranking."""
+    `candidates[scope_column] == query[scope_column]` before ranking.
+
+    The true match is identified by `(player_id, competitionId)` together,
+    per D007 — not `player_id` alone. In the current single-season,
+    domestic-leagues-only population no player appears in two
+    competitions, so this doesn't change today's numbers, but a `player_id`
+    -only match would silently mismatch as soon as one did (multi-season
+    data, a player in both a league and a tournament, etc.)."""
     rows = []
     for query in query_profiles.iter_rows(named=True):
         pool = candidates
         if scope_column is not None:
             pool = pool.filter(pl.col(scope_column) == query[scope_column])
         ranked = baseline_a_rank(query["role"], query["minutes_played"], pool)
-        match = ranked.filter(pl.col("player_id") == query["player_id"])
+        match = ranked.filter(
+            (pl.col("player_id") == query["player_id"]) & (pl.col("competitionId") == query["competitionId"])
+        )
         if match.height == 0:
             continue
         rows.append({
@@ -110,9 +119,12 @@ def run_baseline_b_retrieval(
     given, restricts each query's candidate pool to rows where
     `candidates[scope_column] == query[scope_column]` before ranking —
     `candidates` must carry that column even though it isn't part of
-    `feature_columns` (it passes through `baseline_b_rank` untouched)."""
+    `feature_columns` (it passes through `baseline_b_rank` untouched).
+
+    The true match is identified by `(player_id, competitionId)` together,
+    per D007 — see the same note on `run_baseline_a_retrieval`."""
     rows = []
-    keep_cols = ["player_id"] + ([scope_column] if scope_column else []) + feature_columns
+    keep_cols = ["player_id", "competitionId"] + ([scope_column] if scope_column else []) + feature_columns
     candidate_features = candidates.select(keep_cols)
     for query in query_profiles.iter_rows(named=True):
         pool = candidate_features
@@ -120,7 +132,9 @@ def run_baseline_b_retrieval(
             pool = pool.filter(pl.col(scope_column) == query[scope_column])
         query_features = {c: query[c] for c in feature_columns}
         ranked = baseline_b_rank(query_features, pool, feature_columns)
-        match = ranked.filter(pl.col("player_id") == query["player_id"])
+        match = ranked.filter(
+            (pl.col("player_id") == query["player_id"]) & (pl.col("competitionId") == query["competitionId"])
+        )
         if match.height == 0:
             continue
         rows.append({
@@ -145,10 +159,17 @@ def get_top_k_neighbors(
     on the same fitted population, same contract as `baseline_b_rank`.
 
     Returns one row per (query, neighbor): `query_player_id`,
-    `competitionId`, `neighbor_rank`, `neighbor_player_id`.
+    `competitionId` (the query's), `neighbor_rank`, `neighbor_player_id`,
+    `neighbor_competitionId`, `is_true_match` (whether this neighbor *is*
+    the query's own period-B row, identified by `(player_id,
+    competitionId)` together per D007 — diagnostics that measure
+    confounds among the neighbors, e.g. `neighbor_concentration`, should
+    exclude `is_true_match` rows first: a correctly-retrieved true match
+    trivially shares the query's team, which would otherwise inflate an
+    apparent team confound with retrieval successes rather than mistakes).
     """
     rows = []
-    keep_cols = ["player_id"] + ([scope_column] if scope_column else []) + feature_columns
+    keep_cols = ["player_id", "competitionId"] + ([scope_column] if scope_column else []) + feature_columns
     candidate_features = candidates.select(keep_cols)
     for query in query_profiles.iter_rows(named=True):
         pool = candidate_features
@@ -158,9 +179,13 @@ def get_top_k_neighbors(
         ranked = baseline_b_rank(query_features, pool, feature_columns)
         top_k = ranked.sort("rank").head(k)
         for neighbor in top_k.iter_rows(named=True):
+            is_true_match = (
+                neighbor["player_id"] == query["player_id"] and neighbor["competitionId"] == query["competitionId"]
+            )
             rows.append({
                 "query_player_id": query["player_id"], "competitionId": query["competitionId"],
                 "neighbor_rank": neighbor["rank"], "neighbor_player_id": neighbor["player_id"],
+                "neighbor_competitionId": neighbor["competitionId"], "is_true_match": is_true_match,
             })
     return pl.DataFrame(rows)
 

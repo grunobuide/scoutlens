@@ -34,24 +34,28 @@ minutes in each period and whether the player changed clubs between
 periods (a real, legitimate reason for a profile to shift that would be
 wrongly blamed on "noise" otherwise):
 
-| Player | Role | Rank (of 1,257) | Minutes A → B | Same club both periods? | Likely explanation |
+| Player | Role | Rank (of 1,257) | Minutes A → B | Same club both periods? | What's established vs. speculative |
 |---|---|---|---|---|---|
-| J. Livermore | Midfielder | 791 | 1,512 → 1,164 | Yes (West Brom) | **Not sample noise** — substantial minutes in both periods. A genuine change in statistical profile while at the same club. |
-| D. D'Ambrosio | Defender | 701 | 1,589 → 1,395 | Yes (Inter) | **Not sample noise** — same as above, plenty of data both halves. |
-| F. Grillitsch | Midfielder | 544 | 548 → 1,344 | Yes (Hoffenheim) | **Consistent with sample noise** — period A sits right at the eligibility floor (548 min, barely 6 matches), a plausible source of an unrepresentative profile. |
-| Jorge | Defender | 701\* | 1,342 → 580 | Yes (Monaco) | **Mixed** — period B is well above the floor but far below period A; a real drop in role/usage (squad rotation) is at least as plausible as noise. |
+| J. Livermore | Midfielder | 791 | 1,512 → 1,164 | Yes (West Brom) | **Established:** not sample noise — substantial minutes in both periods, no club change. **Speculative:** *why* the profile changed (tactical shift, form, manager change) is not determined here. |
+| D. D'Ambrosio | Defender | 701 | 1,589 → 1,395 | Yes (Inter) | **Established:** same as above — not sample noise. **Speculative:** cause unknown. |
+| F. Grillitsch | Midfielder | 544 | 548 → 1,344 | Yes (Hoffenheim) | **Established:** consistent with sample noise — period A sits right at the eligibility floor (548 min, barely 6 matches), a plausible source of an unrepresentative profile. This one doesn't need a speculative cause. |
+| Jorge | Defender | 701\* | 1,342 → 580 | Yes (Monaco) | **Established:** mixed signal — period B is well above the floor but far below period A. **Speculative:** reduced role/rotation is one plausible reading; not confirmed. |
 
 \* Both D'Ambrosio and Jorge landed at rank 701 in this run — not a typo.
 
 **Reading:** of the four worst cases, only one (Grillitsch) fits the
 "small sample → apparent instability" pattern D006 worried about
-cleanly. The other three had substantial minutes in both periods and
-stayed at the same club — their profiles plausibly changed for real
-reasons (tactical role shift, squad rotation, change in team form) that
-event-derived statistics would correctly, not erroneously, pick up as
-different. This matters for the final report's limitations section: not
-every retrieval failure is a data-quality artifact, and the spike
-shouldn't claim otherwise in either direction.
+cleanly. What can be said with confidence about the other three: they are
+**not** explained by low minutes or a club change — their statistical
+profile genuinely shifted while everything about their situation that
+this dataset can observe stayed constant. What specifically drove that
+shift (tactical role change, squad rotation, loss of form, a new
+manager's system) is a plausible *hypothesis* offered for football
+context, not a claim this analysis verified — the dataset has no field
+for "reason." This matters for the final report's limitations section:
+not every retrieval failure is a data-quality artifact, but attributing
+the *specific* football cause of a real change would be overclaiming
+beyond what event data alone can establish.
 
 ## Close misses: is rank 2 usually a coherent confusion?
 

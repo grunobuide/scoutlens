@@ -61,17 +61,54 @@ def test_run_baseline_a_retrieval_finds_own_rank():
         "player_id": [1], "competitionId": [100], "role": ["Forward"], "minutes_played": [1000],
     })
     candidates = pl.DataFrame({
-        "player_id": [1, 2], "role": ["Forward", "Forward"], "minutes_played": [1000, 200],
+        "player_id": [1, 2], "competitionId": [100, 100],
+        "role": ["Forward", "Forward"], "minutes_played": [1000, 200],
     })
     result = run_baseline_a_retrieval(query, candidates)
     assert result.row(0, named=True)["rank"] == 1
 
 
+def test_run_baseline_a_retrieval_disambiguates_same_player_id_across_competitions():
+    """Regression test for D007: a player_id appearing in the candidate
+    pool under two different competitions (e.g. a domestic league and a
+    tournament) must be matched by (player_id, competitionId) together,
+    not player_id alone -- otherwise the wrong row's rank could be
+    reported, or the first matching row picked arbitrarily."""
+    query = pl.DataFrame({
+        "player_id": [1], "competitionId": [200], "role": ["Forward"], "minutes_played": [1000],
+    })
+    candidates = pl.DataFrame({
+        "player_id": [1, 1, 2],
+        "competitionId": [100, 200, 200],  # same player_id=1 in two competitions
+        "role": ["Forward", "Forward", "Forward"],
+        "minutes_played": [50, 1000, 999],  # competition 100's row would rank badly if matched by mistake
+    })
+    result = run_baseline_a_retrieval(query, candidates)
+    row = result.row(0, named=True)
+    assert row["competitionId"] == 200
+    assert row["rank"] == 1  # matches the competition-200 row (minutes_played=1000), not competition-100's
+
+
 def test_run_baseline_b_retrieval_finds_own_rank():
     query = pl.DataFrame({"player_id": [1], "competitionId": [100], "f1": [1.0], "f2": [0.0]})
-    candidates = pl.DataFrame({"player_id": [1, 2], "f1": [1.0, -1.0], "f2": [0.0, 0.0]})
+    candidates = pl.DataFrame({
+        "player_id": [1, 2], "competitionId": [100, 100], "f1": [1.0, -1.0], "f2": [0.0, 0.0],
+    })
     result = run_baseline_b_retrieval(query, candidates, feature_columns=["f1", "f2"])
     assert result.row(0, named=True)["rank"] == 1
+
+
+def test_run_baseline_b_retrieval_disambiguates_same_player_id_across_competitions():
+    query = pl.DataFrame({"player_id": [1], "competitionId": [200], "f1": [1.0], "f2": [0.0]})
+    candidates = pl.DataFrame({
+        "player_id": [1, 1, 2],
+        "competitionId": [100, 200, 200],
+        "f1": [-1.0, 1.0, 0.9], "f2": [0.0, 0.0, 0.1],
+    })
+    result = run_baseline_b_retrieval(query, candidates, feature_columns=["f1", "f2"])
+    row = result.row(0, named=True)
+    assert row["competitionId"] == 200
+    assert row["rank"] == 1  # matches the competition-200 row (identical vector), not competition-100's (opposite)
 
 
 def test_bootstrap_mrr_delta_is_deterministic_with_fixed_seed():
@@ -98,6 +135,7 @@ def test_baseline_a_scope_column_excludes_other_scope_candidates():
     })
     candidates = pl.DataFrame({
         "player_id": [1, 2, 3],
+        "competitionId": [100, 100, 100],
         "role": ["Forward", "Forward", "Defender"],
         "minutes_played": [1000, 500, 999],
     })
@@ -113,6 +151,7 @@ def test_baseline_b_scope_column_excludes_other_scope_candidates():
     })
     candidates = pl.DataFrame({
         "player_id": [1, 2, 3],
+        "competitionId": [100, 100, 100],
         "role": ["Forward", "Forward", "Defender"],
         "f1": [1.0, 0.5, 1.0], "f2": [0.0, 0.0, 0.0],
     })
@@ -127,7 +166,7 @@ def test_scope_column_none_is_unaffected_and_omits_no_candidates():
         "player_id": [1], "competitionId": [100], "role": ["Forward"], "minutes_played": [1000],
     })
     candidates = pl.DataFrame({
-        "player_id": [1, 2], "role": ["Forward", "Defender"], "minutes_played": [1000, 999],
+        "player_id": [1, 2], "competitionId": [100, 100], "role": ["Forward", "Defender"], "minutes_played": [1000, 999],
     })
     result = run_baseline_a_retrieval(query, candidates)
     assert result.row(0, named=True)["pool_size"] == 2

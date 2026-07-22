@@ -73,3 +73,29 @@ def test_neighbor_concentration_partial_match():
     neighbor_team = pl.DataFrame({"player_id": [2, 3], "team_id": [500, 700]})
     result = neighbor_concentration(top_k, query_team, neighbor_team, "team_id")
     assert result == 0.5
+
+
+def test_neighbor_concentration_excludes_true_match_by_default():
+    """Regression test for a real bug: a correctly-retrieved true match is
+    trivially "same team" (a player's team almost never changes within one
+    season split), so counting it inflates the apparent team confound with
+    retrieval successes rather than genuine mistakes."""
+    top_k = pl.DataFrame({
+        "query_player_id": [1, 1],
+        "competitionId": [100, 100],
+        "neighbor_rank": [1, 2],
+        "neighbor_player_id": [1, 3],  # rank 1 is the query's own true match
+        "neighbor_competitionId": [100, 100],
+        "is_true_match": [True, False],
+    })
+    query_team = pl.DataFrame({"player_id": [1], "team_id": [500]})
+    # true match (player 1) shares team_id 500 with itself; player 3 does not
+    neighbor_team = pl.DataFrame({"player_id": [1, 3], "team_id": [500, 700]})
+
+    excluding_true_match = neighbor_concentration(top_k, query_team, neighbor_team, "team_id")
+    assert excluding_true_match == 0.0  # only the non-true-match row (player 3) is counted, and it's a mismatch
+
+    including_true_match = neighbor_concentration(
+        top_k, query_team, neighbor_team, "team_id", include_true_matches=True
+    )
+    assert including_true_match == 0.5  # both rows counted, one matches
