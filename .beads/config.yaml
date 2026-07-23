@@ -66,5 +66,8 @@
 # - github.token    → use GITHUB_TOKEN env var instead
 
 sync.remote: "git+https://github.com/grunobuide/scoutlens.git"
+# Keep a reviewable snapshot in the source branch for humans and simple
+# viewers. This file is passive: cross-machine synchronization must still
+# use `bd dolt push` / `bd dolt pull` and refs/dolt/data.
 export:
     auto: true

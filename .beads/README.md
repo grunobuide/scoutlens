@@ -79,3 +79,13 @@ bd create "Try out Beads"
 ---
 
 *Beads: Issue tracking that moves at the speed of thought* ⚡
+
+## Project export policy
+
+This project keeps `.beads/issues.jsonl` as an auto-generated,
+human-readable snapshot that may be versioned with the source branch. It
+is not the issue database and must not be imported during normal work.
+
+The local Dolt database is the source of truth. Synchronize issue state
+between machines exclusively with `bd dolt push` and `bd dolt pull`,
+stored under `refs/dolt/data` on the configured Git remote.
