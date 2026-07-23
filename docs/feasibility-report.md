@@ -564,6 +564,17 @@ confirmed the signal survives that confound.
    not exhaustive — confirm the true per-league match count directly
    against the downloaded files, not inferred from file sizes), the same
    discipline Gate 0 applied to the original source.
+
+   **Done (2026-07-23, D014):** that audit exists —
+   [`statsbomb-provenance.md`](statsbomb-provenance.md). Exact counts:
+   PL/La Liga/Serie A 380 each, Ligue 1 377 (three fixtures missing from
+   the release, identified individually), Bundesliga confirmed
+   Leverkusen-only and excluded; events + lineups files verified present
+   for all 1,517 candidate matches. License verdict: GO for
+   non-commercial research replication — but the StatsBomb User
+   Agreement prohibits redistributing the data and any commercial use of
+   derived analyses, and requires logo attribution on published analysis,
+   all stricter than the Wyscout CC BY 4.0.
 2. **A genuinely different validation methodology for the recruitment
    claim itself**, since same-player retrieval cannot speak to it: blind
    expert scout review of shortlists, or a downstream-task validation —
