@@ -3,6 +3,7 @@ import pytest
 
 from scoutlens.evaluation.retrieval import (
     bootstrap_mrr_delta,
+    bootstrap_mrr_delta_clustered,
     compute_metrics,
     run_baseline_a_retrieval,
     run_baseline_b_retrieval,
@@ -229,3 +230,55 @@ def test_run_baseline_c_retrieval_disambiguates_same_player_id_across_competitio
     row = result.row(0, named=True)
     assert row["competitionId"] == 200
     assert row["rank"] == 1
+
+
+def _ranks_fixture():
+    ranks_a = pl.DataFrame({
+        "player_id": [1, 2, 3, 4, 5, 6],
+        "competitionId": [100] * 6,
+        "rank": [10, 20, 5, 40, 8, 2],
+    })
+    ranks_b = pl.DataFrame({
+        "player_id": [1, 2, 3, 4, 5, 6],
+        "competitionId": [100] * 6,
+        "rank": [1, 3, 2, 10, 4, 1],
+    })
+    clusters = pl.DataFrame({
+        "player_id": [1, 2, 3, 4, 5, 6],
+        "competitionId": [100] * 6,
+        "cluster": [500, 500, 600, 600, 700, 700],
+    })
+    return ranks_a, ranks_b, clusters
+
+
+def test_bootstrap_mrr_delta_clustered_is_deterministic_and_order_independent():
+    ranks_a, ranks_b, clusters = _ranks_fixture()
+    r1 = bootstrap_mrr_delta_clustered(ranks_a, ranks_b, clusters, n_resamples=200, seed=7)
+    shuffled = ranks_a.sort("player_id", descending=True)
+    r2 = bootstrap_mrr_delta_clustered(shuffled, ranks_b, clusters.sort("cluster", descending=True), n_resamples=200, seed=7)
+    assert r1 == r2
+    assert r1["n_clusters"] == 3
+    assert r1["n_queries"] == 6
+    assert r1["ci_low"] <= r1["point_estimate"] <= r1["ci_high"]
+
+
+def test_bootstrap_mrr_delta_clustered_single_cluster_collapses_to_point():
+    ranks_a, ranks_b, clusters = _ranks_fixture()
+    one_cluster = clusters.with_columns(pl.lit(1).alias("cluster"))
+    r = bootstrap_mrr_delta_clustered(ranks_a, ranks_b, one_cluster, n_resamples=50, seed=0)
+    # every resample draws the single cluster once: all deltas equal the full-sample delta
+    assert r["ci_low"] == r["ci_high"] == pytest.approx(r["point_estimate"])
+
+
+def test_bootstrap_mrr_delta_clustered_rejects_unmapped_queries():
+    ranks_a, ranks_b, clusters = _ranks_fixture()
+    incomplete = clusters.filter(pl.col("player_id") != 3)
+    with pytest.raises(ValueError, match="no cluster assignment"):
+        bootstrap_mrr_delta_clustered(ranks_a, ranks_b, incomplete, n_resamples=10, seed=0)
+
+
+def test_bootstrap_mrr_delta_clustered_point_estimate_matches_iid_bootstrap():
+    ranks_a, ranks_b, clusters = _ranks_fixture()
+    clustered = bootstrap_mrr_delta_clustered(ranks_a, ranks_b, clusters, n_resamples=100, seed=0)
+    iid = bootstrap_mrr_delta(ranks_a, ranks_b, n_resamples=100, seed=0)
+    assert clustered["point_estimate"] == pytest.approx(iid["point_estimate"])

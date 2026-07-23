@@ -1,7 +1,7 @@
 {
   "_manifest": {
-    "generated_at": "2026-07-23T17:16:04.902682+00:00",
-    "git_commit": "7a47dc1ae863a658f78375e11c6ceb7ae601c993",
+    "generated_at": "2026-07-23T22:48:16.976171+00:00",
+    "git_commit": "20e01a81c5b5fdf7ba8732939d9a1ef6bbd01ce3",
     "python_version": "3.14.4",
     "polars_version": "1.42.1",
     "platform": "Windows-11-10.0.26200-SP0",
@@ -152,6 +152,31 @@
       "n_features": 3,
       "mrr": 0.01920971161933652,
       "median_rank": 298
+    }
+  },
+  "check_6_cluster_bootstrap": {
+    "iid_reference": {
+      "point_estimate": 0.22834444714927213,
+      "ci_low": 0.2083439998027224,
+      "ci_high": 0.24790560118596439,
+      "n_resamples": 1000,
+      "n_queries": 1257
+    },
+    "clustered_by_team": {
+      "point_estimate": 0.22834444714927216,
+      "ci_low": 0.20437109308961934,
+      "ci_high": 0.2525484462258186,
+      "n_resamples": 1000,
+      "n_queries": 1257,
+      "n_clusters": 98
+    },
+    "clustered_by_league": {
+      "point_estimate": 0.22834444714927216,
+      "ci_low": 0.19524598501566506,
+      "ci_high": 0.25103155746668,
+      "n_resamples": 1000,
+      "n_queries": 1257,
+      "n_clusters": 5
     }
   }
 }

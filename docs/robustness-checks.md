@@ -145,6 +145,30 @@ individually the strongest contributors; carrying (already flagged as a
 proxy, not ground truth) and progression (only 2 features) are weakest
 alone, consistent with their standing in the original catalog.
 
+## Check 6 — Cluster-aware bootstrap on the headline MRR delta (added 2026-07-23, D018)
+
+Limitation #12 in [`feasibility-report.md`](feasibility-report.md): the
+paired bootstrap treats queries as independent draws, though teammates
+share context and leagues share candidate-pool structure. This check
+recomputes the same MRR(B) − MRR(A) interval resampling whole
+*clusters* with replacement instead of individual queries
+(`bootstrap_mrr_delta_clustered`, same seed/resample count from
+`config/experiment.json`):
+
+| Resampling unit | Δ point | 95% CI | # clusters |
+|---|---|---|---|
+| Independent queries (published) | 0.2283 | [0.2083, 0.2479] | 1,257 queries |
+| Whole teams (period-A primary team) | 0.2283 | [0.2044, 0.2525] | 98 |
+| Whole leagues | 0.2283 | [0.1952, 0.2510] | 5 |
+
+**Reading:** within-cluster correlation is real but small — the
+team-clustered CI is ~23% wider than the i.i.d. one, and even the very
+coarse league-clustered interval (5 clusters is too few for a
+well-calibrated bootstrap; read it as a stress test) keeps the delta
+far from zero. The published i.i.d. CI should still be labeled
+approximate, but Limitation #12's "likely survives a more conservative
+interval" is now checked, not assumed.
+
 ## Summary
 
 | Check | Verdict |
@@ -154,9 +178,10 @@ alone, consistent with their standing in the original catalog.
 | Role+team+minutes baseline | **Not robust to this framing** — a cheap baseline using team membership beats Baseline B by >2x. Reframes what "10x better than trivial" should be read to mean, and elevates testing transferred players from a nice-to-have to the critical next step. |
 | Teammates in the candidate pool | Robust — Baseline B's own result doesn't depend on them |
 | Feature family contribution | As expected — combined model >> any single family |
+| Cluster-aware bootstrap CI | Robust — team-clustered CI ~23% wider, conclusion unchanged |
 
-Three of five checks confirm robustness. One (Check 3) is a genuine,
-important finding that should be read alongside every MRR number in
-[`feasibility-report.md`](feasibility-report.md) and
+Four of six checks confirm robustness directly. One (Check 3) is a
+genuine, important finding that should be read alongside every MRR
+number in [`feasibility-report.md`](feasibility-report.md) and
 [`gate-2-decision.md`](gate-2-decision.md) going forward — not a reason
 to reverse Gate 2, but a reason to be more precise about what it showed.

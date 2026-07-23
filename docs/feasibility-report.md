@@ -442,7 +442,13 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
     retrieval difficulty could move together). The reported effect size
     is large enough to likely survive a more conservative
     cluster-aware interval, but the exact CI bounds should be read as
-    approximate, not exact, for that reason.
+    approximate, not exact, for that reason. **Checked (2026-07-23,
+    D018):** [`robustness-checks.md` Check 6](robustness-checks.md#check-6--cluster-aware-bootstrap-on-the-headline-mrr-delta-added-2026-07-23-d018)
+    recomputed the interval resampling whole teams (98 clusters: CI
+    [0.2044, 0.2525], ~23% wider) and whole leagues (5 clusters, coarse
+    stress test: [0.1952, 0.2510]) — the delta stays far from zero, so
+    the conclusion survives; the i.i.d. bounds remain labeled
+    approximate.
 13. **The specific causal explanations offered in the qualitative error
     analysis** (e.g. "tactical role shift," "squad rotation" for the
     non-sample-noise misses) **are plausible hypotheses, not verified

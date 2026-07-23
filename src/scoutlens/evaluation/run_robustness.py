@@ -21,6 +21,8 @@ Checks:
 4. Drop-teammates sensitivity check: exclude same-team-as-query candidates
    (other than the true match itself) from the pool, see if MRR moves.
 5. Per-feature-family ablation: each of the 8 families run alone.
+6. Cluster-aware bootstrap (D018): the headline MRR-delta CI recomputed
+   resampling whole teams/leagues instead of independent queries.
 """
 
 from __future__ import annotations
@@ -34,6 +36,7 @@ from scoutlens.evaluation.diagnostics import compute_primary_team
 from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.retrieval import (
     bootstrap_mrr_delta,
+    bootstrap_mrr_delta_clustered,
     compute_metrics,
     run_baseline_a_retrieval,
     run_baseline_b_retrieval,
@@ -156,6 +159,41 @@ def check_feature_family_ablation(
     return results
 
 
+def check_cluster_bootstrap(
+    eligible: pl.DataFrame, eligible_with_team: pl.DataFrame, n_resamples: int, seed: int
+) -> dict:
+    """Limitation #12's check: the headline bootstrap treats queries as
+    independent draws, but teammates share context and leagues share a
+    candidate-pool structure. Rerun the same MRR(B)-MRR(A) interval with
+    whole clusters resampled instead of single queries. Team clustering
+    (hundreds of clusters) is the meaningful check; league clustering is
+    reported too but with only 5 clusters it is extremely coarse — read
+    it as a stress test, not a well-calibrated interval."""
+    query_a = eligible.filter(pl.col("period") == "A")
+    candidates_b = eligible.filter(pl.col("period") == "B")
+    ranks_a = run_baseline_a_retrieval(query_a, candidates_b)
+    combined_std = impute_and_standardize(eligible, FEATURE_COLUMNS)
+    ranks_b = run_baseline_b_retrieval(
+        combined_std.filter(pl.col("period") == "A"), combined_std.filter(pl.col("period") == "B")
+    )
+
+    team_clusters = eligible_with_team.filter(pl.col("period") == "A").select(
+        "player_id", "competitionId", pl.col("team_id").alias("cluster")
+    )
+    league_clusters = query_a.select(
+        "player_id", "competitionId", pl.col("competitionId").alias("cluster")
+    )
+    return {
+        "iid_reference": bootstrap_mrr_delta(ranks_a, ranks_b, n_resamples=n_resamples, seed=seed),
+        "clustered_by_team": bootstrap_mrr_delta_clustered(
+            ranks_a, ranks_b, team_clusters, n_resamples=n_resamples, seed=seed
+        ),
+        "clustered_by_league": bootstrap_mrr_delta_clustered(
+            ranks_a, ranks_b, league_clusters, n_resamples=n_resamples, seed=seed
+        ),
+    }
+
+
 def run() -> dict:
     config = load_experiment_config()
     leagues = config["domestic_leagues"]
@@ -188,6 +226,10 @@ def run() -> dict:
         "check_4_drop_teammates": check_drop_teammates(eligible_with_team),
         "check_5_feature_family_ablation": check_feature_family_ablation(
             period_profiles, role_lookup, minutes_threshold, leagues
+        ),
+        "check_6_cluster_bootstrap": check_cluster_bootstrap(
+            eligible, eligible_with_team,
+            config["bootstrap"]["n_resamples"], config["bootstrap"]["seed"],
         ),
     }
 
