@@ -446,16 +446,19 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
     [`robustness-checks.md`](robustness-checks.md), writing
     `artifacts/robustness_results.json`; `uv run python -m
     scoutlens.evaluation.run_transfer_analysis` does the same for
-    [`transfer-analysis.md`](transfer-analysis.md). Still missing, and
-    still real future work: an externally versioned
-    config (today's threshold/competition-set/seed are inlined constants,
-    not a separate file), a run-manifest recording the git commit and
-    data checksums the numbers were produced from, and an automated test
-    that diffs the report's published numbers against a freshly-generated
-    artifact so drift is caught automatically rather than by manual
-    review. `data/processed/period_profiles.parquet` and the raw data it's
-    built from remain local and gitignored, as intended — only the results
-    artifact is meant to be inspectable without re-running anything.
+    [`transfer-analysis.md`](transfer-analysis.md).
+    **Fully resolved (2026-07-23, D015):** experiment parameters now live
+    in the versioned [`config/experiment.json`](../config/experiment.json)
+    (no more per-runner inlined constants); every artifact embeds a
+    `_manifest` with the resolved config + its file hash, git commit,
+    environment versions, and a sha256 per input Parquet; and an opt-in
+    fresh-run drift test (`SCOUTLENS_DRIFT=1 uv run pytest
+    tests/evaluation/test_artifact_drift.py`) regenerates all three
+    result sets and compares them to the checked-in artifacts
+    number-by-number — see [`artifacts/README.md`](../artifacts/README.md).
+    Raw and processed data remain local and gitignored, as intended —
+    only the results artifacts are inspectable without re-running
+    anything.
 
 ## GO / PIVOT / KILL Decision
 
@@ -578,7 +581,10 @@ confirmed the signal survives that confound.
 2. **A genuinely different validation methodology for the recruitment
    claim itself**, since same-player retrieval cannot speak to it: blind
    expert scout review of shortlists, or a downstream-task validation —
-   only after (1), not before.
+   only after (1), not before. **Protocol designed (2026-07-23, D016):**
+   [`recruitment-validation-protocol.md`](recruitment-validation-protocol.md)
+   specifies a blinded, pre-registered expert shortlist study (execution
+   still gated on (1)'s outcome).
 3. **Only then, test whether added model complexity earns its place** —
    a learned representation, metric learning, or feature reweighting,
    compared against Baseline B *and* Baseline C, not today's version of
@@ -590,11 +596,13 @@ confirmed the signal survives that confound.
 5. **Resolve the players-count discrepancy** against the source paper —
    low cost, closes a standing question rather than carrying it forward
    indefinitely.
-6. **Still open from the robustness pass itself:** a versioned config
+6. ~~**Still open from the robustness pass itself:** a versioned config
    file and a run-manifest (git commit + data checksums) for
    `run_report.py`, `run_robustness.py`, and `run_transfer_analysis.py`,
    and an automated test that diffs published report numbers against a
-   freshly-generated artifact.
+   freshly-generated artifact.~~ **Done (2026-07-23, D015)** — see
+   limitation #14's resolution note and
+   [`artifacts/README.md`](../artifacts/README.md).
 
 ## Note on Pacing
 

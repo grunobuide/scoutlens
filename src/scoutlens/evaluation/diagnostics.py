@@ -40,7 +40,11 @@ def identify_transferred_players(eligible: pl.DataFrame, primary_team: pl.DataFr
     re-run on directly, since Baseline C's team-based advantage
     structurally cannot apply to them.
 
-    Returns `player_id`, `competitionId`, `team_a`, `team_b`."""
+    Returns `player_id`, `competitionId`, `team_a`, `team_b`, sorted by
+    `(player_id, competitionId)` — join output row order isn't
+    deterministic in Polars, and this table is exported verbatim into a
+    versioned artifact (`transferred_pairs`), where a run-to-run order
+    shuffle would read as spurious drift."""
     pairs = eligible.select("player_id", "competitionId").unique()
     team_a = primary_team.filter(pl.col("period") == "A").select(
         "player_id", "competitionId", pl.col("team_id").alias("team_a")
@@ -51,7 +55,7 @@ def identify_transferred_players(eligible: pl.DataFrame, primary_team: pl.DataFr
     merged = pairs.join(team_a, on=["player_id", "competitionId"], how="left").join(
         team_b, on=["player_id", "competitionId"], how="left"
     )
-    return merged.filter(pl.col("team_a") != pl.col("team_b"))
+    return merged.filter(pl.col("team_a") != pl.col("team_b")).sort(["player_id", "competitionId"])
 
 
 def neighbor_concentration(

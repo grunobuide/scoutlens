@@ -421,3 +421,76 @@ stated wherever the two sets of results are compared. Remaining user
 actions before acquisition: register at statsbomb.com/resource-centre
 (recommended), decide how the logo obligation will be met at
 publication time.
+
+---
+
+## D015 — 2026-07-23 — Versioned experiment config, run manifests with data checksums, and a fresh-run drift test
+
+**Decision:** close the reproducibility gap D013 left open (beads issue
+`scoutlens-a72`, part of the v0.1 release epic) with three pieces:
+`config/experiment.json` as the single versioned source of experiment
+parameters; a `_manifest` embedded in every artifact
+(`run_manifest.build_run_manifest`: resolved config + config-file
+sha256, git commit, Python/Polars/platform versions, sha256 + size per
+input Parquet); and an opt-in fresh-run drift test
+(`SCOUTLENS_DRIFT=1 uv run pytest
+tests/evaluation/test_artifact_drift.py`) that regenerates all three
+result sets and compares them to the checked-in artifacts
+number-by-number, completing the chain: docs ↔ checked-in artifact
+(`test_artifacts.py`) ↔ fresh run (`test_artifact_drift.py`).
+
+**Why:** D013's `_run_metadata()` recorded only commit + timestamp — it
+could not tie published numbers to the exact data bytes (the processed
+Parquets are local and gitignored) or catch a silent divergence between
+the code and the checked-in artifacts. The parameters were also
+re-declared as constants in each of the three runners, so a change in
+one place could silently desynchronize the others.
+
+The drift test earned its keep on its very first execution: it caught
+`transferred_pairs` in the transfer artifact shuffling row order between
+two identical runs (Polars join output order isn't guaranteed).
+`identify_transferred_players` now sorts by `(player_id, competitionId)`
+— all published *numbers* were unaffected (the 26 pairs were identical
+as a set), but the artifact bytes were nondeterministic, which is
+exactly the class of problem this task existed to eliminate.
+
+**How to apply:** any change to `config/experiment.json`, the evaluation
+code, or the local data must regenerate the three artifacts and pass
+both test layers before merging; `test_run_manifest.py` additionally
+pins the config values the published v0.1 numbers were produced with, so
+a parameter change fails loudly until the pin, artifacts, and doc prose
+are updated together. Bootstrap `n_resamples`/`seed` now thread from the
+config through `run_global_retrieval_experiment` /
+`run_within_role_retrieval_experiment` instead of relying on defaults.
+
+---
+
+## D016 — 2026-07-23 — Recruitment-validation protocol designed (blinded expert shortlist study)
+
+**Decision:** the recruitment claim will be tested as a **blinded,
+pre-registered expert study of shortlist plausibility** — Baseline B's
+top-5 vs a role+minutes heuristic vs random same-role, merged and
+shuffled per query, rated 1–5 by 2–5 experts on 40 role-stratified
+queries; primary metric is the paired B−(role+minutes) rating
+difference, with failure criteria declared before any data collection.
+Full protocol: [`recruitment-validation-protocol.md`](recruitment-validation-protocol.md).
+Design only (beads `scoutlens-j23`); execution is `scoutlens-h00`,
+gated on the external-replication outcome.
+
+**Why:** feasibility-report.md's Known Limitation #2 is the spike's
+central boundary — same-player retrieval proves stability, not
+usefulness, and no automated metric on this dataset can close that gap.
+The two candidate methodologies the report floated were expert review
+and downstream-task validation; the protocol picks expert review as the
+only primary and explicitly rejects transfer-retrodiction as a
+secondary (confounded enough to quietly substitute a different question
+for the one being asked). The comparison arm is role+minutes rather
+than Baseline C because team continuity is meaningless for recruitment
+— the honest cheap alternative is a spreadsheet heuristic, and the
+claim only matters if B beats it in expert eyes.
+
+**How to apply:** the protocol document is the pre-registration —
+execution must follow it or publish deviations; the primary metric and
+the three failure criteria (claim / instrument / floor) cannot be
+swapped after ratings exist. A null or failed result is publishable and
+closes the question honestly.

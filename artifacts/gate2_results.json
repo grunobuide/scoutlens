@@ -1,26 +1,64 @@
 {
-  "_metadata": {
-    "generated_at": "2026-07-22T22:54:56.320096+00:00",
-    "git_commit": "d3f792727e47e50e338aea5c7531976b2242ff1b"
-  },
-  "config": {
-    "domestic_leagues": [
-      364,
-      412,
-      426,
-      524,
-      795
-    ],
-    "primary_minutes_threshold": 450,
-    "sensitivity_thresholds": [
-      225,
-      450,
-      675,
-      900,
-      1125,
-      1350
-    ],
-    "top_k_for_diagnostics": 10
+  "_manifest": {
+    "generated_at": "2026-07-23T17:15:51.535421+00:00",
+    "git_commit": "7a47dc1ae863a658f78375e11c6ceb7ae601c993",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "19fc83e126b520d3fc6abd744e0eeb5361861cf2389cf0cf9cfccc0a25db4576",
+    "config": {
+      "config_version": 1,
+      "description": "Single versioned source of the experiment parameters consumed by scoutlens.evaluation.run_report / run_robustness / run_transfer_analysis. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      }
+    },
+    "inputs": {
+      "competitions.parquet": {
+        "sha256": "45a2212a93fed2e41aa4d9e50b9b73efa74aca2b62e8d21daf4b2109a0874101",
+        "bytes": 3122
+      },
+      "events.parquet": {
+        "sha256": "357aa043ca0f6fc94584fffb2a418180fd2b197f073bea6cc8242a2ad2b869ff",
+        "bytes": 53181640
+      },
+      "matches.parquet": {
+        "sha256": "f545ff00713fb27a271d3bd83583b663ec610919a9be9a7e33dc783f5c69762f",
+        "bytes": 564353
+      },
+      "minutes.parquet": {
+        "sha256": "856f631f96fc93bd51cfb8496f5a6d2b581f7df52a04ff6f71fb885081fff666",
+        "bytes": 182279
+      },
+      "players.parquet": {
+        "sha256": "cd58fa8fe1b61be0e685431b58a45fae62f6b451f644419c60b916a98dd88eab",
+        "bytes": 160264
+      },
+      "teams.parquet": {
+        "sha256": "b2670f354e837e60948a6241b2f0ec344b13b199447caf587d187c78cc761fef",
+        "bytes": 8401
+      }
+    }
   },
   "global": {
     "n_eligible": 1257,
