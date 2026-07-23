@@ -20,7 +20,9 @@ Writes artifacts/transfer_analysis_results.json.
 
 from __future__ import annotations
 
+import datetime
 import json
+import subprocess
 from pathlib import Path
 
 import polars as pl
@@ -44,6 +46,18 @@ ARTIFACTS_DIR = REPO_ROOT / "artifacts"
 
 DOMESTIC_LEAGUES = [364, 412, 426, 524, 795]
 PRIMARY_MINUTES_THRESHOLD = 450
+
+
+def _run_metadata() -> dict:
+    """See run_report.py's version of this — same lightweight provenance,
+    not the full versioned-config/checksum manifest (still open)."""
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        commit = None
+    return {"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "git_commit": commit}
 
 
 def _role_lookup(players: pl.DataFrame) -> pl.DataFrame:
@@ -105,6 +119,7 @@ def run() -> dict:
         return result
 
     return {
+        "_metadata": _run_metadata(),
         "config": {"domestic_leagues": DOMESTIC_LEAGUES, "minutes_threshold": PRIMARY_MINUTES_THRESHOLD},
         "n_eligible_total": eligible.select("player_id", "competitionId").unique().height,
         "n_transferred": transferred.height,

@@ -1,0 +1,246 @@
+{
+  "_metadata": {
+    "generated_at": "2026-07-22T22:55:43.002923+00:00",
+    "git_commit": "d3f792727e47e50e338aea5c7531976b2242ff1b"
+  },
+  "config": {
+    "domestic_leagues": [
+      364,
+      412,
+      426,
+      524,
+      795
+    ],
+    "minutes_threshold": 450
+  },
+  "n_eligible_total": 1257,
+  "n_transferred": 26,
+  "transferred_pairs": [
+    {
+      "player_id": 14731,
+      "competitionId": 426,
+      "team_a": 2451,
+      "team_b": 2445
+    },
+    {
+      "player_id": 4375,
+      "competitionId": 795,
+      "team_a": 714,
+      "team_b": 679
+    },
+    {
+      "player_id": 16094,
+      "competitionId": 426,
+      "team_a": 2445,
+      "team_b": 2463
+    },
+    {
+      "player_id": 20460,
+      "competitionId": 524,
+      "team_a": 3194,
+      "team_b": 3162
+    },
+    {
+      "player_id": 274435,
+      "competitionId": 795,
+      "team_a": 695,
+      "team_b": 682
+    },
+    {
+      "player_id": 264989,
+      "competitionId": 412,
+      "team_a": 3774,
+      "team_b": 3780
+    },
+    {
+      "player_id": 105338,
+      "competitionId": 364,
+      "team_a": 1611,
+      "team_b": 1609
+    },
+    {
+      "player_id": 3970,
+      "competitionId": 795,
+      "team_a": 701,
+      "team_b": 714
+    },
+    {
+      "player_id": 21861,
+      "competitionId": 524,
+      "team_a": 3315,
+      "team_b": 3176
+    },
+    {
+      "player_id": 20632,
+      "competitionId": 524,
+      "team_a": 3164,
+      "team_b": 3219
+    },
+    {
+      "player_id": 3361,
+      "competitionId": 364,
+      "team_a": 1609,
+      "team_b": 1611
+    },
+    {
+      "player_id": 15085,
+      "competitionId": 426,
+      "team_a": 2482,
+      "team_b": 2444
+    },
+    {
+      "player_id": 21620,
+      "competitionId": 524,
+      "team_a": 3172,
+      "team_b": 3204
+    },
+    {
+      "player_id": 4332,
+      "competitionId": 795,
+      "team_a": 691,
+      "team_b": 682
+    },
+    {
+      "player_id": 149053,
+      "competitionId": 412,
+      "team_a": 3775,
+      "team_b": 3795
+    },
+    {
+      "player_id": 21370,
+      "competitionId": 524,
+      "team_a": 3173,
+      "team_b": 3197
+    },
+    {
+      "player_id": 284469,
+      "competitionId": 426,
+      "team_a": 2445,
+      "team_b": 2451
+    },
+    {
+      "player_id": 4086,
+      "competitionId": 795,
+      "team_a": 678,
+      "team_b": 677
+    },
+    {
+      "player_id": 3671,
+      "competitionId": 795,
+      "team_a": 687,
+      "team_b": 678
+    },
+    {
+      "player_id": 370,
+      "competitionId": 364,
+      "team_a": 1619,
+      "team_b": 1612
+    },
+    {
+      "player_id": 25577,
+      "competitionId": 795,
+      "team_a": 714,
+      "team_b": 698
+    },
+    {
+      "player_id": 56025,
+      "competitionId": 795,
+      "team_a": 680,
+      "team_b": 677
+    },
+    {
+      "player_id": 25572,
+      "competitionId": 364,
+      "team_a": 1633,
+      "team_b": 10531
+    },
+    {
+      "player_id": 8284,
+      "competitionId": 364,
+      "team_a": 1623,
+      "team_b": 1646
+    },
+    {
+      "player_id": 275032,
+      "competitionId": 412,
+      "team_a": 3799,
+      "team_b": 3783
+    },
+    {
+      "player_id": 22381,
+      "competitionId": 524,
+      "team_a": 3194,
+      "team_b": 3193
+    }
+  ],
+  "full_population": {
+    "label": "full population (reference)",
+    "n_queries": 1257,
+    "baseline_a": {
+      "n": 1257,
+      "mrr": 0.02558886555344638,
+      "median_rank": 128,
+      "recall_at_1": 0.0031821797931583136,
+      "recall_at_5": 0.027048528241845664,
+      "recall_at_10": 0.04852824184566428
+    },
+    "baseline_b": {
+      "n": 1257,
+      "mrr": 0.2539333127027185,
+      "median_rank": 16,
+      "recall_at_1": 0.162291169451074,
+      "recall_at_5": 0.345266507557677,
+      "recall_at_10": 0.4327764518695306
+    },
+    "baseline_c": {
+      "n": 1257,
+      "mrr": 0.5892814045998572,
+      "median_rank": 2,
+      "recall_at_1": 0.36913285600636436,
+      "recall_at_5": 0.9474940334128878,
+      "recall_at_10": 0.979315831344471
+    },
+    "mrr_delta_b_minus_a": {
+      "point_estimate": 0.22834444714927213,
+      "ci_low": 0.2083439998027224,
+      "ci_high": 0.24790560118596439,
+      "n_resamples": 1000,
+      "n_queries": 1257
+    }
+  },
+  "transferred_only": {
+    "label": "transferred players only",
+    "n_queries": 26,
+    "baseline_a": {
+      "n": 26,
+      "mrr": 0.01046352973159066,
+      "median_rank": 149.0,
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0
+    },
+    "baseline_b": {
+      "n": 26,
+      "mrr": 0.23874813903953604,
+      "median_rank": 38.5,
+      "recall_at_1": 0.19230769230769232,
+      "recall_at_5": 0.2692307692307692,
+      "recall_at_10": 0.34615384615384615
+    },
+    "baseline_c": {
+      "n": 26,
+      "mrr": 0.010078578551463767,
+      "median_rank": 150.5,
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0
+    },
+    "mrr_delta_b_minus_a": {
+      "point_estimate": 0.2282846093079454,
+      "ci_low": 0.0952468241393345,
+      "ci_high": 0.39271547036662785,
+      "n_resamples": 1000,
+      "n_queries": 26
+    }
+  }
+}

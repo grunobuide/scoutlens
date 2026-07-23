@@ -77,12 +77,25 @@ def neighbor_concentration(
 
     `query_attribute`/`neighbor_attribute`: `player_id` -> `attribute_name`,
     each pre-filtered by the caller to the relevant period (queries are
-    always period A, neighbors always period B — see
-    `compute_primary_team`). Keyed by `player_id` alone: the eligible
-    domestic-league population essentially never has one player active in
-    two different domestic leagues in the same season, so this doesn't
-    need `competitionId` disambiguation in practice.
+    always period A, neighbors always period B). **Must have at most one
+    row per `player_id`** — raises `ValueError` otherwise, rather than
+    silently joining into a duplicate-row explosion. This bites in
+    practice, not just in theory: `compute_primary_team` runs over every
+    competition including Euro/World Cup, so a player who also appears
+    for their national team gets a second row there (28.7% of this
+    project's eligible population, in fact) unless the caller filters to
+    the relevant competition set first — found by exactly this failure
+    mode inflating a published number, see decisions-log.md.
     """
+    for label, attribute_df in (("query_attribute", query_attribute), ("neighbor_attribute", neighbor_attribute)):
+        n_dupes = attribute_df.height - attribute_df["player_id"].n_unique()
+        if n_dupes:
+            raise ValueError(
+                f"{label} has {n_dupes} duplicate player_id rows — did you forget to filter "
+                "to a single competition set (e.g. domestic leagues only) before selecting "
+                "player_id + attribute? A duplicated player_id silently inflates this join."
+            )
+
     if not include_true_matches and "is_true_match" in top_k_neighbors.columns:
         top_k_neighbors = top_k_neighbors.filter(~pl.col("is_true_match"))
 

@@ -8,9 +8,11 @@ Run with:
 
 Requires data/processed/*.parquet to already exist (see
 `scoutlens.data.ingestion` and `scoutlens.data.minutes`). Writes a JSON
-summary to artifacts/gate2_results.json — gitignored like the rest of
-`artifacts/`, regenerated on demand rather than checked in, per the
-repo's existing convention for spike outputs.
+summary to artifacts/gate2_results.json — one of the few artifacts
+checked into git (see artifacts/README.md), so the published numbers in
+feasibility-report.md/context-diagnostics.md are inspectable without
+re-running anything, and `tests/evaluation/test_artifacts.py` can catch
+drift between this file and the docs that quote it.
 
 Configuration is inlined below rather than an external file — proportional
 to a single-experiment spike, not a claim that this is the final shape a
@@ -18,20 +20,19 @@ multi-experiment version of this tool should take (see limitation #14 in
 feasibility-report.md: a versioned config + run-manifest with checksums
 is real future work, not attempted here).
 
-Reproducibility note: MRR/Recall point estimates and the minutes
-sensitivity curve are exactly reproducible run to run. Bootstrap CI
-*bounds* (not the point estimate) can vary by roughly +/-0.002 between
-runs — `bootstrap_mrr_delta` uses a fixed seed, but which specific
-resampled index lands on which query depends on the row order the
-eligible population happens to be constructed in, which polars doesn't
-guarantee identically across runs unless explicitly sorted. This is
-ordinary Monte Carlo noise at n_resamples=1000, not a correctness issue.
+Reproducibility note: `bootstrap_mrr_delta` explicitly sorts its paired
+query set by `(player_id, competitionId)` before resampling (fixed after
+review — see decisions-log.md D013), so every number here, including
+bootstrap CI bounds, is exactly reproducible run to run for a fixed seed,
+not just the point estimates.
 """
 
 from __future__ import annotations
 
 import dataclasses
+import datetime
 import json
+import subprocess
 from pathlib import Path
 
 import polars as pl
@@ -55,6 +56,21 @@ DOMESTIC_LEAGUES = [364, 412, 426, 524, 795]  # England, France, Germany, Italy,
 PRIMARY_MINUTES_THRESHOLD = 450
 SENSITIVITY_THRESHOLDS = [225, 450, 675, 900, 1125, 1350]
 TOP_K_FOR_DIAGNOSTICS = 10
+
+
+def _run_metadata() -> dict:
+    """Lightweight provenance: which commit and when. Not the full
+    versioned-config/data-checksum manifest flagged as still-open in
+    feasibility-report.md's limitations — just enough that a reviewer
+    reading a committed artifacts/*.json can tell which code produced it,
+    without re-deriving that from git log timestamps."""
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        commit = None
+    return {"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "git_commit": commit}
 
 
 def _metrics_to_dict(m) -> dict:
@@ -95,9 +111,23 @@ def run() -> dict:
     candidates_b_std = combined_std.filter(pl.col("period") == "B")
     top_k = get_top_k_neighbors(query_a_std, candidates_b_std, FEATURE_COLUMNS, k=TOP_K_FOR_DIAGNOSTICS)
 
+    # compute_primary_team runs over EVERY competition a player appears in
+    # (Euro/WC included, and a player can even have minutes in two
+    # different *domestic* leagues in the same period after a mid-season
+    # inter-league transfer). Selecting player_id+team_id from that table
+    # directly, at any scope broader than "exactly this eligible
+    # population's own (player_id, competitionId, period)", risks
+    # duplicate player_id rows and a silently inflated join in
+    # neighbor_concentration -- found in review; neighbor_concentration
+    # now raises instead of silently miscounting. The correct fix is to
+    # join primary_team onto `eligible` on the full key, not re-derive a
+    # broader team table and hope it happens to be unique.
     primary_team = compute_primary_team(data["minutes"], period_assignment)
-    query_team = primary_team.filter(pl.col("period") == "A").select("player_id", "team_id")
-    neighbor_team = primary_team.filter(pl.col("period") == "B").select("player_id", "team_id")
+    eligible_with_team = eligible.join(
+        primary_team, on=["player_id", "competitionId", "period"], how="left"
+    )
+    query_team = eligible_with_team.filter(pl.col("period") == "A").select("player_id", "team_id")
+    neighbor_team = eligible_with_team.filter(pl.col("period") == "B").select("player_id", "team_id")
     team_concentration = neighbor_concentration(top_k, query_team, neighbor_team, "team_id")
 
     query_league = eligible.filter(pl.col("period") == "A").select("player_id", pl.col("competitionId").alias("league_id"))
@@ -119,6 +149,7 @@ def run() -> dict:
         })
 
     return {
+        "_metadata": _run_metadata(),
         "config": {
             "domestic_leagues": DOMESTIC_LEAGUES,
             "primary_minutes_threshold": PRIMARY_MINUTES_THRESHOLD,

@@ -324,3 +324,57 @@ confirms it holds up) rather than re-researching dataset options from
 zero. Treat this as a new mini-Gate-0, with its own provenance/license
 documentation, not as a continuation of the existing acquisition
 pipeline.
+
+---
+
+## D013 — 2026-07-22 — Second review round: a second instance of the D009 bug class, plus a wrong dataset recommendation
+
+**Decision:** fix the diagnostics bug and make the function fail loudly
+on the underlying precondition (not just recompute the one number
+by hand), correct the StatsBomb recommendation from D012, and tighten
+report language where a second reviewer found it still overclaiming.
+
+**Why:** a second, independent review of the merged spike + follow-up
+work found:
+
+1. **The team-concentration number from D009's own fix was still
+   wrong.** `run_report.py` built `query_team`/`neighbor_team` by
+   selecting `player_id` + `team_id` from `compute_primary_team`'s full
+   output — but that function runs over *every* competition a player
+   appears in, so a player with minutes recorded under more than one
+   `competitionId` (Euro/World Cup appearances, or a genuine mid-season
+   transfer between two of the five domestic leagues) produces duplicate
+   `player_id` rows with different `team_id` values. 361 of 1,257
+   eligible players (28.7%) are affected. This silently inflated
+   `neighbor_concentration`'s join. Published: 1.30% / ~1.24x. Corrected:
+   1.20% / ~1.14x — exactly matching the reviewer's independently
+   recomputed figure.
+2. **The `feasibility-report.md` recommendation to use "StatsBomb La
+   Liga 2018/19" was wrong.** Verified directly: that release is a
+   Messi/Barcelona-focused subset (a few dozen matches), not a full
+   380-match season — confirmed by fetching the actual file. StatsBomb's
+   2015/16 season covers four of the five domestic leagues at full depth
+   (Premier League, La Liga, Serie A, Ligue 1 — Bundesliga's 2015/16
+   release is itself a small subset, ~34 matches, confirmed the same
+   way) and is the corrected recommendation.
+3. Report language still said "stable player-role signal" in the
+   Executive Summary/charter-quote sections despite the body text
+   elsewhere already having moved to the more precise "statistical
+   fingerprint" framing — a genuine inconsistency, not just a style
+   preference.
+4. The transferred-players write-up (D011) reported MRR holding up but
+   didn't call out that median rank (16→38.5) and Recall@10 (43.3%→
+   34.6%) moved unfavorably for that subset — MRR alone can be dominated
+   by a handful of rank-1 hits at n=26, and the fuller picture is more
+   mixed than "holds up" alone conveys.
+
+**How to apply:** `neighbor_concentration` now raises `ValueError` on any
+duplicate `player_id` in its inputs instead of trusting the caller to
+have scoped correctly — this is the structural fix, not just a one-time
+recomputation, and it caught itself immediately on re-run (see
+`context-diagnostics.md`). Numbers corrected throughout
+`context-diagnostics.md`, `feasibility-report.md`, `gate-2-decision.md`.
+The StatsBomb recommendation, report-language consistency, and the
+transfer-analysis metric picture are corrected in the same pass — see
+each document's own change for specifics rather than duplicating them
+here.

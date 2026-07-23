@@ -43,16 +43,31 @@ understood to mean. **That next validation step was run the same day:**
 restricting the retrieval experiment to the 26 eligible players who did
 change clubs between the two periods — where the team-based baseline's
 advantage cannot structurally apply — shows the team-based baseline
-collapsing to chance-level performance while the feature-based method's
-advantage over the trivial baseline holds essentially unchanged. Small
-sample (n=26), but a clean, direct, encouraging result. See the full
-discussion below.
+collapsing to chance-level performance, unambiguously. The feature-based
+method's advantage over the trivial baseline (Baseline B − A) also
+survives, though a closer look at rank distribution and Recall@5/10 (not
+just MRR) shows real, moderate degradation for this subset — a smaller,
+more mixed win than "unchanged" would suggest. Small sample (n=26); see
+the full discussion below.
 
-**Maximum permitted claim, per the charter, now supported by evidence:**
+**Maximum permitted claim, per the charter** (quoted verbatim from
+`project-charter.md` — this is the ceiling the charter allows, not
+edited here even though the wording is now known to be looser than what
+was actually demonstrated):
 
 > Event-derived profiles show sufficient evidence of **stable**
 > player-role signal to justify **continuing** the ScoutLens research
 > program.
+
+**What this spike actually demonstrated, more precisely — flagged in a
+second review round as still worth tightening:** a stable *individual
+statistical fingerprint*, not proven role/style representation
+specifically. Prefer this framing over the charter's own wording above
+when describing results:
+
+> Event-derived profiles show a temporally stable individual statistical
+> fingerprint, consistent with — but not sufficient on its own to prove —
+> a stable player-role or playing-style representation.
 
 **Not supported, and not claimed:** that ScoutLens finds good players to
 sign, that this generalizes beyond the five domestic leagues studied, or
@@ -266,24 +281,33 @@ subset (same global candidate pool otherwise) — full writeup:
 
 | | Full population (n=1,257) | Transferred only (n=26) |
 |---|---|---|
-| Baseline B MRR | 0.2539 | **0.2387** |
+| Baseline B MRR | 0.2539 | 0.2387 |
+| Baseline B median rank | 16 | **38.5** |
+| Baseline B Recall@10 | 43.3% | **34.6%** |
 | Baseline C MRR | 0.5893 | **0.0101** |
 | Baseline B − A delta | +0.228, CI [0.210, 0.250] | +0.228, CI [0.089, 0.393] |
 
 **Baseline C's team-based advantage completely collapses for transferred
 players** (0.589 → 0.010, statistically indistinguishable from Baseline
 A) — direct confirmation, not just inference, that its strength was
-entirely about team continuity. **Baseline B holds up**: MRR for
-transferred players is close to the full-population value, and the
-Baseline B − A delta point estimate is, to three decimal places,
-identical for transferred players as for everyone else (the CI is far
-wider at n=26, as expected, but still clears 0 comfortably). This is
-direct evidence — not just the absence-of-evidence teammates-excluded
-check above — that Baseline B's signal is not an artifact of team
-continuity, for exactly the population (players who change clubs) a
-recruitment tool would care about most. Read with the sample-size caveat
-in `transfer-analysis.md`: n=26 is real evidence, not proof, and a larger
-sample from another season is still the natural follow-up.
+entirely about team continuity; this part of the finding is clean and
+doesn't depend on which metric is read.
+
+**Baseline B's picture is more mixed than "holds up" alone conveys** —
+flagged in a second review round. MRR stays close to the full-population
+value and the B−A delta remains positive with a CI clearing 0, but median
+rank roughly doubles and Recall@10 drops by nearly 9 points. At n=26,
+MRR's near-parity is consistent with a handful of perfect (rank-1) hits
+(Recall@1 was actually slightly *higher* for transferred players, 19.2%
+vs 16.2%) propping up the average while the rest of the subset ranks
+meaningfully worse — plausibly real degradation from a new club changing
+a transferred player's actual role/usage, not only noise. Read with the
+sample-size caveat in `transfer-analysis.md`: this is genuine, direct
+evidence that Baseline B's advantage over the trivial baseline is not
+solely a team-continuity artifact, but n=26 cannot yet distinguish "the
+individual signal is fully intact" from "there's a real, moderate cost to
+changing clubs on top of it." A larger sample from another season is the
+natural way to resolve that, not just to tighten the confidence interval.
 
 ## Position / Minutes / League Diagnostics
 
@@ -296,11 +320,17 @@ confound. Fixed and re-run excluding true matches; see
 [`context-diagnostics.md`](context-diagnostics.md) for the full
 before/after. The correction **strengthens** the diagnostic conclusion.
 
-- **Team confound:** 1.30% of genuinely-other-player top-10 neighbors
+- **Team confound:** 1.20% of genuinely-other-player top-10 neighbors
   share the query's primary team, vs. 1.05% expected under squad-size-
-  weighted random selection (~1.24x enrichment) — small.
+  weighted random selection (~1.14x enrichment) — small. (A second
+  correction, made the same day as the first: the original 1.30% figure
+  came from a `player_id`-keyed join vulnerable to silent duplication —
+  28.7% of the eligible population has minutes recorded under more than
+  one competitionId, mostly via Euro/World Cup appearances. Fixed with a
+  hard failure on duplicate keys, not just a recomputation — see D013.)
 - **League confound:** 21.64% observed vs. 20.06% expected
-  (league-size-weighted) — close to negligible (~1.08x).
+  (league-size-weighted) — close to negligible (~1.08x), unaffected by
+  the above.
 - **Minutes sensitivity** (resolves [D006](decisions-log.md#d006--2026-07-20--450-minute-threshold-flagged-as-a-known-noise-risk-not-just-a-parameter)):
   ran the full experiment at six thresholds from 225 to 1,350 min/period.
   The B−A delta's CI stays clear of 0 at **every** threshold and
@@ -432,7 +462,11 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
 Both gates cleared, several criteria with considerable margin rather than
 marginally:
 
-- **Gate 0 (Provenance):** GO — [`gate-1-decision.md`](gate-1-decision.md) §Evidence table.
+- **Gate 0 (Provenance):** GO — license verified individually on each of
+  the 7 consumed artifacts' own Figshare pages, see
+  [`data-provenance.md`](data-provenance.md) (corrected citation — this
+  previously pointed to `gate-1-decision.md`, which covers Gate 1, not
+  Gate 0; found in a second review round).
 - **Gate 1 (Data):** GO — 1,969 eligible players (season-level), 99.72%
   clean minutes, 99.97% join integrity, all comfortably past threshold.
 - **Gate 2 (Analytical signal):** GO — Baseline B beats the trivial
@@ -494,15 +528,23 @@ confirmed the signal survives that confound.
    (not yet verified in the same per-artifact detail as
    `data-provenance.md` did for Wyscout — only a surface-level check was
    done here). Two real obstacles found:
-   - **Uneven per-league coverage.** La Liga has extensive coverage (18
-     seasons, including 2018/19 — the season immediately after this
-     spike's data), but the other four leagues are sparse: Premier League
-     only 2015/16 and 2003/04, Serie A only 2015/16 and 1986/87,
-     Bundesliga only 2023/24 and 2015/16, Ligue 1 only 2015/16, 2021/22,
-     2022/23. **No single season has all five leagues at full depth** —
-     any StatsBomb-based extension would have to either drop to
-     fewer leagues or mix different seasons per league, complicating the
-     "same season, two halves" design this spike used throughout.
+   - **Uneven per-league coverage, and per-season match completeness
+     varies a lot.** La Liga has many seasons listed (18, including
+     2018/19), but **the 2018/19 file is not a full season** — verified
+     directly by fetching it: it's the Messi/Barcelona-career release (a
+     few dozen matches, not 380). The originally-recorded recommendation
+     to use it was wrong and has been removed (see D013).
+     **2015/16 is a better candidate**: Premier League, La Liga, Serie A,
+     and Ligue 1 each appear to carry a full season's worth of matches —
+     corroborated by file size scaling (PL's 2015/16 match file is ~11x
+     the line count of Bundesliga's same-season file for a competition
+     with a similar number of teams) rather than an exhaustive per-match
+     count, so treat this as *strong, not exhaustive* verification.
+     **Bundesliga's 2015/16 release is itself a small subset** (~34
+     matches, confirmed directly — appears focused on Bayer Leverkusen)
+     and should be excluded. **No single StatsBomb season has all five of
+     this spike's leagues at full depth** — a StatsBomb-based extension
+     would cover four leagues (dropping Bundesliga) or mix seasons.
    - **A structurally different schema.** StatsBomb's event taxonomy,
      coordinate system, and file structure are not compatible with
      `scoutlens.data.ingestion`/`validation`/`minutes` as built — this
@@ -510,14 +552,15 @@ confirmed the signal survives that confound.
      for a new source, not reusing the existing pipeline with new input
      files. A multi-day undertaking, not a rerun.
 
-   **Recommendation, if/when this is picked back up:** if only one
-   league needs to be tested for generalization, La Liga 2018/19 via
-   StatsBomb is the best-supported single-league option found so far —
-   but a full license audit (per-artifact, matching the rigor of
-   `data-provenance.md`) and a real match-count check (StatsBomb's public
-   data has historically included selected matches rather than guaranteed
-   full seasons for some competitions — not confirmed either way here)
-   should happen before any acquisition code is written, the same
+   **Recommendation, if/when this is picked back up:** StatsBomb 2015/16
+   across Premier League, La Liga, Serie A, and Ligue 1 (Bundesliga
+   excluded) is the best-supported StatsBomb option found — not La Liga
+   2018/19 alone, which was this document's earlier (wrong) suggestion.
+   Before any acquisition code is written: a full per-artifact license
+   audit matching `data-provenance.md`'s rigor, and an exact match-count
+   check per competition (this section's verification was corroborating,
+   not exhaustive — confirm the true per-league match count directly
+   against the downloaded files, not inferred from file sizes), the same
    discipline Gate 0 applied to the original source.
 2. **A genuinely different validation methodology for the recruitment
    claim itself**, since same-player retrieval cannot speak to it: blind

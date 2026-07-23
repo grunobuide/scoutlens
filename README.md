@@ -17,7 +17,7 @@ the charter, gates, and the maximum claim this spike is allowed to make.
 |---|---|
 | Gate 0 — Provenance | **GO** — [`docs/data-provenance.md`](docs/data-provenance.md) |
 | Gate 1 — Data | **GO** — [`docs/gate-1-decision.md`](docs/gate-1-decision.md). 1,969 eligible players at ≥450 min/season, 99.72% clean minutes derivation, 99.97% join integrity. |
-| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. **Follow-up caveat:** a team-aware baseline beats Baseline B by 2x+ ([`robustness-checks.md`](docs/robustness-checks.md)) — **directly tested and held up** on the 26 players who changed clubs ([`transfer-analysis.md`](docs/transfer-analysis.md)), though that sample is small. |
+| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. **Follow-up caveat:** a team-aware baseline beats Baseline B by 2x+ ([`robustness-checks.md`](docs/robustness-checks.md)) — **directly tested on the 26 players who changed clubs** ([`transfer-analysis.md`](docs/transfer-analysis.md)): Baseline B's advantage over the trivial baseline survives, though a fuller look (not just MRR) shows real, moderate degradation for that subset — encouraging, not a clean "unchanged" result, and the sample is small. |
 
 Task-by-task progress against the backlog (SLS-001…023, defined in the
 brief) is tracked in-session, not duplicated here as a static checklist —

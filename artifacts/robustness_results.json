@@ -1,0 +1,118 @@
+{
+  "_metadata": {
+    "generated_at": "2026-07-22T22:54:58.203144+00:00",
+    "git_commit": "d3f792727e47e50e338aea5c7531976b2242ff1b"
+  },
+  "config": {
+    "domestic_leagues": [
+      364,
+      412,
+      426,
+      524,
+      795
+    ],
+    "minutes_threshold": 450
+  },
+  "baseline_a_reference": {
+    "n": 1257,
+    "mrr": 0.02558886555344638,
+    "median_rank": 128,
+    "recall_at_1": 0.0031821797931583136,
+    "recall_at_5": 0.027048528241845664,
+    "recall_at_10": 0.04852824184566428
+  },
+  "check_1_standardization_fit": {
+    "combined_fit": {
+      "n": 1257,
+      "mrr": 0.2539333127027185,
+      "median_rank": 16,
+      "recall_at_1": 0.162291169451074,
+      "recall_at_5": 0.345266507557677,
+      "recall_at_10": 0.4327764518695306
+    },
+    "a_only_fit": {
+      "n": 1257,
+      "mrr": 0.25425871695180013,
+      "median_rank": 16,
+      "recall_at_1": 0.16388225934765313,
+      "recall_at_5": 0.3428798727128083,
+      "recall_at_10": 0.4303898170246619
+    }
+  },
+  "check_2_distance_metric": {
+    "cosine": {
+      "n": 1257,
+      "mrr": 0.2539333127027185,
+      "median_rank": 16,
+      "recall_at_1": 0.162291169451074,
+      "recall_at_5": 0.345266507557677,
+      "recall_at_10": 0.4327764518695306
+    },
+    "euclidean": {
+      "n": 1257,
+      "mrr": 0.25352676753741626,
+      "median_rank": 15,
+      "recall_at_1": 0.15513126491646778,
+      "recall_at_5": 0.34844868735083534,
+      "recall_at_10": 0.4494828957836118
+    }
+  },
+  "check_3_baseline_c_role_team_minutes": {
+    "n": 1257,
+    "mrr": 0.5892814045998572,
+    "median_rank": 2,
+    "recall_at_1": 0.36913285600636436,
+    "recall_at_5": 0.9474940334128878,
+    "recall_at_10": 0.979315831344471
+  },
+  "check_4_drop_teammates": {
+    "n": 1257,
+    "mrr": 0.2553438482802083,
+    "median_rank": 16,
+    "recall_at_1": 0.16388225934765313,
+    "recall_at_5": 0.3460620525059666,
+    "recall_at_10": 0.4327764518695306
+  },
+  "check_5_feature_family_ablation": {
+    "passing": {
+      "n_features": 5,
+      "mrr": 0.1171019048562244,
+      "median_rank": 37
+    },
+    "progression": {
+      "n_features": 2,
+      "mrr": 0.01886312108858347,
+      "median_rank": 209
+    },
+    "chance_creation": {
+      "n_features": 4,
+      "mrr": 0.03282512077153157,
+      "median_rank": 186
+    },
+    "shooting": {
+      "n_features": 5,
+      "mrr": 0.02201858058935529,
+      "median_rank": 260
+    },
+    "defensive": {
+      "n_features": 4,
+      "mrr": 0.040412215435653265,
+      "median_rank": 125
+    },
+    "spatial": {
+      "n_features": 5,
+      "mrr": 0.09548134657012526,
+      "median_rank": 31
+    },
+    "possession": {
+      "n_features": 4,
+      "mrr": 0.06539442890545479,
+      "median_rank": 77
+    },
+    "carrying_proxy": {
+      "n_features": 3,
+      "mrr": 0.01920971161933652,
+      "median_rank": 298
+    }
+  }
+}
