@@ -494,3 +494,35 @@ execution must follow it or publish deviations; the primary metric and
 the three failure criteria (claim / instrument / floor) cannot be
 swapped after ratings exist. A null or failed result is publishable and
 closes the question honestly.
+
+---
+
+## D017 — 2026-07-23 — The 3,603-vs-4,299 players "discrepancy" is an arithmetic error in the source paper
+
+**Decision:** close Known Limitation #6 / Recommended Next Experiment #5
+(beads `scoutlens-6w8`) as **fully reconciled, with the residual bounded
+to the source paper itself**, and pin the reconciliation with
+`tests/data/test_player_counts.py`.
+
+**Why:** every counting definition was reproduced from primary sources
+(the paper's PDF, Table 1) against the local data:
+
+- Counting **distinct rostered players (lineup+bench) per competition**
+  reproduces the paper's Table 1 `#players` column *exactly*, all seven
+  values: 619 (Spain), 603 (England), 686 (Italy), 537 (Germany),
+  629 (France), 736 (World Cup), 552 (Euro).
+- Those values sum to **4,362**. The paper's totals row prints
+  **4,299** — which matches neither its own column sum nor the distinct
+  union nor any other constructible definition. The "4,299 total
+  players" is an arithmetic/typographic error in the paper.
+- The true distinct union is **3,618** = 3,603 players.json profiles
+  + 15 rostered-but-unprofiled players, all of whom are unused bench
+  players (0 minutes, 0 events — verified) and therefore irrelevant to
+  every published ScoutLens number.
+
+**How to apply:** the dataset is complete for every purpose this project
+uses it for; no correction to any published number is needed. The three
+data-gated tests keep the reconciliation true (per-competition counts,
+the 4,362/3,618 arithmetic, and the harmlessness of the 15 unprofiled
+players). Anyone citing the dataset's size should cite 3,603 profiled
+players (or 3,618 rostered), never 4,299.
