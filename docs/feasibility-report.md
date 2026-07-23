@@ -104,8 +104,16 @@ Figshare's own reported hashes) and profiled empirically — see
 - 1,941 matches (exact match to the paper), 3,251,294 events (matches the
   paper's ~3.25M), 142 teams, 7 competitions (5 domestic leagues + Euro
   2016 + World Cup 2018).
-- 3,603 players in `players.json` — **below the paper's stated 4,299**,
-  unexplained, flagged rather than silently resolved.
+- 3,603 players in `players.json` — below the paper's stated 4,299,
+  flagged at the time rather than silently resolved. **Resolved
+  (2026-07-23, D017):** the paper's per-competition Table 1 values are
+  reproduced exactly by counting distinct rostered players per
+  competition (they sum to 4,362 — multi-competition players counted
+  once per competition); the printed total "4,299" matches neither that
+  sum nor any distinct count and is an arithmetic error in the paper's
+  totals row. The dataset itself is complete: 3,618 distinct rostered
+  players = 3,603 profiled + 15 unused bench players with 0 minutes and
+  0 events. Pinned by `tests/data/test_player_counts.py`.
 - Match-level position confirmed genuinely absent (only a single
   `players.role` per player) — the brief's section 3.2 concern, closed
   out empirically.
@@ -399,8 +407,12 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
    `players.foot`'s `""` vs. `null`, and `weight`/`height`'s `0`-as-sentinel.
    Currently inconsequential (no anthropometric feature is used) but
    flagged, not silently fixed.
-6. **The 3,603 vs. 4,299 players discrepancy** against the paper's
-   stated count is still unexplained.
+6. ~~**The 3,603 vs. 4,299 players discrepancy** against the paper's
+   stated count is still unexplained.~~ **Resolved (2026-07-23, D017)**
+   — the paper's own Table 1 column sums to 4,362 (reproduced here
+   exactly, per competition); its printed total 4,299 is an arithmetic
+   error in the source paper, not a gap in this dataset. See the Gate 1
+   summary above and `tests/data/test_player_counts.py`.
 7. **Goalkeepers are the weakest-signal role**, consistent with an
    outfield-action-heavy feature catalog — a goalkeeper-specific feature
    family is the most obvious near-term extension.

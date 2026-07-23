@@ -57,13 +57,18 @@ independently computed sha256 for our own reproducibility checks.
   stated count exactly.
 - **Events:** 3,251,294 rows — matches the paper's stated "~3.25 million"
   events.
-- **Players:** 3,603 rows in `players.json`. This is meaningfully below the
-  paper's stated 4,299 players. Not yet explained — candidate causes to
-  check in SLS-005 schema profiling: the paper's count may include players
-  who only appear in `events.playerId` without a corresponding entry in
-  `players.json` (e.g., red-carded/early-substituted players from smaller
-  federations), or may come from a different dataset version. Flagged here
-  rather than silently assumed benign.
+- **Players:** 3,603 rows in `players.json`. Originally flagged as
+  "meaningfully below the paper's stated 4,299 players," unexplained.
+  **Resolved (2026-07-23, D017):** counting distinct rostered players
+  (lineup + bench) *per competition* reproduces every one of the seven
+  per-competition values in the paper's Table 1 exactly (619 + 603 +
+  686 + 537 + 629 + 736 + 552); those sum to **4,362**, not the 4,299
+  printed in the paper's totals row — the paper's total is an
+  arithmetic error, and it never was a distinct-player count (the true
+  distinct union is 3,618: the 3,603 profiled players plus 15 unused
+  bench players with 0 minutes and 0 events). No player referenced by
+  any event or any non-zero minute is missing a profile. Pinned by
+  [`tests/data/test_player_counts.py`](../tests/data/test_player_counts.py).
 - **Teams:** 142 rows. **Competitions:** 7 rows (five domestic leagues +
   World Cup 2018 + Euro 2016, as documented).
 
