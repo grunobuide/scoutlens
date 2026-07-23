@@ -581,7 +581,10 @@ confirmed the signal survives that confound.
 2. **A genuinely different validation methodology for the recruitment
    claim itself**, since same-player retrieval cannot speak to it: blind
    expert scout review of shortlists, or a downstream-task validation —
-   only after (1), not before.
+   only after (1), not before. **Protocol designed (2026-07-23, D016):**
+   [`recruitment-validation-protocol.md`](recruitment-validation-protocol.md)
+   specifies a blinded, pre-registered expert shortlist study (execution
+   still gated on (1)'s outcome).
 3. **Only then, test whether added model complexity earns its place** —
    a learned representation, metric learning, or feature reweighting,
    compared against Baseline B *and* Baseline C, not today's version of
