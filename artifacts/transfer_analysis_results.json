@@ -1,21 +1,108 @@
 {
-  "_metadata": {
-    "generated_at": "2026-07-22T22:55:43.002923+00:00",
-    "git_commit": "d3f792727e47e50e338aea5c7531976b2242ff1b"
-  },
-  "config": {
-    "domestic_leagues": [
-      364,
-      412,
-      426,
-      524,
-      795
-    ],
-    "minutes_threshold": 450
+  "_manifest": {
+    "generated_at": "2026-07-23T17:20:46.732003+00:00",
+    "git_commit": "7a47dc1ae863a658f78375e11c6ceb7ae601c993",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "19fc83e126b520d3fc6abd744e0eeb5361861cf2389cf0cf9cfccc0a25db4576",
+    "config": {
+      "config_version": 1,
+      "description": "Single versioned source of the experiment parameters consumed by scoutlens.evaluation.run_report / run_robustness / run_transfer_analysis. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      }
+    },
+    "inputs": {
+      "events.parquet": {
+        "sha256": "357aa043ca0f6fc94584fffb2a418180fd2b197f073bea6cc8242a2ad2b869ff",
+        "bytes": 53181640
+      },
+      "matches.parquet": {
+        "sha256": "f545ff00713fb27a271d3bd83583b663ec610919a9be9a7e33dc783f5c69762f",
+        "bytes": 564353
+      },
+      "minutes.parquet": {
+        "sha256": "856f631f96fc93bd51cfb8496f5a6d2b581f7df52a04ff6f71fb885081fff666",
+        "bytes": 182279
+      },
+      "players.parquet": {
+        "sha256": "cd58fa8fe1b61be0e685431b58a45fae62f6b451f644419c60b916a98dd88eab",
+        "bytes": 160264
+      }
+    }
   },
   "n_eligible_total": 1257,
   "n_transferred": 26,
   "transferred_pairs": [
+    {
+      "player_id": 370,
+      "competitionId": 364,
+      "team_a": 1619,
+      "team_b": 1612
+    },
+    {
+      "player_id": 3361,
+      "competitionId": 364,
+      "team_a": 1609,
+      "team_b": 1611
+    },
+    {
+      "player_id": 3671,
+      "competitionId": 795,
+      "team_a": 687,
+      "team_b": 678
+    },
+    {
+      "player_id": 3970,
+      "competitionId": 795,
+      "team_a": 701,
+      "team_b": 714
+    },
+    {
+      "player_id": 4086,
+      "competitionId": 795,
+      "team_a": 678,
+      "team_b": 677
+    },
+    {
+      "player_id": 4332,
+      "competitionId": 795,
+      "team_a": 691,
+      "team_b": 682
+    },
+    {
+      "player_id": 4375,
+      "competitionId": 795,
+      "team_a": 714,
+      "team_b": 679
+    },
+    {
+      "player_id": 8284,
+      "competitionId": 364,
+      "team_a": 1623,
+      "team_b": 1646
+    },
     {
       "player_id": 14731,
       "competitionId": 426,
@@ -23,10 +110,10 @@
       "team_b": 2445
     },
     {
-      "player_id": 4375,
-      "competitionId": 795,
-      "team_a": 714,
-      "team_b": 679
+      "player_id": 15085,
+      "competitionId": 426,
+      "team_a": 2482,
+      "team_b": 2444
     },
     {
       "player_id": 16094,
@@ -41,70 +128,10 @@
       "team_b": 3162
     },
     {
-      "player_id": 274435,
-      "competitionId": 795,
-      "team_a": 695,
-      "team_b": 682
-    },
-    {
-      "player_id": 264989,
-      "competitionId": 412,
-      "team_a": 3774,
-      "team_b": 3780
-    },
-    {
-      "player_id": 105338,
-      "competitionId": 364,
-      "team_a": 1611,
-      "team_b": 1609
-    },
-    {
-      "player_id": 3970,
-      "competitionId": 795,
-      "team_a": 701,
-      "team_b": 714
-    },
-    {
-      "player_id": 21861,
-      "competitionId": 524,
-      "team_a": 3315,
-      "team_b": 3176
-    },
-    {
       "player_id": 20632,
       "competitionId": 524,
       "team_a": 3164,
       "team_b": 3219
-    },
-    {
-      "player_id": 3361,
-      "competitionId": 364,
-      "team_a": 1609,
-      "team_b": 1611
-    },
-    {
-      "player_id": 15085,
-      "competitionId": 426,
-      "team_a": 2482,
-      "team_b": 2444
-    },
-    {
-      "player_id": 21620,
-      "competitionId": 524,
-      "team_a": 3172,
-      "team_b": 3204
-    },
-    {
-      "player_id": 4332,
-      "competitionId": 795,
-      "team_a": 691,
-      "team_b": 682
-    },
-    {
-      "player_id": 149053,
-      "competitionId": 412,
-      "team_a": 3775,
-      "team_b": 3795
     },
     {
       "player_id": 21370,
@@ -113,28 +140,28 @@
       "team_b": 3197
     },
     {
-      "player_id": 284469,
-      "competitionId": 426,
-      "team_a": 2445,
-      "team_b": 2451
+      "player_id": 21620,
+      "competitionId": 524,
+      "team_a": 3172,
+      "team_b": 3204
     },
     {
-      "player_id": 4086,
-      "competitionId": 795,
-      "team_a": 678,
-      "team_b": 677
+      "player_id": 21861,
+      "competitionId": 524,
+      "team_a": 3315,
+      "team_b": 3176
     },
     {
-      "player_id": 3671,
-      "competitionId": 795,
-      "team_a": 687,
-      "team_b": 678
+      "player_id": 22381,
+      "competitionId": 524,
+      "team_a": 3194,
+      "team_b": 3193
     },
     {
-      "player_id": 370,
+      "player_id": 25572,
       "competitionId": 364,
-      "team_a": 1619,
-      "team_b": 1612
+      "team_a": 1633,
+      "team_b": 10531
     },
     {
       "player_id": 25577,
@@ -149,16 +176,28 @@
       "team_b": 677
     },
     {
-      "player_id": 25572,
+      "player_id": 105338,
       "competitionId": 364,
-      "team_a": 1633,
-      "team_b": 10531
+      "team_a": 1611,
+      "team_b": 1609
     },
     {
-      "player_id": 8284,
-      "competitionId": 364,
-      "team_a": 1623,
-      "team_b": 1646
+      "player_id": 149053,
+      "competitionId": 412,
+      "team_a": 3775,
+      "team_b": 3795
+    },
+    {
+      "player_id": 264989,
+      "competitionId": 412,
+      "team_a": 3774,
+      "team_b": 3780
+    },
+    {
+      "player_id": 274435,
+      "competitionId": 795,
+      "team_a": 695,
+      "team_b": 682
     },
     {
       "player_id": 275032,
@@ -167,10 +206,10 @@
       "team_b": 3783
     },
     {
-      "player_id": 22381,
-      "competitionId": 524,
-      "team_a": 3194,
-      "team_b": 3193
+      "player_id": 284469,
+      "competitionId": 426,
+      "team_a": 2445,
+      "team_b": 2451
     }
   ],
   "full_population": {

@@ -134,6 +134,26 @@ def test_identify_transferred_players_ignores_players_not_in_eligible():
     assert result["player_id"].to_list() == [1]
 
 
+def test_identify_transferred_players_output_order_is_deterministic():
+    """Regression test (D015): the result is exported verbatim into the
+    versioned transfer artifact, and the first fresh-run drift-test
+    execution caught its row order shuffling between identical runs
+    (Polars join order isn't guaranteed). The function must sort."""
+    eligible = pl.DataFrame({"player_id": [3, 1, 2], "competitionId": [100, 100, 100]})
+    primary_team = pl.DataFrame({
+        "player_id": [1, 1, 2, 2, 3, 3],
+        "competitionId": [100] * 6,
+        "period": ["A", "B", "A", "B", "A", "B"],
+        "team_id": [500, 600, 500, 700, 500, 800],  # all three transferred
+    })
+    result = identify_transferred_players(eligible, primary_team)
+    assert result["player_id"].to_list() == [1, 2, 3]
+
+    eligible_other_order = eligible.sort("player_id", descending=True)
+    result_other = identify_transferred_players(eligible_other_order, primary_team)
+    assert result_other.to_dicts() == result.to_dicts()
+
+
 def test_neighbor_concentration_rejects_duplicate_player_id_in_query_attribute():
     """Regression test for a real bug: compute_primary_team runs over every
     competition (including internationals), so a player who also appears

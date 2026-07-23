@@ -266,6 +266,8 @@ def run_global_retrieval_experiment(
     competition_ids: list[int],
     feature_columns: list[str] = FEATURE_COLUMNS,
     scope_column: str | None = None,
+    n_resamples: int = 1000,
+    seed: int = 0,
 ) -> dict:
     """End-to-end retrieval run (SLS-018 global condition when
     `scope_column=None`; SLS-019's within-role condition when
@@ -291,7 +293,7 @@ def run_global_retrieval_experiment(
     ranks_b = run_baseline_b_retrieval(query_a_std, candidates_b_std, feature_columns, scope_column=scope_column)
     metrics_b = compute_metrics(ranks_b["rank"].to_list())
 
-    delta = bootstrap_mrr_delta(ranks_a, ranks_b)
+    delta = bootstrap_mrr_delta(ranks_a, ranks_b, n_resamples=n_resamples, seed=seed)
 
     return {
         "n_eligible_player_competition": eligible.select("player_id", "competitionId").unique().height,
@@ -310,6 +312,8 @@ def run_within_role_retrieval_experiment(
     minutes_threshold: int,
     competition_ids: list[int],
     feature_columns: list[str] = FEATURE_COLUMNS,
+    n_resamples: int = 1000,
+    seed: int = 0,
 ) -> dict:
     """SLS-019: identical to the global experiment (SLS-018) except each
     query's candidate pool is restricted to players sharing its nominal
@@ -320,5 +324,6 @@ def run_within_role_retrieval_experiment(
     re-normalizing away cross-role variance that might itself be
     meaningful."""
     return run_global_retrieval_experiment(
-        period_profiles, role_lookup, minutes_threshold, competition_ids, feature_columns, scope_column="role"
+        period_profiles, role_lookup, minutes_threshold, competition_ids, feature_columns,
+        scope_column="role", n_resamples=n_resamples, seed=seed,
     )

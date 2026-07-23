@@ -1,0 +1,13 @@
+{
+  "config_version": 1,
+  "description": "Single versioned source of the experiment parameters consumed by scoutlens.evaluation.run_report / run_robustness / run_transfer_analysis. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+  "domestic_leagues": [364, 412, 426, 524, 795],
+  "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+  "primary_minutes_threshold": 450,
+  "sensitivity_thresholds": [225, 450, 675, 900, 1125, 1350],
+  "top_k_for_diagnostics": 10,
+  "bootstrap": {
+    "n_resamples": 1000,
+    "seed": 0
+  }
+}

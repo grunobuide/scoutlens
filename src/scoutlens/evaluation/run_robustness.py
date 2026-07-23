@@ -7,10 +7,10 @@ Run with:
 
     uv run python -m scoutlens.evaluation.run_robustness
 
-Writes artifacts/robustness_results.json. Same scope/config
-philosophy as run_report.py: inlined constants, not an external config
-system (see that module's docstring and feasibility-report.md limitation
-#14 for what's still open).
+Writes artifacts/robustness_results.json. Same scope/config philosophy
+as run_report.py: parameters come from the versioned
+`config/experiment.json`, and the artifact embeds a `_manifest` (see
+`run_manifest.py`, D015).
 
 Checks:
 1. Standardization fit on period A alone vs. today's A+B combined fit (D008).
@@ -25,14 +25,13 @@ Checks:
 
 from __future__ import annotations
 
-import datetime
 import json
-import subprocess
 from pathlib import Path
 
 import polars as pl
 
 from scoutlens.evaluation.diagnostics import compute_primary_team
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.retrieval import (
     bootstrap_mrr_delta,
     compute_metrics,
@@ -50,20 +49,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
 
-DOMESTIC_LEAGUES = [364, 412, 426, 524, 795]
-PRIMARY_MINUTES_THRESHOLD = 450
-
-
-def _run_metadata() -> dict:
-    """See run_report.py's version of this — same lightweight provenance,
-    not the full versioned-config/checksum manifest (still open)."""
-    try:
-        commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True, stderr=subprocess.DEVNULL
-        ).strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        commit = None
-    return {"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "git_commit": commit}
+INPUT_FILES = ("players", "matches", "minutes", "events")
 
 
 def _role_lookup(players: pl.DataFrame) -> pl.DataFrame:
@@ -158,21 +144,27 @@ def check_drop_teammates(eligible_with_team: pl.DataFrame) -> dict:
     return compute_metrics(ranks).__dict__
 
 
-def check_feature_family_ablation(period_profiles: pl.DataFrame, role_lookup: pl.DataFrame) -> dict:
+def check_feature_family_ablation(
+    period_profiles: pl.DataFrame, role_lookup: pl.DataFrame, minutes_threshold: int, leagues: list[int]
+) -> dict:
     results = {}
     for family, cols in FEATURE_FAMILIES.items():
         r = run_global_retrieval_experiment(
-            period_profiles, role_lookup, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES, feature_columns=cols
+            period_profiles, role_lookup, minutes_threshold, leagues, feature_columns=cols
         )
         results[family] = {"n_features": len(cols), "mrr": r["baseline_b"].mrr, "median_rank": r["baseline_b"].median_rank}
     return results
 
 
 def run() -> dict:
+    config = load_experiment_config()
+    leagues = config["domestic_leagues"]
+    minutes_threshold = config["primary_minutes_threshold"]
+
     period_profiles, players, matches, minutes, period_assignment = _load_period_profiles()
     role_lookup = _role_lookup(players)
 
-    eligible = select_eligible_both_periods(period_profiles, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES)
+    eligible = select_eligible_both_periods(period_profiles, minutes_threshold, leagues)
     eligible = eligible.join(role_lookup, on="player_id", how="left")
 
     primary_team = compute_primary_team(minutes, period_assignment).select(
@@ -186,14 +178,17 @@ def run() -> dict:
     baseline_a_metrics = compute_metrics(baseline_a["rank"].to_list()).__dict__
 
     return {
-        "_metadata": _run_metadata(),
-        "config": {"domestic_leagues": DOMESTIC_LEAGUES, "minutes_threshold": PRIMARY_MINUTES_THRESHOLD},
+        "_manifest": build_run_manifest(
+            config, [PROCESSED_DIR / f"{name}.parquet" for name in INPUT_FILES]
+        ),
         "baseline_a_reference": baseline_a_metrics,
         "check_1_standardization_fit": check_a_only_vs_combined_scaling(eligible),
         "check_2_distance_metric": check_cosine_vs_euclidean(eligible),
         "check_3_baseline_c_role_team_minutes": check_baseline_c(eligible_with_team),
         "check_4_drop_teammates": check_drop_teammates(eligible_with_team),
-        "check_5_feature_family_ablation": check_feature_family_ablation(period_profiles, role_lookup),
+        "check_5_feature_family_ablation": check_feature_family_ablation(
+            period_profiles, role_lookup, minutes_threshold, leagues
+        ),
     }
 
 

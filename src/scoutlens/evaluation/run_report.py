@@ -14,11 +14,10 @@ feasibility-report.md/context-diagnostics.md are inspectable without
 re-running anything, and `tests/evaluation/test_artifacts.py` can catch
 drift between this file and the docs that quote it.
 
-Configuration is inlined below rather than an external file — proportional
-to a single-experiment spike, not a claim that this is the final shape a
-multi-experiment version of this tool should take (see limitation #14 in
-feasibility-report.md: a versioned config + run-manifest with checksums
-is real future work, not attempted here).
+Configuration comes from the versioned `config/experiment.json` (D015 —
+see `run_manifest.py`), and the emitted artifact embeds a `_manifest`
+tying the numbers to the exact config, code commit, environment, and
+input-file checksums that produced them.
 
 Reproducibility note: `bootstrap_mrr_delta` explicitly sorts its paired
 query set by `(player_id, competitionId)` before resampling (fixed after
@@ -30,14 +29,13 @@ not just the point estimates.
 from __future__ import annotations
 
 import dataclasses
-import datetime
 import json
-import subprocess
 from pathlib import Path
 
 import polars as pl
 
 from scoutlens.evaluation.diagnostics import compute_primary_team, neighbor_concentration
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.retrieval import (
     get_top_k_neighbors,
     run_global_retrieval_experiment,
@@ -52,25 +50,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
 
-DOMESTIC_LEAGUES = [364, 412, 426, 524, 795]  # England, France, Germany, Italy, Spain
-PRIMARY_MINUTES_THRESHOLD = 450
-SENSITIVITY_THRESHOLDS = [225, 450, 675, 900, 1125, 1350]
-TOP_K_FOR_DIAGNOSTICS = 10
-
-
-def _run_metadata() -> dict:
-    """Lightweight provenance: which commit and when. Not the full
-    versioned-config/data-checksum manifest flagged as still-open in
-    feasibility-report.md's limitations — just enough that a reviewer
-    reading a committed artifacts/*.json can tell which code produced it,
-    without re-deriving that from git log timestamps."""
-    try:
-        commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True, stderr=subprocess.DEVNULL
-        ).strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        commit = None
-    return {"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "git_commit": commit}
+INPUT_FILES = ("competitions", "teams", "players", "matches", "minutes", "events")
 
 
 def _metrics_to_dict(m) -> dict:
@@ -89,6 +69,12 @@ def _role_lookup(players: pl.DataFrame) -> pl.DataFrame:
 
 
 def run() -> dict:
+    config = load_experiment_config()
+    leagues = config["domestic_leagues"]
+    minutes_threshold = config["primary_minutes_threshold"]
+    n_resamples = config["bootstrap"]["n_resamples"]
+    seed = config["bootstrap"]["seed"]
+
     data = _load_processed()
     events = pl.read_parquet(PROCESSED_DIR / "events.parquet")
     role_lookup = _role_lookup(data["players"])
@@ -97,19 +83,19 @@ def run() -> dict:
     period_profiles = build_period_profiles(events, data["minutes"], period_assignment)
 
     global_result = run_global_retrieval_experiment(
-        period_profiles, role_lookup, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES
+        period_profiles, role_lookup, minutes_threshold, leagues, n_resamples=n_resamples, seed=seed
     )
     within_role_result = run_within_role_retrieval_experiment(
-        period_profiles, role_lookup, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES
+        period_profiles, role_lookup, minutes_threshold, leagues, n_resamples=n_resamples, seed=seed
     )
 
     # --- context diagnostics (team/league concentration, true matches excluded) ---
-    eligible = select_eligible_both_periods(period_profiles, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES)
+    eligible = select_eligible_both_periods(period_profiles, minutes_threshold, leagues)
     eligible = eligible.join(role_lookup, on="player_id", how="left")
     combined_std = impute_and_standardize(eligible, FEATURE_COLUMNS)
     query_a_std = combined_std.filter(pl.col("period") == "A")
     candidates_b_std = combined_std.filter(pl.col("period") == "B")
-    top_k = get_top_k_neighbors(query_a_std, candidates_b_std, FEATURE_COLUMNS, k=TOP_K_FOR_DIAGNOSTICS)
+    top_k = get_top_k_neighbors(query_a_std, candidates_b_std, FEATURE_COLUMNS, k=config["top_k_for_diagnostics"])
 
     # compute_primary_team runs over EVERY competition a player appears in
     # (Euro/WC included, and a player can even have minutes in two
@@ -136,8 +122,10 @@ def run() -> dict:
 
     # --- minutes sensitivity curve ---
     sensitivity = []
-    for threshold in SENSITIVITY_THRESHOLDS:
-        r = run_global_retrieval_experiment(period_profiles, role_lookup, threshold, DOMESTIC_LEAGUES)
+    for threshold in config["sensitivity_thresholds"]:
+        r = run_global_retrieval_experiment(
+            period_profiles, role_lookup, threshold, leagues, n_resamples=n_resamples, seed=seed
+        )
         sensitivity.append({
             "threshold": threshold,
             "n_eligible": r["n_eligible_player_competition"],
@@ -149,13 +137,9 @@ def run() -> dict:
         })
 
     return {
-        "_metadata": _run_metadata(),
-        "config": {
-            "domestic_leagues": DOMESTIC_LEAGUES,
-            "primary_minutes_threshold": PRIMARY_MINUTES_THRESHOLD,
-            "sensitivity_thresholds": SENSITIVITY_THRESHOLDS,
-            "top_k_for_diagnostics": TOP_K_FOR_DIAGNOSTICS,
-        },
+        "_manifest": build_run_manifest(
+            config, [PROCESSED_DIR / f"{name}.parquet" for name in INPUT_FILES]
+        ),
         "global": {
             "n_eligible": global_result["n_eligible_player_competition"],
             "baseline_a": _metrics_to_dict(global_result["baseline_a"]),

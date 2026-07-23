@@ -20,14 +20,13 @@ Writes artifacts/transfer_analysis_results.json.
 
 from __future__ import annotations
 
-import datetime
 import json
-import subprocess
 from pathlib import Path
 
 import polars as pl
 
 from scoutlens.evaluation.diagnostics import compute_primary_team, identify_transferred_players
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.retrieval import (
     bootstrap_mrr_delta,
     compute_metrics,
@@ -44,20 +43,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
 
-DOMESTIC_LEAGUES = [364, 412, 426, 524, 795]
-PRIMARY_MINUTES_THRESHOLD = 450
-
-
-def _run_metadata() -> dict:
-    """See run_report.py's version of this — same lightweight provenance,
-    not the full versioned-config/checksum manifest (still open)."""
-    try:
-        commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True, stderr=subprocess.DEVNULL
-        ).strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        commit = None
-    return {"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "git_commit": commit}
+INPUT_FILES = ("players", "matches", "minutes", "events")
 
 
 def _role_lookup(players: pl.DataFrame) -> pl.DataFrame:
@@ -65,6 +51,12 @@ def _role_lookup(players: pl.DataFrame) -> pl.DataFrame:
 
 
 def run() -> dict:
+    config = load_experiment_config()
+    leagues = config["domestic_leagues"]
+    minutes_threshold = config["primary_minutes_threshold"]
+    n_resamples = config["bootstrap"]["n_resamples"]
+    seed = config["bootstrap"]["seed"]
+
     players = pl.read_parquet(PROCESSED_DIR / "players.parquet")
     matches = pl.read_parquet(PROCESSED_DIR / "matches.parquet")
     minutes = pl.read_parquet(PROCESSED_DIR / "minutes.parquet")
@@ -74,7 +66,7 @@ def run() -> dict:
     period_assignment = assign_periods(matches)
     period_profiles = build_period_profiles(events, minutes, period_assignment)
 
-    eligible = select_eligible_both_periods(period_profiles, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES)
+    eligible = select_eligible_both_periods(period_profiles, minutes_threshold, leagues)
     eligible = eligible.join(role_lookup, on="player_id", how="left")
 
     primary_team = compute_primary_team(minutes, period_assignment)
@@ -115,12 +107,13 @@ def run() -> dict:
             "baseline_c": compute_metrics(ranks_c["rank"].to_list()).__dict__ if ranks_c.height else None,
         }
         if ranks_a.height and ranks_b.height:
-            result["mrr_delta_b_minus_a"] = bootstrap_mrr_delta(ranks_a, ranks_b, n_resamples=1000, seed=0)
+            result["mrr_delta_b_minus_a"] = bootstrap_mrr_delta(ranks_a, ranks_b, n_resamples=n_resamples, seed=seed)
         return result
 
     return {
-        "_metadata": _run_metadata(),
-        "config": {"domestic_leagues": DOMESTIC_LEAGUES, "minutes_threshold": PRIMARY_MINUTES_THRESHOLD},
+        "_manifest": build_run_manifest(
+            config, [PROCESSED_DIR / f"{name}.parquet" for name in INPUT_FILES]
+        ),
         "n_eligible_total": eligible.select("player_id", "competitionId").unique().height,
         "n_transferred": transferred.height,
         "transferred_pairs": transferred.to_dicts(),
