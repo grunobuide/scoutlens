@@ -24,6 +24,8 @@ bd close <id>         # Complete work
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md for details and anti-patterns.
 
+**JSONL policy (decided 2026-07-23, scoutlens-dij):** `.beads/issues.jsonl` is **tracked in git deliberately** — backlog changes ride along with PRs as reviewable diffs. The Dolt DB remains the source of truth: on any git conflict in `issues.jsonl`, take the newest export or regenerate from the DB — never hand-merge JSONL lines. Windows note: `bd dolt push/pull` requires `git config --global core.longpaths true` (the embedded Dolt's git-remote-cache paths exceed 260 chars; the failure mode is a misleading `Filename too long` wrapped in credential hints).
+
 ## Agent Context Profiles
 
 The managed Beads block is task-tracking guidance, not permission to override repository, user, or orchestrator instructions.
