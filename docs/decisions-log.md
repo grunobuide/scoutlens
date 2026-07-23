@@ -378,3 +378,46 @@ The StatsBomb recommendation, report-language consistency, and the
 transfer-analysis metric picture are corrected in the same pass — see
 each document's own change for specifics rather than duplicating them
 here.
+
+---
+
+## D014 — 2026-07-23 — StatsBomb mini Gate 0: GO for the replication epic, with license constraints
+
+**Decision:** clear `scoutlens-8mc.1` (license + match-count audit) with a
+**GO** for non-commercial research replication on StatsBomb Open Data
+2015/16, scoped to Premier League (2), Ligue 1 (7), La Liga (11), and
+Serie A (12), season_id 27, pinned to repository commit
+`b0bc9f22dd77c206ddedc1d742893b3bbe64baec`. Full audit:
+[`statsbomb-provenance.md`](statsbomb-provenance.md).
+
+**Why:** D012/D013 left the StatsBomb verification explicitly
+non-exhaustive (file-size scaling, surface-level license check). This
+audit closed both gaps against the actual files:
+
+1. **Counts, exact:** PL/La Liga/Serie A 380 each; Ligue 1 **377** (the
+   release omits Bastia–Gazélec Ajaccio wk 14, Saint-Étienne–PSG wk 23,
+   Troyes–Bordeaux wk 36 — six clubs at 37 matches, negligible for
+   aggregates but the Ligue 1 validation must expect it); Bundesliga 34
+   (Leverkusen-only — exclusion confirmed); La Liga 2018/19 re-confirmed
+   as the Messi release (Barcelona in all 34 files, not even
+   Barcelona-complete). Events + lineups files exist for all 1,517
+   candidate matches (verified via full git-tree listings, not
+   sampling).
+2. **License, per-clause:** the "StatsBomb Public Data User Agreement"
+   (LICENSE.pdf, 2023-09-08) is *not* an open license. Redistribution of
+   the data is prohibited (1.2.1, 7); commercial exploitation of the
+   data **and of derived analyses** is prohibited (1.2.2); publishing
+   analysis is allowed but requires StatsBomb logo attribution (1.4 +
+   README); user registration is requested (2.2). All materially
+   stricter than the Wyscout CC BY 4.0.
+
+**How to apply:** acquisition code (`scoutlens-8mc.2`) pins the source
+to the audited commit SHA and downloads only competitions {2,7,11,12} ×
+season 27. Raw *and* per-player derived StatsBomb tables stay out of
+Git (license obligation now, not just hygiene). Any published
+StatsBomb-derived result must carry logo attribution and stays
+non-commercial; the Wyscout-vs-StatsBomb asymmetry in licensing must be
+stated wherever the two sets of results are compared. Remaining user
+actions before acquisition: register at statsbomb.com/resource-centre
+(recommended), decide how the logo obligation will be met at
+publication time.
