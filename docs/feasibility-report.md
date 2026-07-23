@@ -411,12 +411,14 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
 9. **Code license for this repository is still undecided** (independent
    of the CC BY 4.0 data license), deferred by the user pending public
    positioning of the project.
-10. **Standardization is fit on the combined A+B population** (D008) —
-    defensible for a transductive, retrieval-style evaluation where both
-    periods are known in advance, but not yet compared against fitting
-    the scaler on period A alone (closer to how a production system would
-    actually operate on a genuinely-unseen period B). Worth a direct
-    ablation before relying on the exact magnitude of the reported MRR.
+10. **Resolved by the robustness battery:** the default standardization
+    is fit on the combined A+B population (D008), but
+    [`robustness-checks.md` Check 1](robustness-checks.md#check-1--standardization-fit-a-only-vs-ab-combined)
+    directly compared it with fitting on period A alone. MRR was 0.2539
+    with the combined fit and 0.2543 with the A-only fit (median rank 16
+    in both), so the transductive choice is not meaningfully inflating
+    this result. A genuinely unseen production period should still use a
+    scaler fit only on historical data.
 11. **Ratio features computed from very few attempts can be extreme and
     over-trusted** — a player with 1 shot and 1 goal gets
     `shot_conversion_pct = 1.0`, the same numeric value as a striker who
