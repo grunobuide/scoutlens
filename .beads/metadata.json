@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "scoutlens",
+  "project_id": "2c766d4b-a589-47a0-9a0d-447479ee87cb"
+}
