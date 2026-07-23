@@ -259,6 +259,78 @@ def bootstrap_mrr_delta(
     return {"point_estimate": point_estimate, "ci_low": lo, "ci_high": hi, "n_resamples": n_resamples, "n_queries": n}
 
 
+def bootstrap_mrr_delta_clustered(
+    ranks_a: pl.DataFrame,
+    ranks_b: pl.DataFrame,
+    clusters: pl.DataFrame,
+    n_resamples: int = 1000,
+    seed: int = 0,
+) -> dict:
+    """Cluster bootstrap for MRR(B) - MRR(A): resamples whole *clusters*
+    of queries with replacement instead of individual queries, so
+    within-cluster correlation (teammates' retrieval difficulty moving
+    together, league-level effects) widens the interval instead of being
+    ignored — the check feasibility-report.md's Limitation #12 asked for.
+
+    `clusters` maps every query to a cluster: columns `player_id`,
+    `competitionId`, `cluster` (any hashable dtype — team_id, league id).
+    Queries missing from `clusters` (null after the left join) raise:
+    silently dropping them would change the estimand.
+
+    Same determinism contract as `bootstrap_mrr_delta`: sorted before
+    resampling, fixed seed reproduces bit-identical CI bounds. Each
+    resample draws `n_clusters` clusters with replacement and pools
+    their queries, so resample sizes vary with cluster sizes — standard
+    for the cluster bootstrap; the delta is a per-resample mean, so
+    unequal sizes are handled naturally."""
+    paired = (
+        ranks_a.join(ranks_b, on=["player_id", "competitionId"], suffix="_b")
+        .join(clusters, on=["player_id", "competitionId"], how="left")
+        .sort(["player_id", "competitionId"])
+        .select(pl.col("rank").alias("rank_a"), pl.col("rank_b"), pl.col("cluster"))
+    )
+    if paired["cluster"].null_count() > 0:
+        raise ValueError(
+            f"{paired['cluster'].null_count()} queries have no cluster assignment — "
+            "the clusters table must cover every (player_id, competitionId) query"
+        )
+    n = paired.height
+    by_cluster: dict = {}
+    for rank_a, rank_b, cluster in paired.iter_rows():
+        by_cluster.setdefault(cluster, []).append((1.0 / rank_a, 1.0 / rank_b))
+    cluster_ids = sorted(by_cluster)
+    n_clusters = len(cluster_ids)
+
+    import random
+    rng = random.Random(seed)
+    deltas = []
+    for _ in range(n_resamples):
+        total_a = total_b = 0.0
+        count = 0
+        for _ in range(n_clusters):
+            drawn = by_cluster[cluster_ids[rng.randrange(n_clusters)]]
+            for rr_a, rr_b in drawn:
+                total_a += rr_a
+                total_b += rr_b
+            count += len(drawn)
+        deltas.append((total_b - total_a) / count)
+
+    deltas.sort()
+    lo = deltas[int(0.025 * n_resamples)]
+    hi = deltas[int(0.975 * n_resamples) - 1]
+    point_estimate = (
+        sum(1.0 / r for r in paired["rank_b"]) - sum(1.0 / r for r in paired["rank_a"])
+    ) / n
+    return {
+        "point_estimate": point_estimate,
+        "ci_low": lo,
+        "ci_high": hi,
+        "n_resamples": n_resamples,
+        "n_queries": n,
+        "n_clusters": n_clusters,
+    }
+
+
 def run_global_retrieval_experiment(
     period_profiles: pl.DataFrame,
     role_lookup: pl.DataFrame,

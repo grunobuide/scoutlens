@@ -526,3 +526,34 @@ data-gated tests keep the reconciliation true (per-competition counts,
 the 4,362/3,618 arithmetic, and the harmlessness of the 15 unprofiled
 players). Anyone citing the dataset's size should cite 3,603 profiled
 players (or 3,618 rostered), never 4,299.
+
+---
+
+## D018 — 2026-07-23 — Cluster-aware bootstrap: the headline CI survives team- and league-level resampling
+
+**Decision:** close Known Limitation #12 (beads `scoutlens-n44`) as
+**checked, conclusion unchanged**: `bootstrap_mrr_delta_clustered`
+(retrieval.py) resamples whole clusters instead of independent queries,
+and robustness-checks.md Check 6 reports it beside the published
+interval. The i.i.d. interval stays the published headline, explicitly
+labeled approximate; the clustered intervals are the calibration check,
+not a replacement.
+
+**Why:** queries share teams and leagues, so the i.i.d. bootstrap's
+independence assumption was a documented but untested caveat. Results
+(same seed/resamples as the published numbers, from
+config/experiment.json): i.i.d. CI [0.2083, 0.2479]; team-clustered
+(98 clusters, the meaningful unit) [0.2044, 0.2525] — ~23% wider;
+league-clustered (5 clusters — far too few for a calibrated bootstrap,
+reported as a stress test only) [0.1952, 0.2510]. The MRR delta of
+0.2283 stays far from zero under every resampling scheme, so
+Limitation #12's "likely survives a more conservative interval" is now
+verified rather than assumed.
+
+**How to apply:** any future headline CI on paired retrieval deltas
+should report the team-clustered interval alongside the i.i.d. one
+(Check 6's pattern); the function raises on queries missing a cluster
+assignment rather than silently dropping them. Unit tests cover
+determinism, input-order independence, the single-cluster degenerate
+case, unmapped-query rejection, and point-estimate agreement with the
+i.i.d. bootstrap.
