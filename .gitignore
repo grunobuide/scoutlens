@@ -2,6 +2,12 @@ data/*
 !data/README.md
 artifacts/*
 !artifacts/README.md
+# Small (a few KB) regenerable result summaries -- versioned so a clone
+# can inspect published numbers without re-running the pipeline; still
+# regenerated fresh, not hand-edited, by their respective run_*.py script.
+!artifacts/gate2_results.json
+!artifacts/robustness_results.json
+!artifacts/transfer_analysis_results.json
 *.parquet
 .venv/
 __pycache__/

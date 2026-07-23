@@ -227,9 +227,17 @@ def bootstrap_mrr_delta(
     """Paired bootstrap over queries for MRR(B) - MRR(A). `ranks_a`/`ranks_b`
     must cover the same (player_id, competitionId) query set — joined here
     to guarantee alignment before resampling, rather than trusting caller
-    row order."""
-    paired = ranks_a.join(ranks_b, on=["player_id", "competitionId"], suffix="_b").select(
-        pl.col("rank").alias("rank_a"), pl.col("rank_b")
+    row order. Explicitly sorted by (player_id, competitionId) after the
+    join, not just joined: a join's output row order isn't guaranteed by
+    polars, so without this sort, `rng.randrange` draws against index
+    positions that could vary run to run even with the same seed —
+    harmless for the point estimate (order-invariant) but a real source
+    of the ~0.002 CI-bound jitter observed across runs before this fix
+    (found in review; previously only documented as a caveat)."""
+    paired = (
+        ranks_a.join(ranks_b, on=["player_id", "competitionId"], suffix="_b")
+        .sort(["player_id", "competitionId"])
+        .select(pl.col("rank").alias("rank_a"), pl.col("rank_b"))
     )
     n = paired.height
     rank_a = paired["rank_a"].to_list()

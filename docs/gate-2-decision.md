@@ -16,7 +16,7 @@ and limitations.
 | Baseline B beats Baseline A materially | yes | MRR 0.0256 → 0.2539 (global, ~10x); 0.0256 → 0.2787 (within-role) | [`temporal-retrieval-global.md`](temporal-retrieval-global.md), [`temporal-retrieval-within-role.md`](temporal-retrieval-within-role.md) |
 | Gain has a consistent confidence interval | yes | CI excludes 0 at every minutes threshold tested, 225–1,350 min | [`context-diagnostics.md`](context-diagnostics.md) |
 | Signal holds up within-role | yes | Within-role delta (+0.253, CI [0.232, 0.274]) is at least as large as the global delta (+0.228, CI [0.208, 0.248]) — structurally can't be explained by Baseline A's free role-matching, since Baseline A's own numbers didn't move | [`temporal-retrieval-within-role.md`](temporal-retrieval-within-role.md) |
-| No collapse in the main strata | yes, with a noted exception | Team confound ~1.24x enriched, league ~1.08x — both small (see correction below). Goalkeeper is the weakest role stratum (MRR 0.129) but still clearly positive, plausibly because the feature catalog (SLS-013) is built almost entirely around outfield actions | [`context-diagnostics.md`](context-diagnostics.md) |
+| No collapse in the main strata | yes, with a noted exception | Team confound ~1.14x enriched, league ~1.08x — both small (see corrections below). Goalkeeper is the weakest role stratum (MRR 0.129) but still clearly positive, plausibly because the feature catalog (SLS-013) is built almost entirely around outfield actions | [`context-diagnostics.md`](context-diagnostics.md) |
 | Errors are investigable and explicable | yes | Worst cases have identifiable, heterogeneous causes (genuine profile change at 3 of 4 top misses; sample-size noise at 1 of 4) rather than being unexplained; close misses are football-coherent (attacking-fullback and defensive-midfielder sub-clusters), not arbitrary | [`error-analysis.md`](error-analysis.md) |
 
 Every criterion clears, several with considerable margin. This is a
@@ -30,16 +30,31 @@ analysis counted a query's own correctly-retrieved true match as a
 "neighbor" — which trivially shares the query's team, inflating the
 apparent team effect roughly 4x. Fixed (`diagnostics.py` now excludes
 true matches from concentration calculations by default) and re-run; the
-corrected numbers (~1.24x team, ~1.08x league) are smaller than
-originally reported, which *strengthens* this row's conclusion rather
-than weakening it. Full before/after: [`context-diagnostics.md`](context-diagnostics.md).
+corrected numbers were smaller than originally reported, which
+*strengthens* this row's conclusion rather than weakening it. Full
+before/after: [`context-diagnostics.md`](context-diagnostics.md).
 A second, independent bug was found and fixed in the same review: the
 retrieval matching logic identified the true match by `player_id` alone
 rather than `(player_id, competitionId)` per D007 — currently harmless
-(no player appears in two domestic competitions in this dataset) but
-would silently misbehave with multi-season or multi-competition data.
-Fixed with regression tests; headline MRR/CI numbers are unchanged by
-this fix (verified by re-running).
+for the headline retrieval numbers (no eligible player appears in two
+domestic competitions), but would silently misbehave with multi-season
+or multi-competition data. Fixed with regression tests; headline MRR/CI
+numbers are unchanged by this fix (verified by re-running).
+
+**Second correction (2026-07-22, second review round, D013):** the
+team-confound figure above was *itself* still wrong — 1.30%, not the
+1.20% now shown — because the diagnostic's `player_id`-keyed join was
+vulnerable to the same class of bug as the D007 fix, just in a different
+function: `compute_primary_team` runs over every competition a player
+appears in, so 28.7% of the eligible population (361 of 1,257 — mostly
+via Euro/World Cup appearances, plus a smaller number of genuine
+mid-season transfers *between* two of the five domestic leagues) had
+duplicate `player_id` rows feeding `neighbor_concentration`'s join.
+`neighbor_concentration` now raises `ValueError` on a duplicated
+`player_id` in its input rather than silently over- or under-counting —
+this caught the bug immediately on re-run, rather than requiring another
+manual audit. Corrected: team ~1.14x (not 1.24x), league unaffected at
+~1.08x. Still small; still strengthens rather than weakens this row.
 
 ## What Gate 2 does — and does not — license
 
@@ -105,11 +120,12 @@ framing, not an independently verified finding.
   itself). **Directly tested the same day**
   ([`transfer-analysis.md`](transfer-analysis.md)): among the 26 eligible
   players who *did* change clubs between periods, the team-based baseline
-  collapses to chance level while Baseline B's advantage over Baseline A
-  holds essentially unchanged — encouraging direct confirmation that the
-  retrieval result isn't just measuring team continuity, though n=26 is
-  small and a larger sample (another season) is still the natural
-  follow-up, now the top item in
+  collapses to chance level, unambiguously. Baseline B's advantage over
+  Baseline A also survives, but a closer look than MRR alone (median rank,
+  Recall@5/10) shows real, moderate degradation for this subset — a
+  smaller, more mixed win than "unchanged," not a clean null result
+  either. n=26 is small and a larger sample (another season) is still the
+  natural follow-up, now the top item in
   [`feasibility-report.md`](feasibility-report.md)'s next-experiment list.
 
 ## Next step

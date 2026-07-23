@@ -34,9 +34,24 @@ Of the 12,570 (query, neighbor) pairs, 544 (4.3%) were the true match
 itself, retrieved into its own top-10 — a data point about retrieval
 quality, not about confounds, and excluded from the table below.
 
+**Second correction (2026-07-22, second review round):** the team
+concentration number above was itself computed from a `player_id`-keyed
+join that could silently duplicate rows — `compute_primary_team` runs
+over every competition a player appears in (Euro/World Cup included, and
+even two different domestic leagues after a mid-season inter-league
+transfer), so selecting `player_id + team_id` without scoping to exactly
+this population's own `(player_id, competitionId, period)` risks a
+player_id appearing twice with two different teams. 28.7% of the eligible
+population (361 of 1,257) is affected via international-competition
+appearances alone. `neighbor_concentration` now raises `ValueError` on a
+duplicated `player_id` instead of silently over- or under-counting
+(caught this exact bug when re-running after adding the check — see
+decisions-log.md D013). Corrected team concentration: **1.20%**, not
+1.30%.
+
 | Confound | Observed (excluding true matches) | Expected under random neighbor selection | Enrichment |
 |---|---|---|---|
-| Same primary team as query | 1.30% | 1.05% (98 teams, actual squad-size-weighted) | ~1.24x |
+| Same primary team as query | 1.20% | 1.05% (98 teams, actual squad-size-weighted) | ~1.14x |
 | Same league as query | 21.64% | 20.06% (actual league-size-weighted, leagues are near-equal size) | ~1.08x |
 
 "Expected under random" is computed from the *actual* team/league size
@@ -46,7 +61,7 @@ naive uniform assumption would be wrong.
 
 **Reading:** once retrieval successes are correctly excluded, *both*
 confounds are small — team enrichment drops from an apparent ~4.6x to a
-real ~1.24x, and league enrichment is close to negligible at ~1.08x. This
+real ~1.14x, and league enrichment is close to negligible at ~1.08x. This
 is a **stronger** result for Gate 2 than the uncorrected numbers
 suggested, not a weaker one: among the genuine "wrong" or exploratory
 neighbors Baseline B surfaces, there is barely more team/league

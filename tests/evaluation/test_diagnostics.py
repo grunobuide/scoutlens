@@ -132,3 +132,36 @@ def test_identify_transferred_players_ignores_players_not_in_eligible():
     result = identify_transferred_players(eligible, primary_team)
     # player 2 transferred too (500->999) but isn't in `eligible`, so must not appear
     assert result["player_id"].to_list() == [1]
+
+
+def test_neighbor_concentration_rejects_duplicate_player_id_in_query_attribute():
+    """Regression test for a real bug: compute_primary_team runs over every
+    competition (including internationals), so a player who also appears
+    for their national team gets a second row -- feeding that unfiltered
+    into neighbor_concentration silently inflated a published confound
+    number instead of failing loudly."""
+    top_k = pl.DataFrame({
+        "query_player_id": [1], "competitionId": [100],
+        "neighbor_rank": [1], "neighbor_player_id": [2],
+    })
+    duplicated_query_attribute = pl.DataFrame({"player_id": [1, 1], "team_id": [500, 600]})
+    neighbor_attribute = pl.DataFrame({"player_id": [2], "team_id": [500]})
+    try:
+        neighbor_concentration(top_k, duplicated_query_attribute, neighbor_attribute, "team_id")
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "duplicate player_id" in str(e)
+
+
+def test_neighbor_concentration_rejects_duplicate_player_id_in_neighbor_attribute():
+    top_k = pl.DataFrame({
+        "query_player_id": [1], "competitionId": [100],
+        "neighbor_rank": [1], "neighbor_player_id": [2],
+    })
+    query_attribute = pl.DataFrame({"player_id": [1], "team_id": [500]})
+    duplicated_neighbor_attribute = pl.DataFrame({"player_id": [2, 2], "team_id": [500, 600]})
+    try:
+        neighbor_concentration(top_k, query_attribute, duplicated_neighbor_attribute, "team_id")
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "duplicate player_id" in str(e)

@@ -120,6 +120,30 @@ def test_bootstrap_mrr_delta_is_deterministic_with_fixed_seed():
     assert result1 == result2
 
 
+def test_bootstrap_mrr_delta_is_independent_of_input_row_order():
+    """Regression test for a real bug: the paired query set wasn't
+    explicitly sorted before resampling, so CI bounds (not the point
+    estimate) could vary run to run depending on incidental row order
+    from upstream joins -- not just theoretically, observed as ~0.002
+    jitter across real runs. A fixed seed must now give bit-identical
+    results regardless of the order ranks_a/ranks_b arrive in."""
+    ranks_a_forward = pl.DataFrame({
+        "player_id": [1, 2, 3], "competitionId": [100, 100, 100], "rank": [5, 3, 10],
+    })
+    ranks_b_forward = pl.DataFrame({
+        "player_id": [1, 2, 3], "competitionId": [100, 100, 100], "rank": [1, 1, 2],
+    })
+    ranks_a_shuffled = pl.DataFrame({
+        "player_id": [3, 1, 2], "competitionId": [100, 100, 100], "rank": [10, 5, 3],
+    })
+    ranks_b_shuffled = pl.DataFrame({
+        "player_id": [2, 3, 1], "competitionId": [100, 100, 100], "rank": [1, 2, 1],
+    })
+    result_forward = bootstrap_mrr_delta(ranks_a_forward, ranks_b_forward, n_resamples=200, seed=7)
+    result_shuffled = bootstrap_mrr_delta(ranks_a_shuffled, ranks_b_shuffled, n_resamples=200, seed=7)
+    assert result_forward == result_shuffled
+
+
 def test_bootstrap_mrr_delta_positive_when_b_strictly_better():
     """B ranks everyone at 1 (perfect), A ranks everyone worse -- the point
     estimate and the whole CI must be positive."""

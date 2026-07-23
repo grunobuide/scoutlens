@@ -45,21 +45,42 @@ from Baseline A's already-weak performance). This confirms directly, not
 just by inference, that Baseline C's strength was entirely about team
 continuity: remove that continuity and the baseline has nothing left.
 
-**Baseline B holds up.** MRR for transferred players (0.239) is close to
-its full-population value (0.254) — a modest, unsurprising dip given
-n=26, not a collapse. **The Baseline B − A delta is, to three decimal
-places, the same for transferred players as for the general population
-(+0.228 both times)** — the CI is far wider for the 26-player subset
-(as expected at this sample size) but still clears 0 by a comfortable
-margin ([0.089, 0.393]).
+**Baseline B's MRR holds up — but MRR alone overstates how uniform that
+is.** Flagged in a second review round: the full metric picture for
+transferred players is more mixed than "MRR nearly unchanged" alone
+suggests.
 
-This is the direct evidence D010 called for: **Baseline B's advantage
-over the trivial baseline is not an artifact of team continuity.** For
-the specific players where team continuity structurally cannot help —
-exactly the population a recruitment tool cares most about, since
-recruitment is fundamentally about players *changing* clubs — the
-event-derived signal is still there, at essentially the same strength as
-in the team-stable majority of the population.
+| Metric | Full population | Transferred only |
+|---|---|---|
+| MRR | 0.2539 | 0.2387 |
+| Median rank | 16 | **38.5** |
+| Recall@1 | 16.2% | **19.2%** (slightly better) |
+| Recall@5 | 34.5% | **26.9%** (worse) |
+| Recall@10 | 43.3% | **34.6%** (worse) |
+
+Median rank roughly doubles and Recall@5/10 both drop meaningfully — at
+n=26, MRR's near-parity is consistent with a small number of perfect
+(rank-1) retrievals propping up the average (Recall@1 of 19.2% is ~5 of
+26 queries) while the *rest* of the transferred population ranks
+noticeably worse than the general population's typical case. MRR is not
+wrong, but reading it alone as "performance is basically unchanged" would
+overstate the uniformity of the result.
+
+**The honest summary:** Baseline C's team-based advantage still
+completely and unambiguously collapses (0.589 → 0.010, the clean, large,
+unambiguous part of this finding) — that conclusion doesn't depend on
+which metric is used. Baseline B's advantage over Baseline A also
+survives (the B−A delta stays positive and the CI clears 0), but the
+*degree* to which Baseline B's absolute retrieval quality holds up for
+transferred players specifically is less clean than the MRR number alone
+implies — some real degradation is visible in rank distribution and
+Recall@5/10, plausibly reflecting that a new club changes real aspects of
+a transferred player's role/usage (new system, new teammates, different
+minutes pattern) on top of whatever the underlying individual signal is.
+This is exactly the kind of nuance a larger sample (another season) would
+resolve — n=26 cannot currently distinguish "mostly noise around a stable
+signal" from "a real, moderate degradation specific to transferred
+players."
 
 ## Honest caveats
 
