@@ -580,3 +580,76 @@ pyproject.toml; README's license section updated. Known Limitation #9
 in feasibility-report.md is closed. Any published analysis still
 carries the applicable *data* attribution obligations — MIT covers the
 code only.
+
+---
+
+## D020 — 2026-07-24 — StatsBomb feature-compatibility map: GO with a bounded redesign
+
+**Decision:** clear `scoutlens-8mc.4` (the design gate before the
+StatsBomb pipeline) with **GO, conditional on a frozen redesign**. Full
+inventory and rules: [`statsbomb-feature-compatibility.md`](statsbomb-feature-compatibility.md).
+
+**Why:** verified each of the 32 v0.1 feature concepts against a real
+StatsBomb 2015/16 events + lineup file (match 3754217), not the spec
+alone. Of the 32: 22 map directly, 6 by defensible approximation, 1 is
+unavailable (`smart_passes_p90` — Wyscout-proprietary), 1 is
+structurally non-comparable (`events_p90` — StatsBomb's event taxonomy is
+far denser: native Ball Receipt / Carry / Pressure inflate any
+total-event count), and 2 shift construct (the carry family: StatsBomb
+has a **native Carry event**, so what Wyscout measured by an Acceleration
+proxy is measured natively here). No NO-GO condition surfaced.
+
+Six structural differences documented and given frozen handling rules:
+event taxonomy (denser), coordinates (120×80 → normalize to Wyscout
+0–100 and reuse thresholds), possession (StatsBomb native → secondary set
+only), lineup/minutes (interval-based, cleaner than the Wyscout
+reconstruction), identifiers (disjoint namespaces → the replication is
+within-StatsBomb compared at the aggregate-metric level, not a
+cross-provider player merge), and missingness (StatsBomb encodes
+outcome-by-presence, inverting Wyscout's accurate/not-accurate tag pair;
+shots are cleaner — no GK-conceded contamination).
+
+**How to apply:** two disjoint sets are frozen. The **canonical shared
+set** (28 features = 22 Direct + 6 Approx, excluding the Unavailable and
+Non-comparable ones) drives the like-for-like replication, with
+normalization/eligibility/standardization/retrieval rules pinned
+identical to v0.1 so the comparison is clean; the carry construct-shift
+is kept but must be flagged in every comparison. The **provider-native
+secondary set** (native xG, Pressure-based pressing, possession-sequence
+involvement, freeze-frame features) is analyzed separately and must never
+silently widen the canonical set. `8mc.2` may now build the pipeline
+against open-data commit b0bc9f22dd, competitions {2,7,11,12} × season 27.
+
+---
+
+## D021 — 2026-07-24 — StatsBomb pipeline: provider-scoped ingestion, interval-union minutes, validation
+
+**Decision:** implement the StatsBomb ingestion / minutes / validation
+pipeline (beads `scoutlens-8mc.2`) as a **separate package**
+(`src/scoutlens/statsbomb/`) that shares no code with `scoutlens.data.*`,
+so both providers stay independently reproducible and all Wyscout
+behaviour is untouched. Schema and reproduction:
+[`statsbomb-pipeline.md`](statsbomb-pipeline.md).
+
+**Why:** the frozen comparison design (D020) requires StatsBomb-native
+parsing — a denser event taxonomy, 120×80 coordinates, outcome-by-
+presence, and interval-based lineups. Two findings shaped the code:
+
+1. **The StatsBomb match clock overlaps across periods** (period 1 ran to
+   48:38, period 2 restarts at 45:00 in the reference match), so a naive
+   final-whistle-minus-kickoff over-counts. Minutes are summed per period
+   with each stint clipped to its `[Half Start, Half End]` bounds.
+2. **Lineup files occasionally record overlapping stints for one player**
+   (Coquelin in match 3754217: an injury off-and-on plus a tactical-shift
+   position that outlives his own substitution). Summing stints would
+   credit >100% of a match; the pipeline **unions** per-period intervals
+   instead and flags the row `overlap_merged` rather than smoothing it.
+   Validation warns if the flag rate is high.
+
+**How to apply:** `uv run python -m scoutlens.statsbomb.ingestion`
+materializes the four-league 2015/16 processed set (~5 GB, pinned to
+open-data commit b0bc9f22dd); raw and processed StatsBomb data stay
+gitignored per the licence (D014). Event frames use an explicit schema
+(inference overflows at scale). 25 StatsBomb tests (unit + malformed-
+input + real-sample integration) pass; the full-scale download is the
+entry step of 8mc.3, deferred until that experiment runs.
