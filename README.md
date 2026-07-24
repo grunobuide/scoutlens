@@ -93,8 +93,13 @@ and per-artifact verification. **Not redistributed in this repo** — only
 acquisition code and the manifest are tracked; raw files are downloaded
 fresh by `ingestion.py`.
 
-The license for ScoutLens's own code (this repository's Python source,
-independent of the CC BY 4.0 data license above) has not been decided yet.
+ScoutLens's own code (this repository's Python source, independent of
+the CC BY 4.0 data license above) is licensed under the
+[MIT License](LICENSE) (decided 2026-07-23, D019). The data licenses
+above still govern the data: MIT covers the code only, and any use of
+StatsBomb-derived results additionally carries that source's
+non-commercial and attribution constraints (see
+[`docs/statsbomb-provenance.md`](docs/statsbomb-provenance.md)).
 
 ## Repository layout
 

@@ -420,9 +420,11 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
    real, finer sub-role structure exists (attacking vs. defensive
    fullback, for example) that this spike didn't attempt to model
    directly, only observed as a byproduct.
-9. **Code license for this repository is still undecided** (independent
+9. ~~**Code license for this repository is still undecided** (independent
    of the CC BY 4.0 data license), deferred by the user pending public
-   positioning of the project.
+   positioning of the project.~~ **Decided (2026-07-23, D019): MIT** —
+   see [`LICENSE`](../LICENSE). Covers the code only; data licenses are
+   unchanged.
 10. **Resolved by the robustness battery:** the default standardization
     is fit on the combined A+B population (D008), but
     [`robustness-checks.md` Check 1](robustness-checks.md#check-1--standardization-fit-a-only-vs-ab-combined)

@@ -557,3 +557,26 @@ assignment rather than silently dropping them. Unit tests cover
 determinism, input-order independence, the single-cluster degenerate
 case, unmapped-query rejection, and point-estimate agreement with the
 i.i.d. bootstrap.
+
+---
+
+## D019 — 2026-07-23 — Code license: MIT
+
+**Decision:** the repository's code is licensed under the MIT License
+(beads `scoutlens-3y8`, a user decision — chosen by the user 2026-07-23
+from MIT / Apache-2.0 / AGPL-3.0 / all-rights-reserved).
+
+**Why:** ScoutLens is publicly positioned as a research/portfolio
+project; MIT maximizes readability and reuse with zero friction, and a
+permissive license on the code does not constrain the author's own
+future commercialization of it. The choice deliberately does not touch
+the data side: Wyscout-derived data remains CC BY 4.0 (attribution per
+DATA_LICENSES.md), and any StatsBomb-derived work keeps that source's
+non-commercial + attribution constraints (D014) regardless of the code
+license.
+
+**How to apply:** LICENSE at the repo root; `license = "MIT"` in
+pyproject.toml; README's license section updated. Known Limitation #9
+in feasibility-report.md is closed. Any published analysis still
+carries the applicable *data* attribution obligations — MIT covers the
+code only.
