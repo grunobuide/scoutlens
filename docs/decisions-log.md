@@ -580,3 +580,42 @@ pyproject.toml; README's license section updated. Known Limitation #9
 in feasibility-report.md is closed. Any published analysis still
 carries the applicable *data* attribution obligations — MIT covers the
 code only.
+
+---
+
+## D020 — 2026-07-24 — StatsBomb feature-compatibility map: GO with a bounded redesign
+
+**Decision:** clear `scoutlens-8mc.4` (the design gate before the
+StatsBomb pipeline) with **GO, conditional on a frozen redesign**. Full
+inventory and rules: [`statsbomb-feature-compatibility.md`](statsbomb-feature-compatibility.md).
+
+**Why:** verified each of the 32 v0.1 feature concepts against a real
+StatsBomb 2015/16 events + lineup file (match 3754217), not the spec
+alone. Of the 32: 22 map directly, 6 by defensible approximation, 1 is
+unavailable (`smart_passes_p90` — Wyscout-proprietary), 1 is
+structurally non-comparable (`events_p90` — StatsBomb's event taxonomy is
+far denser: native Ball Receipt / Carry / Pressure inflate any
+total-event count), and 2 shift construct (the carry family: StatsBomb
+has a **native Carry event**, so what Wyscout measured by an Acceleration
+proxy is measured natively here). No NO-GO condition surfaced.
+
+Six structural differences documented and given frozen handling rules:
+event taxonomy (denser), coordinates (120×80 → normalize to Wyscout
+0–100 and reuse thresholds), possession (StatsBomb native → secondary set
+only), lineup/minutes (interval-based, cleaner than the Wyscout
+reconstruction), identifiers (disjoint namespaces → the replication is
+within-StatsBomb compared at the aggregate-metric level, not a
+cross-provider player merge), and missingness (StatsBomb encodes
+outcome-by-presence, inverting Wyscout's accurate/not-accurate tag pair;
+shots are cleaner — no GK-conceded contamination).
+
+**How to apply:** two disjoint sets are frozen. The **canonical shared
+set** (28 features = 22 Direct + 6 Approx, excluding the Unavailable and
+Non-comparable ones) drives the like-for-like replication, with
+normalization/eligibility/standardization/retrieval rules pinned
+identical to v0.1 so the comparison is clean; the carry construct-shift
+is kept but must be flagged in every comparison. The **provider-native
+secondary set** (native xG, Pressure-based pressing, possession-sequence
+involvement, freeze-frame features) is analyzed separately and must never
+silently widen the canonical set. `8mc.2` may now build the pipeline
+against open-data commit b0bc9f22dd, competitions {2,7,11,12} × season 27.
