@@ -653,3 +653,44 @@ gitignored per the licence (D014). Event frames use an explicit schema
 (inference overflows at scale). 25 StatsBomb tests (unit + malformed-
 input + real-sample integration) pass; the full-scale download is the
 entry step of 8mc.3, deferred until that experiment runs.
+
+---
+
+## D022 — 2026-07-24 — External replication executed: the v0.1 signal replicates on StatsBomb 2015/16
+
+**Decision:** close the external-replication experiment (beads
+`scoutlens-8mc.3`) with **the v0.1 signal replicates, at somewhat lower
+magnitude**. Full results and side-by-side:
+[`statsbomb-replication.md`](statsbomb-replication.md);
+`artifacts/statsbomb_replication_results.json`.
+
+**Why:** ran the full v0.1 temporal-stability battery on the StatsBomb
+four-league 2015/16 processed set (1,061 eligible player×competition,
+5.3M events) using the frozen canonical 28-feature set (D020), reusing
+the provider-agnostic evaluation layer with `feature_columns=CANONICAL`.
+Results:
+
+- **Global:** Baseline B (28 features + cosine) MRR 0.203, median rank 19,
+  vs Baseline A (role+minutes) MRR 0.038 — delta 0.165, 95% CI
+  [0.146, 0.185], confidently non-zero (~5.3× vs Wyscout's ~10×; absolute
+  MRR 0.20 vs 0.25). **Holds within role** (B MRR 0.227), the v0.1
+  pattern.
+- **Team-continuity confound reproduces:** Baseline C (role+team+minutes)
+  MRR 0.602, median rank 2 — beats B ~3×, same as Wyscout (D010).
+- **Transferred players (n=19):** C collapses to chance (MRR 0.028); B
+  retains a *positive* edge over A (delta 0.054) but the CI includes zero
+  [−0.004, 0.124] — inconclusive at small n, and weaker in point estimate
+  than Wyscout's n=26. The larger-sample need is unchanged.
+- **Sensitivity:** the +2 native-carry variant (30 features) lifts global
+  B to 0.227 — a measurement improvement (StatsBomb sees carrying
+  natively), reported separately and kept out of the primary 28 exactly
+  so it can't be mistaken for a method effect. Also corrected the D020
+  "28 vs 30" wording (the construct-shift carries are held *out* of the
+  primary set).
+
+**How to apply:** nothing overturns Gate 2; this strengthens its
+external-validity side while preserving the same honest boundary on the
+transferred-player / recruitment-usefulness question (still the top
+follow-up, now via `h00` and a larger transferred sample). Provider
+comparison is at the aggregate-metric level only (disjoint id namespaces,
+D020 §5). Artifact versioned + snapshot-tested (`test_artifacts.py`).

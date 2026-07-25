@@ -1,0 +1,165 @@
+{
+  "provider": "statsbomb",
+  "season": "2015/16",
+  "config": {
+    "domestic_leagues": [
+      2,
+      7,
+      11,
+      12
+    ],
+    "minutes_threshold": 450,
+    "n_canonical_features": 28
+  },
+  "wyscout_v01_reference": {
+    "global": {
+      "baseline_a_mrr": 0.0256,
+      "baseline_b_mrr": 0.2539,
+      "baseline_b_median_rank": 16
+    },
+    "within_role": {
+      "baseline_b_mrr": 0.2787,
+      "baseline_b_median_rank": 12
+    }
+  },
+  "global_28": {
+    "n_eligible": 1061,
+    "baseline_a": {
+      "n": 1061,
+      "mrr": 0.03807008463049461,
+      "median_rank": 99,
+      "recall_at_1": 0.008482563619227144,
+      "recall_at_5": 0.04429783223374175,
+      "recall_at_10": 0.07163053722902922
+    },
+    "baseline_b": {
+      "n": 1061,
+      "mrr": 0.20306171181199223,
+      "median_rank": 19,
+      "recall_at_1": 0.11215834118755891,
+      "recall_at_5": 0.27426955702167766,
+      "recall_at_10": 0.37888784165881245
+    },
+    "mrr_delta": {
+      "point_estimate": 0.16499162718149762,
+      "ci_low": 0.14585324287462226,
+      "ci_high": 0.18512600504452054,
+      "n_resamples": 1000,
+      "n_queries": 1061
+    }
+  },
+  "within_role_28": {
+    "n_eligible": 1061,
+    "baseline_a": {
+      "n": 1061,
+      "mrr": 0.03807008463049461,
+      "median_rank": 99,
+      "recall_at_1": 0.008482563619227144,
+      "recall_at_5": 0.04429783223374175,
+      "recall_at_10": 0.07163053722902922
+    },
+    "baseline_b": {
+      "n": 1061,
+      "mrr": 0.22645935719033589,
+      "median_rank": 15,
+      "recall_at_1": 0.12723845428840716,
+      "recall_at_5": 0.3063147973609802,
+      "recall_at_10": 0.42601319509896324
+    },
+    "mrr_delta": {
+      "point_estimate": 0.18838927255984128,
+      "ci_low": 0.16814096537271706,
+      "ci_high": 0.2101593342138575,
+      "n_resamples": 1000,
+      "n_queries": 1061
+    }
+  },
+  "global_30_with_native_carry": {
+    "baseline_b": {
+      "n": 1061,
+      "mrr": 0.22651967912665094,
+      "median_rank": 16,
+      "recall_at_1": 0.13289349670122527,
+      "recall_at_5": 0.3053722902921772,
+      "recall_at_10": 0.4222431668237512
+    },
+    "mrr_delta": {
+      "point_estimate": 0.18844959449615634,
+      "ci_low": 0.167860466114555,
+      "ci_high": 0.21005289730746554,
+      "n_resamples": 1000,
+      "n_queries": 1061
+    }
+  },
+  "transferred_players": {
+    "n_transferred": 19,
+    "full_population": {
+      "n_queries": 1061,
+      "baseline_a": {
+        "n": 1061,
+        "mrr": 0.03807008463049461,
+        "median_rank": 99,
+        "recall_at_1": 0.008482563619227144,
+        "recall_at_5": 0.04429783223374175,
+        "recall_at_10": 0.07163053722902922
+      },
+      "baseline_b": {
+        "n": 1061,
+        "mrr": 0.20306171181199223,
+        "median_rank": 19,
+        "recall_at_1": 0.11215834118755891,
+        "recall_at_5": 0.27426955702167766,
+        "recall_at_10": 0.37888784165881245
+      },
+      "baseline_c": {
+        "n": 1061,
+        "mrr": 0.6019878278761049,
+        "median_rank": 2,
+        "recall_at_1": 0.3826578699340245,
+        "recall_at_5": 0.9585296889726673,
+        "recall_at_10": 0.9830348727615457
+      },
+      "mrr_delta_b_minus_a": {
+        "point_estimate": 0.16499162718149762,
+        "ci_low": 0.14585324287462226,
+        "ci_high": 0.18512600504452054,
+        "n_resamples": 1000,
+        "n_queries": 1061
+      }
+    },
+    "transferred_only": {
+      "n_queries": 19,
+      "baseline_a": {
+        "n": 19,
+        "mrr": 0.029424446767994675,
+        "median_rank": 141,
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.05263157894736842,
+        "recall_at_10": 0.05263157894736842
+      },
+      "baseline_b": {
+        "n": 19,
+        "mrr": 0.08347419504348057,
+        "median_rank": 37,
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.15789473684210525,
+        "recall_at_10": 0.3157894736842105
+      },
+      "baseline_c": {
+        "n": 19,
+        "mrr": 0.028297726585198888,
+        "median_rank": 143,
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.05263157894736842,
+        "recall_at_10": 0.05263157894736842
+      },
+      "mrr_delta_b_minus_a": {
+        "point_estimate": 0.05404974827548589,
+        "ci_low": -0.003893318892794935,
+        "ci_high": 0.12429798001682286,
+        "n_resamples": 1000,
+        "n_queries": 19
+      }
+    }
+  }
+}

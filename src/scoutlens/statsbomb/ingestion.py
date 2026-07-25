@@ -171,9 +171,22 @@ def _get_json(url: str) -> list[dict]:
     return resp.json()
 
 
-def _match_ids(competition_id: int) -> list[tuple[int, int]]:
+def _match_ids(competition_id: int) -> list[tuple[int, int, str]]:
+    """(match_id, competition_id, match_date). The date drives the
+    chronological period split (`assign_periods`), so it must be captured
+    here, not discarded."""
     matches = _get_json(f"{BASE}/matches/{competition_id}/{SEASON_ID}.json")
-    return [(m["match_id"], competition_id) for m in matches]
+    return [(m["match_id"], competition_id, m["match_date"]) for m in matches]
+
+
+def matches_frame(match_rows: list[dict]) -> pl.DataFrame:
+    """Matches table shaped for the provider-agnostic `assign_periods`
+    (which sorts by `dateutc`, tiebreaks on `wyId`): `wyId` = StatsBomb
+    match_id, `dateutc` = match_date (YYYY-MM-DD, lexically sortable)."""
+    return pl.DataFrame(match_rows).select(
+        pl.col("match_id").alias("wyId"), "competitionId",
+        pl.col("match_date").alias("dateutc"), "competition_name",
+    )
 
 
 def run() -> dict:
@@ -182,7 +195,7 @@ def run() -> dict:
     match_rows = []
     n_matches = 0
     for competition_id, comp_name in COMPETITIONS.items():
-        for match_id, cid in _match_ids(competition_id):
+        for match_id, cid, match_date in _match_ids(competition_id):
             raw_events = _get_json(f"{BASE}/events/{match_id}.json")
             lineups = _get_json(f"{BASE}/lineups/{match_id}.json")
             team_ids = team_ids_from_events(raw_events)
@@ -195,14 +208,15 @@ def run() -> dict:
                                  if any(x["player_id"] == p["player_id"] for x in t["lineup"]))
                 p["team_id"] = team_ids[team_name]
                 all_players.append(p)
-            match_rows.append({"match_id": match_id, "competitionId": cid, "competition_name": comp_name})
+            match_rows.append({"match_id": match_id, "competitionId": cid,
+                               "match_date": match_date, "competition_name": comp_name})
             n_matches += 1
 
     events_df = events_frame(all_events)
     events_df.write_parquet(PROCESSED_DIR / "events.parquet")
     minutes_frame(all_minutes).write_parquet(PROCESSED_DIR / "minutes.parquet")
     pl.DataFrame(all_players).unique(subset=["player_id", "competitionId"]).write_parquet(PROCESSED_DIR / "players.parquet")
-    pl.DataFrame(match_rows).write_parquet(PROCESSED_DIR / "matches.parquet")
+    matches_frame(match_rows).write_parquet(PROCESSED_DIR / "matches.parquet")
     return {"n_matches": n_matches, "n_events": events_df.height, "n_minutes_rows": len(all_minutes)}
 
 

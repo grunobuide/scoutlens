@@ -538,6 +538,18 @@ confirmed the signal survives that confound.
    `transfer-analysis.md` genuinely tight), and check the domestic-league
    results generalize beyond this single 2017/18 snapshot at all.
 
+   **Done (2026-07-24, D022): the external replication was executed and
+   the signal replicates.** On StatsBomb 2015/16 (four leagues, 28
+   canonical features — D014/D020/D021), Baseline B beats the trivial
+   baseline with a confidently non-zero margin (MRR 0.203 vs 0.038, delta
+   CI [0.146, 0.185]), holding within role — the core v0.1 result
+   reproduces on an independent provider, season, and league set, at
+   somewhat lower magnitude (~5× vs ~10×). The team-continuity confound
+   reproduces (Baseline C MRR 0.602). The transferred-player edge
+   reproduces in sign but stays inconclusive at n=19 (delta CI includes
+   zero) — so the larger-sample need above is unchanged. Full results:
+   [`statsbomb-replication.md`](statsbomb-replication.md).
+
    **Scoping check (2026-07-22):** the current Pappalardo/Wyscout
    collection has exactly one season per competition — confirmed
    empirically (every `competitionId` maps to a single `seasonId`), not
