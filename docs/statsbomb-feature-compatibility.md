@@ -189,15 +189,23 @@ Construct-shift 2 = 32.
 ## Frozen canonical shared feature set (the like-for-like comparison)
 
 The set used to test *does the v0.1 signal replicate on a different
-provider and season*. **28 features:** all Direct (22) and all Approx (6),
-**excluding** `smart_passes_p90` (Unavailable) and `events_p90`
-(Non-comparable). The two Construct-shift carry features **are included**,
-because native `Carry` is a legitimately better measure of the *same
-underlying construct* (progression by carrying) — but every report
-comparing the two runs must state that Wyscout measured this family by
-proxy and StatsBomb natively, so an improvement there is expected and not
-evidence of anything about the method. `touches_p90` is retained but
-labeled weak; a sensitivity run with it dropped is part of `8mc.3`.
+provider and season*. **28 features (primary):** all Direct (22) and all
+Approx (6), **excluding** four of the 32 — `smart_passes_p90`
+(Unavailable), `events_p90` (Non-comparable), and the two Construct-shift
+carry features `carry_proxy_p90` / `carry_distance_proxy_p90`.
+
+**Why the carry family is held out of the primary set (corrected
+2026-07-24, D021):** an earlier draft included them and still called the
+set "28", which was self-contradictory (22 + 6 = 28 already excludes
+them). The clean-science resolution is to *exclude* them from the
+like-for-like comparison: Wyscout measured this family by an
+`Acceleration` proxy while StatsBomb has a **native `Carry`** — a
+genuinely different measurement, so an improvement there would confound
+"the signal replicates" with "the measurement got better." The two
+native-carry features are instead reported as a **+2 sensitivity variant**
+(`CANONICAL_PLUS_CARRY`, 30 features) alongside the primary 28, never
+mixed into it. `touches_p90` is retained in the 28 but labeled weak; a
+sensitivity run with it dropped is part of `8mc.3`.
 
 Normalization and eligibility for the canonical set are **frozen to match
 v0.1 exactly** so the comparison is clean:

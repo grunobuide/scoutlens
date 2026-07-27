@@ -53,3 +53,16 @@ def test_transfer_analysis_results_match_documented_headline_numbers():
     assert transferred["baseline_b"]["mrr"] == pytest.approx(0.2387, abs=1e-3)
     assert transferred["baseline_b"]["median_rank"] == pytest.approx(38.5, abs=0.5)
     assert transferred["baseline_c"]["mrr"] == pytest.approx(0.0101, abs=1e-3)
+
+
+def test_statsbomb_replication_results_match_documented_headline_numbers():
+    data = _load("statsbomb_replication_results.json")
+    # docs/statsbomb-replication.md (D022): the signal replicates at lower magnitude
+    assert data["global_28"]["n_eligible"] == 1061
+    assert data["global_28"]["baseline_b"]["mrr"] == pytest.approx(0.2031, abs=1e-3)
+    assert data["global_28"]["baseline_b"]["median_rank"] == 19
+    assert data["global_28"]["mrr_delta"]["ci_low"] > 0            # confidently non-zero
+    assert data["within_role_28"]["baseline_b"]["mrr"] == pytest.approx(0.2265, abs=1e-3)
+    assert data["transferred_players"]["n_transferred"] == 19
+    # transferred edge is inconclusive at small n: CI includes zero
+    assert data["transferred_players"]["transferred_only"]["mrr_delta_b_minus_a"]["ci_low"] < 0
