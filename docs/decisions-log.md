@@ -694,3 +694,43 @@ transferred-player / recruitment-usefulness question (still the top
 follow-up, now via `h00` and a larger transferred sample). Provider
 comparison is at the aggregate-metric level only (disjoint id namespaces,
 D020 §5). Artifact versioned + snapshot-tested (`test_artifacts.py`).
+
+---
+
+## D023 — 2026-07-27 — Recruitment-study execution harness built (ratings collection is the human-in-the-loop remainder)
+
+**Decision:** build the full execution harness for the recruitment
+study (beads `scoutlens-h00`) — blinded shortlist generation + the
+pre-registered analysis pipeline — and stop where honesty requires a
+human: real expert ratings. Harness: `src/scoutlens/study/`; doc:
+[`recruitment-study-harness.md`](recruitment-study-harness.md). `h00`
+stays open pending real ratings.
+
+**Why:** h00 is the first issue allowed to support/reject a *recruitment
+usefulness* claim, which same-player retrieval (v0.1) and the external
+replication (D022) cannot. That requires human judgement in the loop; an
+agent cannot recruit scouts or fabricate ratings without invalidating the
+study. So the honest, high-value move is to make the study *runnable* —
+generate the materials and implement the analysis — leaving only data
+collection.
+
+- **Shortlists** (`shortlists.py`): 40 role-stratified queries (10 per
+  role) from the frozen Wyscout data (CC BY 4.0 — cleaner than StatsBomb
+  for rater-facing cards); three mutually-exclusive arms of 5 —
+  B (cosine top-5), C_role (role+closest-minutes), R (random same-role);
+  query player + his own true-match excluded; 15 candidates merged and
+  shuffled with **no arm labels**, arm key stored separately. Verified on
+  real data: blinded, 200/200/200 arm balance, 15 distinct per query.
+- **Analysis** (`analysis.py`): the pre-registered plan implemented
+  without scipy — paired B−C_role Wilcoxon signed-rank + bootstrap CI
+  (primary), interval Krippendorff α (reliability gate 0.40), secondary
+  metrics, and the three failure criteria → GO/REDESIGN/NO-GO. Unit-tested
+  incl. a hand-computed Krippendorff α (0.85) and synthetic
+  GO/NO-GO/REDESIGN/floor scenarios.
+
+**How to apply:** `uv run python -m scoutlens.study.shortlists`
+regenerates the materials; a human recruits 2–5 raters, collects ~600
+ratings/rater (5-query discarded pilot first), then `analyze_study`
+produces the outcome. Study materials stay under `artifacts/` (gitignored,
+regenerable). Only after real ratings can h00 close with a
+GO/REDESIGN/NO-GO on recruitment usefulness.
