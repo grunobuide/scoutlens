@@ -619,3 +619,37 @@ secondary set** (native xG, Pressure-based pressing, possession-sequence
 involvement, freeze-frame features) is analyzed separately and must never
 silently widen the canonical set. `8mc.2` may now build the pipeline
 against open-data commit b0bc9f22dd, competitions {2,7,11,12} × season 27.
+
+---
+
+## D021 — 2026-07-24 — StatsBomb pipeline: provider-scoped ingestion, interval-union minutes, validation
+
+**Decision:** implement the StatsBomb ingestion / minutes / validation
+pipeline (beads `scoutlens-8mc.2`) as a **separate package**
+(`src/scoutlens/statsbomb/`) that shares no code with `scoutlens.data.*`,
+so both providers stay independently reproducible and all Wyscout
+behaviour is untouched. Schema and reproduction:
+[`statsbomb-pipeline.md`](statsbomb-pipeline.md).
+
+**Why:** the frozen comparison design (D020) requires StatsBomb-native
+parsing — a denser event taxonomy, 120×80 coordinates, outcome-by-
+presence, and interval-based lineups. Two findings shaped the code:
+
+1. **The StatsBomb match clock overlaps across periods** (period 1 ran to
+   48:38, period 2 restarts at 45:00 in the reference match), so a naive
+   final-whistle-minus-kickoff over-counts. Minutes are summed per period
+   with each stint clipped to its `[Half Start, Half End]` bounds.
+2. **Lineup files occasionally record overlapping stints for one player**
+   (Coquelin in match 3754217: an injury off-and-on plus a tactical-shift
+   position that outlives his own substitution). Summing stints would
+   credit >100% of a match; the pipeline **unions** per-period intervals
+   instead and flags the row `overlap_merged` rather than smoothing it.
+   Validation warns if the flag rate is high.
+
+**How to apply:** `uv run python -m scoutlens.statsbomb.ingestion`
+materializes the four-league 2015/16 processed set (~5 GB, pinned to
+open-data commit b0bc9f22dd); raw and processed StatsBomb data stay
+gitignored per the licence (D014). Event frames use an explicit schema
+(inference overflows at scale). 25 StatsBomb tests (unit + malformed-
+input + real-sample integration) pass; the full-scale download is the
+entry step of 8mc.3, deferred until that experiment runs.
