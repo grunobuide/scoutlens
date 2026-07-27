@@ -438,6 +438,13 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
     `shot_conversion_pct = 1.0`, the same numeric value as a striker who
     converted 20 of 20, with no attempt-count-based confidence weighting.
     No shrinkage or minimum-attempts floor was applied in this catalog.
+    **Characterized and resolved (2026-07-27, D024):** an empirical-Bayes
+    shrinkage experiment ([`shrinkage-experiment.md`](shrinkage-experiment.md))
+    confirms the pathology per feature (low-sample ratios shift up to
+    0.75) but shows it is **immaterial to retrieval** (global MRR
+    0.2539 → 0.2512), so shrinkage is deliberately *not* adopted into the
+    default catalog; the implementation is kept for future direct-ratio
+    uses.
 12. **The bootstrap treats queries as independent draws**, though they
     share teams, leagues, and the same period-B candidate pool — some
     correlation between queries is plausible (e.g. two teammates'

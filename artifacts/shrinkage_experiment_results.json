@@ -1,0 +1,108 @@
+{
+  "raw_v01": {
+    "global": {
+      "n_eligible": 1257,
+      "baseline_b": {
+        "n": 1257,
+        "mrr": 0.2539333127027185,
+        "median_rank": 16,
+        "recall_at_1": 0.162291169451074,
+        "recall_at_5": 0.345266507557677,
+        "recall_at_10": 0.4327764518695306
+      },
+      "mrr_delta_b_minus_a": {
+        "point_estimate": 0.22834444714927213,
+        "ci_low": 0.2083439998027224,
+        "ci_high": 0.24790560118596439,
+        "n_resamples": 1000,
+        "n_queries": 1257
+      }
+    },
+    "within_role": {
+      "n_eligible": 1257,
+      "baseline_b": {
+        "n": 1257,
+        "mrr": 0.2787109170786653,
+        "median_rank": 12,
+        "recall_at_1": 0.17820206841686556,
+        "recall_at_5": 0.3818615751789976,
+        "recall_at_10": 0.477326968973747
+      },
+      "mrr_delta_b_minus_a": {
+        "point_estimate": 0.25312205152521894,
+        "ci_low": 0.23300658999211232,
+        "ci_high": 0.27379861982751863,
+        "n_resamples": 1000,
+        "n_queries": 1257
+      }
+    }
+  },
+  "shrunk": {
+    "global": {
+      "n_eligible": 1257,
+      "baseline_b": {
+        "n": 1257,
+        "mrr": 0.2511945256701458,
+        "median_rank": 15,
+        "recall_at_1": 0.1575178997613365,
+        "recall_at_5": 0.3317422434367542,
+        "recall_at_10": 0.43516308671439935
+      },
+      "mrr_delta_b_minus_a": {
+        "point_estimate": 0.22560566011669939,
+        "ci_low": 0.20717468806837538,
+        "ci_high": 0.24457091266920758,
+        "n_resamples": 1000,
+        "n_queries": 1257
+      }
+    },
+    "within_role": {
+      "n_eligible": 1257,
+      "baseline_b": {
+        "n": 1257,
+        "mrr": 0.27702549648315433,
+        "median_rank": 11,
+        "recall_at_1": 0.1758154335719968,
+        "recall_at_5": 0.3635640413683373,
+        "recall_at_10": 0.4908512330946698
+      },
+      "mrr_delta_b_minus_a": {
+        "point_estimate": 0.25143663092970797,
+        "ci_low": 0.23290961353955106,
+        "ci_high": 0.27110976520468644,
+        "n_resamples": 1000,
+        "n_queries": 1257
+      }
+    }
+  },
+  "ratio_movement": {
+    "pass_completion_pct": {
+      "mean_abs_shift": 0.020595212923878732,
+      "max_abs_shift": 0.7468959886648946
+    },
+    "shot_conversion_pct": {
+      "mean_abs_shift": 0.04124789618879734,
+      "max_abs_shift": 0.6384155674012222
+    },
+    "shots_on_target_pct": {
+      "mean_abs_shift": 0.09030160129059207,
+      "max_abs_shift": 0.45074845437597477
+    },
+    "blocked_shot_pct": {
+      "mean_abs_shift": 0.0786841990512455,
+      "max_abs_shift": 0.4919432837766402
+    },
+    "defensive_duel_win_pct": {
+      "mean_abs_shift": 0.06012803195759004,
+      "max_abs_shift": 0.5815456400159198
+    },
+    "duel_win_pct": {
+      "mean_abs_shift": 0.042038121166431686,
+      "max_abs_shift": 0.4560509226640917
+    },
+    "take_on_success_pct": {
+      "mean_abs_shift": 0.09261792528059161,
+      "max_abs_shift": 0.40745662353027734
+    }
+  }
+}
