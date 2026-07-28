@@ -48,6 +48,14 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - run: uv sync --frozen
+        working-directory: .
+      - run: uv run --frozen python -m scoutlens.showcase.payload hydrate
+        working-directory: .
       - uses: pnpm/action-setup@v6.0.8
         with:
           version: 11.9.0

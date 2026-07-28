@@ -110,8 +110,17 @@ all schemas, cross-artifact references and checksums, and fails before replacing
 an existing export if any invariant or gzip budget is violated. The reviewable
 manifest, feature catalog, player index, and research summary are versioned in
 Git. The reproducible 1,257-file player payload directory is excluded from Git
-because its compact JSON totals about 147 MB; immutable raw-data-free packaging
-is tracked in Beads as `scoutlens-jtt.10`.
+because its compact JSON totals about 147 MB. A clean clone hydrates the complete
+content-addressed payload from its pinned release asset without provider data:
+
+```bash
+uv run --frozen python -m scoutlens.showcase.payload hydrate
+```
+
+The command verifies the archive digest, exact manifest path set, and every
+profile checksum before atomically publishing `players/`. Offline rebuilds,
+the immutable asset identity, and the licence boundary are documented in
+[Showcase payload distribution](docs/showcase-payload-pack.md).
 
 ### StatsBomb external replication
 
