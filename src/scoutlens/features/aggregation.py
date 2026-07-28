@@ -74,7 +74,21 @@ def _per90(count_col: pl.Expr, minutes_col: pl.Expr) -> pl.Expr:
     return pl.when(minutes_col > 0).then(count_col / minutes_col * 90).otherwise(None)
 
 
-def compute_player_features(events: pl.DataFrame, player_minutes: pl.DataFrame) -> pl.DataFrame:
+# Numerator/denominator count columns backing each of the 7 ratio
+# features — exposed via `with_counts=True` for the shrinkage experiment
+# (D024). Names are the `_sum_<col>` aliases produced during aggregation.
+RATIO_COUNT_COLUMNS = [
+    "_sum_pass_accurate", "_sum_pass_not_accurate",
+    "_sum_is_shot", "_sum_shot_goal", "_sum_shot_on_target", "_sum_shot_blocked",
+    "_sum_def_duel_won", "_sum_def_duel_decided",
+    "_sum_duel_won", "_sum_duel_decided",
+    "_sum_take_on_success", "_sum_take_on_attempt",
+]
+
+
+def compute_player_features(
+    events: pl.DataFrame, player_minutes: pl.DataFrame, with_counts: bool = False
+) -> pl.DataFrame:
     """events: rows already scoped to the period of interest, with the
     usual events.parquet schema (playerId, eventName, subEventName, tags,
     positions, ...).
@@ -85,6 +99,10 @@ def compute_player_features(events: pl.DataFrame, player_minutes: pl.DataFrame) 
     Returns one row per player in player_minutes (players with minutes but
     zero events still appear, with all counts at 0 and ratios at null),
     with `minutes_played` plus all 32 features from feature-definitions.md.
+    `with_counts=True` additionally returns `RATIO_COUNT_COLUMNS` (the
+    numerator/denominator behind each ratio feature) — used by the ratio-
+    shrinkage experiment; the default (False) is byte-for-byte the v0.1
+    behavior.
     """
     real_events = events.filter(pl.col("playerId") != 0)
     enriched = add_event_helper_columns(real_events)
@@ -147,4 +165,7 @@ def compute_player_features(events: pl.DataFrame, player_minutes: pl.DataFrame) 
         take_on_success_pct=_safe_ratio(pl.col("_sum_take_on_success"), pl.col("_sum_take_on_attempt")),
     )
 
-    return result.select(["player_id", "minutes_played"] + FEATURE_COLUMNS)
+    cols = ["player_id", "minutes_played"] + FEATURE_COLUMNS
+    if with_counts:
+        cols += RATIO_COUNT_COLUMNS
+    return result.select(cols)

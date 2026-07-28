@@ -734,3 +734,34 @@ ratings/rater (5-query discarded pilot first), then `analyze_study`
 produces the outcome. Study materials stay under `artifacts/` (gitignored,
 regenerable). Only after real ratings can h00 close with a
 GO/REDESIGN/NO-GO on recruitment usefulness.
+
+---
+
+## D024 — 2026-07-27 — Ratio-shrinkage experiment (v0.2): pathology real per feature, immaterial to retrieval
+
+**Decision:** run the ratio-shrinkage experiment (beads `scoutlens-dul`,
+Known Limitation #11) as an **additive comparison** that leaves the v0.1
+catalog frozen, and — on the null result — **not** adopt shrinkage into
+the default features. Full result:
+[`shrinkage-experiment.md`](shrinkage-experiment.md);
+artifact `shrinkage_experiment_results.json` (versioned + snapshot-tested).
+
+**Why:** the 7 `*_pct` ratio features are over-trusted at low attempt
+counts (1-of-1 = 1.0). Empirical-Bayes Beta-Binomial shrinkage
+(`features/shrinkage.py`) fits a Beta prior per ratio and reports
+`(k+α)/(n+α+β)`. It does exactly what Limitation #11 asks per feature
+(low-sample ratios pulled toward the mean by up to 0.75), but Baseline B
+retrieval barely moves — global MRR 0.2539 → 0.2512, median rank 16 → 15;
+within-role 0.2787 → 0.2770, median 12 → 11. The raw arm reproduces the
+v0.1 headline **exactly** (0.2539), confirming the plumbing. The null is
+consistent with the distributed-signal finding (robustness Check 5): no
+single ratio carries the result, so standardization+cosine over 32
+features already dilutes any one over-trusted ratio.
+
+**How to apply:** shrinkage stays out of the default catalog (complexity
+must earn its place); the implementation is retained for any future use
+that reads individual ratios directly (per-player interpretation,
+scout-facing cards, a feature-weighting model). Aggregation gained a
+purely-additive `with_counts=True` (default byte-identical to v0.1) to
+expose the numerator/denominator counts. Limitation #11 is resolved:
+characterized, fixed, and its (non-)effect measured.

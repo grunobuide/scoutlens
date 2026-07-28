@@ -66,3 +66,13 @@ def test_statsbomb_replication_results_match_documented_headline_numbers():
     assert data["transferred_players"]["n_transferred"] == 19
     # transferred edge is inconclusive at small n: CI includes zero
     assert data["transferred_players"]["transferred_only"]["mrr_delta_b_minus_a"]["ci_low"] < 0
+
+
+def test_shrinkage_experiment_results_match_documented_headline_numbers():
+    data = _load("shrinkage_experiment_results.json")
+    # docs/shrinkage-experiment.md (D024): shrinkage is a wash for retrieval
+    raw = data["raw_v01"]["global"]["baseline_b"]
+    shrunk = data["shrunk"]["global"]["baseline_b"]
+    assert raw["mrr"] == pytest.approx(0.2539, abs=1e-4)      # reproduces v0.1 exactly
+    assert shrunk["mrr"] == pytest.approx(0.2512, abs=1e-3)   # negligibly different
+    assert abs(raw["mrr"] - shrunk["mrr"]) < 0.01             # the null result
