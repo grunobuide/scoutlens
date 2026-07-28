@@ -3,6 +3,7 @@ import addFormats from "ajv-formats";
 
 import schema from "@/contracts/generated/showcase.schema.json";
 import type {
+  FeatureCatalogArtifact,
   Manifest,
   PlayerIndexArtifact,
   PlayerIndexItem,
@@ -40,6 +41,7 @@ export class ShowcaseContractError extends Error {
 
 export interface ShowcaseRepository {
   getManifest(): Promise<Manifest>;
+  getFeatureCatalog(): Promise<FeatureCatalogArtifact>;
   getResearchSummary(): Promise<ResearchSummaryArtifact>;
   listProfiles(): Promise<ReadonlyArray<PlayerIndexItem>>;
   getProfile(profileKey: string): Promise<PlayerProfileArtifact>;
@@ -98,6 +100,12 @@ function isResearchSummary(
   value: ScoutLensShowcaseArtifacts100,
 ): value is ResearchSummaryArtifact {
   return "experiments" in value && "supported_claim" in value;
+}
+
+function isFeatureCatalog(
+  value: ScoutLensShowcaseArtifacts100,
+): value is FeatureCatalogArtifact {
+  return "features" in value && !('periods' in value);
 }
 
 function isPlayerIndex(value: ScoutLensShowcaseArtifacts100): value is PlayerIndexArtifact {
@@ -195,6 +203,16 @@ export class StaticShowcaseRepository implements ShowcaseRepository {
     const artifact = await this.readVerified(artifactPath, manifest);
     if (!isResearchSummary(artifact)) {
       throw new ShowcaseContractError("artifact_kind", "Expected a research summary", artifactPath);
+    }
+    return artifact;
+  }
+
+  async getFeatureCatalog(): Promise<FeatureCatalogArtifact> {
+    const manifest = await this.getManifest();
+    const artifactPath = "feature-catalog.json";
+    const artifact = await this.readVerified(artifactPath, manifest);
+    if (!isFeatureCatalog(artifact)) {
+      throw new ShowcaseContractError("artifact_kind", "Expected a feature catalog", artifactPath);
     }
     return artifact;
   }
