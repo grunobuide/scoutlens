@@ -867,3 +867,26 @@ slice must represent uncertainty as explicitly pending; `scoutlens-jtt.5`
 fills the predeclared match-bootstrap fields without redesigning the UI
 contract. AI remains optional and consumes evidence IDs only after both layers
 exist.
+
+---
+
+## D029 — 2026-07-28 — Exact cardinality for v1 confidence intervals
+
+**Decision:** require exactly two numeric bounds in all five confidence-interval
+arrays declared by `scoutlens.showcase/1.0.0`, while continuing to allow `null`
+for unavailable uncertainty. Keep the contract version unchanged because this
+pre-release correction rejects only malformed arrays that the exporter has
+never produced. Regenerate the web schema, TypeScript types, and public manifest
+so their provenance records the corrected schema.
+
+**Why:** `prefixItems` with `items: false` limited an interval to at most two
+items but still admitted empty and one-bound arrays. That contradicted the
+documented tuple shape, the Python builders, and strict Ajv tuple validation.
+Adding `minItems: 2` and `maxItems: 2` makes the scientific boundary explicit
+without changing any valid artifact shape, dataset value, or numerical result.
+
+**How to apply:** every confidence interval in the v1 contract is either `null`
+or a two-number array. Future contract edits must keep Python validation, strict
+Ajv compilation, generated TypeScript types, and the published manifest in
+lockstep. A change to interval meaning or estimation remains a separately
+versioned scientific decision.
