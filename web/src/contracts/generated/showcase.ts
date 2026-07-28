@@ -572,8 +572,8 @@ export interface FeatureValue {
 export interface FeatureUncertainty {
   status: "pending" | "available" | "insufficient";
   valid_resamples: number | null;
-  raw_ci_95: null | never[];
-  within_role_percentile_ci_95: null | never[];
+  raw_ci_95: null | [number, number];
+  within_role_percentile_ci_95: null | [number, number];
 }
 export interface IdentityRetrieval {
   query_period: "a";
@@ -595,7 +595,7 @@ export interface RankUncertainty {
   status: "pending" | "available" | "insufficient";
   valid_resamples: number | null;
   median_rank: number | null;
-  rank_ci_95: null | never[];
+  rank_ci_95: null | [number, number];
   recall_at_1_rate: number | null;
   recall_at_5_rate: number | null;
   recall_at_10_rate: number | null;
@@ -675,7 +675,7 @@ export interface NeighborStability {
   valid_resamples: number | null;
   top_5_selection_rate: number | null;
   median_rank: number | null;
-  rank_ci_95: null | never[];
+  rank_ci_95: null | [number, number];
 }
 export interface UncertaintyBlock {
   status: "pending" | "available" | "insufficient";
@@ -805,7 +805,7 @@ export interface ResearchMetric {
   metric_id: string;
   label: string;
   value: number;
-  ci_95: null | never[];
+  ci_95: null | [number, number];
   unit: "mrr" | "median_rank" | "recall" | "count";
   display_precision: number;
 }

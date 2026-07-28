@@ -52,7 +52,7 @@ interface AssetBytes {
   text: string;
 }
 
-const ajv = new Ajv2020({ allErrors: true, strict: true, strictTuples: false });
+const ajv = new Ajv2020({ allErrors: true, strict: true });
 addFormats(ajv);
 const validateArtifact: ValidateFunction<unknown> = ajv.compile(schema);
 

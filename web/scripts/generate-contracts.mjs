@@ -18,7 +18,39 @@ const outputPath = resolve(webRoot, "src", "contracts", "generated", "showcase.t
 const schemaOutputPath = resolve(webRoot, "src", "contracts", "generated", "showcase.schema.json");
 const schemaSource = await readFile(schemaPath, "utf8");
 const schema = JSON.parse(schemaSource);
-const generated = await compile(schema, "ShowcaseArtifact", {
+
+function normalizeTuplesForTypeGeneration(value) {
+  if (Array.isArray(value)) {
+    return value.map(normalizeTuplesForTypeGeneration);
+  }
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+
+  if ("prefixItems" in value) {
+    if (!Array.isArray(value.prefixItems) || value.items !== false) {
+      throw new Error("Tuple schemas must declare prefixItems with items: false");
+    }
+    const { prefixItems } = value;
+    const rest = Object.fromEntries(
+      Object.entries(value).filter(([key]) => key !== "prefixItems" && key !== "items"),
+    );
+    return {
+      ...normalizeTuplesForTypeGeneration(rest),
+      items: prefixItems.map(normalizeTuplesForTypeGeneration),
+      additionalItems: false,
+    };
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, child]) => [key, normalizeTuplesForTypeGeneration(child)]),
+  );
+}
+
+// json-schema-to-typescript consumes draft-07 tuple syntax. Keep the published
+// 2020-12 schema intact and adapt only the compiler input.
+const typeGenerationSchema = normalizeTuplesForTypeGeneration(schema);
+const generated = await compile(typeGenerationSchema, "ShowcaseArtifact", {
   bannerComment: [
     "/** Generated from src/scoutlens/showcase/schemas/showcase-1.0.0.schema.json.",
     " * Do not edit by hand; run pnpm contracts:generate.",
