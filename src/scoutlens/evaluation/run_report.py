@@ -35,13 +35,13 @@ from pathlib import Path
 import polars as pl
 
 from scoutlens.evaluation.diagnostics import compute_primary_team, neighbor_concentration
-from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.retrieval import (
     get_top_k_neighbors,
     run_global_retrieval_experiment,
     run_within_role_retrieval_experiment,
     select_eligible_both_periods,
 )
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.similarity import impute_and_standardize
 from scoutlens.evaluation.temporal import assign_periods, build_period_profiles
 from scoutlens.features.aggregation import FEATURE_COLUMNS

@@ -27,17 +27,14 @@ from scoutlens.evaluation.retrieval import (
     run_global_retrieval_experiment,
     run_within_role_retrieval_experiment,
 )
-from scoutlens.evaluation.temporal import assign_periods, build_period_profiles
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
+from scoutlens.evaluation.temporal import assign_periods
 from scoutlens.features.aggregation import FEATURE_COLUMNS, RATIO_COUNT_COLUMNS, compute_player_features
 from scoutlens.features.shrinkage import RATIO_SPECS, shrink_ratios
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
-
-DOMESTIC_LEAGUES = [364, 412, 426, 524, 795]
-MINUTES_THRESHOLD = 450
-
 
 def _role_lookup(players: pl.DataFrame) -> pl.DataFrame:
     return players.select(pl.col("wyId").alias("player_id"), pl.col("role").struct.field("name").alias("role"))
@@ -75,10 +72,22 @@ def _summ(result: dict) -> dict:
 
 
 def run() -> dict:
-    players = pl.read_parquet(PROCESSED_DIR / "players.parquet")
-    matches = pl.read_parquet(PROCESSED_DIR / "matches.parquet")
-    minutes = pl.read_parquet(PROCESSED_DIR / "minutes.parquet")
-    events = pl.read_parquet(PROCESSED_DIR / "events.parquet")
+    config = load_experiment_config()
+    leagues = config["domestic_leagues"]
+    minutes_threshold = config["primary_minutes_threshold"]
+    n_resamples = config["bootstrap"]["n_resamples"]
+    seed = config["bootstrap"]["seed"]
+    input_paths = [
+        PROCESSED_DIR / "players.parquet",
+        PROCESSED_DIR / "matches.parquet",
+        PROCESSED_DIR / "minutes.parquet",
+        PROCESSED_DIR / "events.parquet",
+    ]
+
+    players = pl.read_parquet(input_paths[0])
+    matches = pl.read_parquet(input_paths[1])
+    minutes = pl.read_parquet(input_paths[2])
+    events = pl.read_parquet(input_paths[3])
 
     role_lookup = _role_lookup(players)
     period_assignment = assign_periods(matches)
@@ -99,17 +108,28 @@ def run() -> dict:
             "max_abs_shift": float(j.select((pl.col(feat) - pl.col("shrunk")).abs().max()).item() or 0.0),
         }
 
-    results = {"raw_v01": {}, "shrunk": {}, "ratio_movement": movement}
+    results = {
+        "_manifest": build_run_manifest(config, input_paths),
+        "raw_v01": {},
+        "shrunk": {},
+        "ratio_movement": movement,
+    }
     for label, profiles in (("raw_v01", raw), ("shrunk", shrunk)):
         results[label]["global"] = _summ(run_global_retrieval_experiment(
-            profiles, role_lookup, MINUTES_THRESHOLD, DOMESTIC_LEAGUES, feature_columns=FEATURE_COLUMNS))
+            profiles, role_lookup, minutes_threshold, leagues, feature_columns=FEATURE_COLUMNS,
+            n_resamples=n_resamples, seed=seed,
+        ))
         results[label]["within_role"] = _summ(run_within_role_retrieval_experiment(
-            profiles, role_lookup, MINUTES_THRESHOLD, DOMESTIC_LEAGUES, feature_columns=FEATURE_COLUMNS))
+            profiles, role_lookup, minutes_threshold, leagues, feature_columns=FEATURE_COLUMNS,
+            n_resamples=n_resamples, seed=seed,
+        ))
     return results
 
 
 if __name__ == "__main__":
     out = run()
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
-    (ARTIFACTS_DIR / "shrinkage_experiment_results.json").write_text(json.dumps(out, indent=2))
+    (ARTIFACTS_DIR / "shrinkage_experiment_results.json").write_text(
+        json.dumps(out, indent=2), encoding="utf-8"
+    )
     print(json.dumps(out, indent=2))

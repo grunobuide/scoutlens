@@ -74,7 +74,7 @@ def check_composite_key_unique(df: pl.DataFrame, table: str, key_columns: list[s
 
 
 def check_no_negative(df: pl.DataFrame, table: str, column: str) -> CheckResult:
-    n_negative = (df[column] < 0).sum()
+    n_negative = int((df[column] < 0).sum() or 0)
     if n_negative == 0:
         return CheckResult(f"no_negative[{column}]", table, "ok", "no negative values")
     return CheckResult(
@@ -84,7 +84,7 @@ def check_no_negative(df: pl.DataFrame, table: str, column: str) -> CheckResult:
 
 
 def check_value_range(df: pl.DataFrame, table: str, column: str, lo: float, hi: float) -> CheckResult:
-    n_out = ((df[column] < lo) | (df[column] > hi)).sum()
+    n_out = int(((df[column] < lo) | (df[column] > hi)).sum() or 0)
     if n_out == 0:
         return CheckResult(f"value_range[{column}]", table, "ok", f"all values within [{lo},{hi}]")
     return CheckResult(
@@ -107,7 +107,7 @@ def check_sentinel_zero(df: pl.DataFrame, table: str, column: str) -> CheckResul
     height) and therefore likely encodes "unknown" rather than a real
     measurement. Warn, not fail — found in SLS-005, not yet used by any
     spike feature, so no normalization is forced here."""
-    n_zero = (df[column] == 0).sum()
+    n_zero = int((df[column] == 0).sum() or 0)
     if n_zero == 0:
         return CheckResult(f"sentinel_zero[{column}]", table, "ok", "no zero values")
     return CheckResult(
@@ -123,7 +123,7 @@ def check_dual_null_sentinel(df: pl.DataFrame, table: str, column: str) -> Check
     'unknown' — found in players.foot during SLS-005. Warn, not fail: the
     two are not yet confirmed equivalent, so this isn't auto-normalized."""
     n_null = df[column].null_count()
-    n_empty = (df[column] == "").sum()
+    n_empty = int((df[column] == "").sum() or 0)
     if n_null > 0 and n_empty > 0:
         return CheckResult(
             f"dual_null_sentinel[{column}]", table, "warn",
@@ -142,7 +142,7 @@ def check_coordinate_bounds(events: pl.DataFrame, lo: float = 0, hi: float = 100
             .explode("v", empty_as_null=True)
             .drop_nulls()["v"]
         )
-        n_out = ((values < lo) | (values > hi)).sum()
+        n_out = int(((values < lo) | (values > hi)).sum() or 0)
         n_total = values.len()
         if n_out == 0:
             results.append(CheckResult(f"coordinate_bounds[{axis}]", "events", "ok", f"all {n_total} within [{lo},{hi}]"))

@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
-import pytest
-
 import polars as pl
 
 from scoutlens.statsbomb.ingestion import (
@@ -16,12 +11,6 @@ from scoutlens.statsbomb.ingestion import (
 )
 from scoutlens.statsbomb.minutes import derive_match_minutes, minutes_frame
 from scoutlens.statsbomb.validation import run_all, summarize
-
-SAMPLE = (
-    Path(r"C:\Users\SrGui\AppData\Local\Temp\claude")
-    / "C--Users-SrGui-Documents-sandbox-futebol-scoutlens-scoutlens"
-    / "0682ec49-87dd-4d01-b993-2e2819db7516" / "scratchpad" / "statsbomb"
-)
 
 
 def _base(idx, type_name, **extra):
@@ -85,10 +74,8 @@ def test_team_ids_from_events():
     assert team_ids_from_events(ev) == {"Home": 1, "Away": 2}
 
 
-@pytest.mark.skipif(not (SAMPLE / "events_3754217.json").exists(),
-                    reason="sample match not present locally")
-def test_normalize_real_sample_is_flat_and_complete():
-    raw = json.loads((SAMPLE / "events_3754217.json").read_text(encoding="utf-8"))
+def test_normalize_synthetic_sample_is_flat_and_complete(synthetic_statsbomb_match):
+    raw, _lineups = synthetic_statsbomb_match
     rows = normalize_events(raw, 3754217, 2)
     assert len(rows) == len(raw)
     # every row has the full flat schema, same keys
@@ -102,14 +89,11 @@ def test_normalize_real_sample_is_flat_and_complete():
     assert sum(1 for p in passes if p["pass_outcome_name"] is None) > len(passes) / 2
 
 
-@pytest.mark.skipif(not (SAMPLE / "events_3754217.json").exists(),
-                    reason="sample match not present locally")
-def test_full_per_match_pipeline_passes_validation():
+def test_full_per_match_pipeline_passes_validation(synthetic_statsbomb_match):
     """normalize + minutes + validation compose into a clean processed set
-    for one real match — the end-to-end wiring `run()` performs per match,
+    for one schema-faithful synthetic match — the end-to-end wiring `run()` performs per match,
     minus the network fetch."""
-    raw = json.loads((SAMPLE / "events_3754217.json").read_text(encoding="utf-8"))
-    lineups = json.loads((SAMPLE / "lineups_3754217.json").read_text(encoding="utf-8"))
+    raw, lineups = synthetic_statsbomb_match
     team_ids = team_ids_from_events(raw)
 
     events = events_frame(normalize_events(raw, 3754217, 2))
@@ -119,6 +103,5 @@ def test_full_per_match_pipeline_passes_validation():
     summary = summarize(run_all(events, minutes, matches))
     assert summary["passed"] is True, summary
     assert summary["fail"] == 0
-    # sanity: a real PL match has ~3.7k events and 22+ minutes rows
-    assert events.height > 2000
-    assert minutes.height >= 22
+    assert events.height == len(raw)
+    assert minutes.height == 22

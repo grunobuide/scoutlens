@@ -18,9 +18,10 @@ Run with:
 
 Downloads ~1,517 events files (~5 GB) plus lineups, normalizes to
 `data/processed/statsbomb/{events,matches,minutes,players}.parquet`. The
-`normalize_events` / player+team extraction functions are pure and unit-
-tested on a checked sample match; only the network fetch needs the live
-repository.
+`normalize_events` / player+team extraction functions are pure and tested
+end-to-end on schema-faithful synthetic match records that can run on every
+machine without redistributing licensed source data; only the network fetch
+and full-scale reproduction need the live repository.
 """
 
 from __future__ import annotations
@@ -52,7 +53,7 @@ _F = pl.Float64
 _I = pl.Int64
 _S = pl.Utf8
 _B = pl.Boolean
-EVENTS_SCHEMA: dict[str, pl.DataType] = {
+EVENTS_SCHEMA = {
     "id": _S, "match_id": _I, "competitionId": _I, "index": _I, "period": _I,
     "minute": _I, "second": _I, "type_name": _S, "player_id": _I, "team_id": _I,
     "position_name": _S, "location_x": _F, "location_y": _F,

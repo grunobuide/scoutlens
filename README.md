@@ -1,120 +1,183 @@
-# ScoutLens — Feasibility Spike
+# ScoutLens — Evidence-first Player Fingerprints
 
-**Decision question:**
+[![quality](https://github.com/grunobuide/scoutlens/actions/workflows/tests.yml/badge.svg)](https://github.com/grunobuide/scoutlens/actions/workflows/tests.yml)
 
-> Is there enough signal in the available event data to justify ScoutLens
-> as a flagship project?
+ScoutLens is a research-backed portfolio project for building, testing, and
+explaining statistical fingerprints of football players from event data.
+It combines reproducible data engineering, deliberately simple baselines,
+external replication, uncertainty-aware evaluation, and a planned interactive
+Player Fingerprint Lab.
 
-**Answer: yes — GO.** The spike is complete; see
-[`docs/feasibility-report.md`](docs/feasibility-report.md) for the full
-executive summary, results, limitations, and recommended next
-experiment. See [`docs/project-charter.md`](docs/project-charter.md) for
-the charter, gates, and the maximum claim this spike is allowed to make.
+The feasibility phase is complete: **event-derived profiles contain a stable
+individual fingerprint worth turning into a flagship experience.** The project
+does not claim that statistical similarity proves playing style, recommends a
+signing, or predicts transfer success.
 
-## Status
+## Why this project is interesting
 
-| Gate | Status |
-|---|---|
-| Gate 0 — Provenance | **GO** — [`docs/data-provenance.md`](docs/data-provenance.md) |
-| Gate 1 — Data | **GO** — [`docs/gate-1-decision.md`](docs/gate-1-decision.md). 1,969 eligible players at ≥450 min/season, 99.72% clean minutes derivation, 99.97% join integrity. |
-| Gate 2 — Analytical signal | **GO** — [`docs/gate-2-decision.md`](docs/gate-2-decision.md). Baseline B (standardized features + cosine) beats the trivial baseline ~10x on MRR, holding up within-role, with confounds checked and minor. **Follow-up caveat:** a team-aware baseline beats Baseline B by 2x+ ([`robustness-checks.md`](docs/robustness-checks.md)) — **directly tested on the 26 players who changed clubs** ([`transfer-analysis.md`](docs/transfer-analysis.md)): Baseline B's advantage over the trivial baseline survives, though a fuller look (not just MRR) shows real, moderate degradation for that subset — encouraging, not a clean "unchanged" result, and the sample is small. |
+ScoutLens is not a story about adding the most complex model available. It is
+a record of scientific decisions under imperfect real-world data:
 
-Task-by-task progress against the backlog (SLS-001…023, defined in the
-brief) is tracked in-session, not duplicated here as a static checklist —
-see recent commit history for what's landed. Post-spike follow-up work
-(bug fixes, robustness checks) continues past SLS-023 — see
-[`decisions-log.md`](docs/decisions-log.md) D009/D010.
+- A 32-feature cosine baseline recovered the same player's second-half profile
+  far better than a role-and-minutes heuristic on Wyscout 2017/18.
+- A stronger team-aware control exposed a major same-season experimental
+  confound and forced a narrower interpretation of the result.
+- The core fingerprint signal replicated on StatsBomb 2015/16 with a different
+  provider, season, league set, and 28-feature canonical mapping — at a smaller
+  magnitude, reported as such.
+- A ratio-shrinkage experiment fixed an obvious low-sample pathology but did
+  not improve retrieval, so it was not promoted into the default catalog.
 
-## Start here
+That sequence — result, challenge, correction, replication, and a documented
+null — is the central evidence behind the project.
 
-1. **[`docs/feasibility-report.md`](docs/feasibility-report.md) — the final report. Start here if you only read one document.**
-2. [`docs/00_ScoutLens_Project_Brief_v1.md`](docs/00_ScoutLens_Project_Brief_v1.md) — the frozen original brief. Source of truth for scope; never edited.
-3. [`docs/project-charter.md`](docs/project-charter.md) — operational charter derived from the brief.
-4. [`docs/decisions-log.md`](docs/decisions-log.md) — every adjustment made to the brief during execution, with the reasoning (append-only).
-5. [`docs/data-provenance.md`](docs/data-provenance.md) · [`data-dictionary.md`](docs/data-dictionary.md) · [`data-quality-report.md`](docs/data-quality-report.md) — data acquisition, schema, and validation.
-6. [`docs/minutes-derivation.md`](docs/minutes-derivation.md) · [`eligible-population.md`](docs/eligible-population.md) · [`gate-1-decision.md`](docs/gate-1-decision.md) — minutes reconstruction and Gate 1.
-7. [`docs/feature-definitions.md`](docs/feature-definitions.md) · [`chronological-split.md`](docs/chronological-split.md) · [`baseline-b-standardization.md`](docs/baseline-b-standardization.md) — modeling setup.
-8. [`docs/temporal-retrieval-global.md`](docs/temporal-retrieval-global.md) · [`temporal-retrieval-within-role.md`](docs/temporal-retrieval-within-role.md) · [`context-diagnostics.md`](docs/context-diagnostics.md) · [`error-analysis.md`](docs/error-analysis.md) · [`gate-2-decision.md`](docs/gate-2-decision.md) — results and Gate 2.
-9. [`docs/robustness-checks.md`](docs/robustness-checks.md) — post-spike follow-up: standardization/metric ablations, and the team-continuity finding that qualifies the headline result.
-10. [`docs/transfer-analysis.md`](docs/transfer-analysis.md) — direct follow-up on (9): retrieval restricted to players who changed clubs between periods.
+## Evidence at a glance
 
-## Setup
+| Experiment | Simple baseline MRR | Fingerprint MRR | Honest interpretation |
+|---|---:|---:|---|
+| Wyscout 2017/18, 1,257 eligible player×competition units | 0.0256 | **0.2539** | Strong temporal fingerprint; about 10× the role+minutes baseline |
+| Wyscout, candidate pool restricted within nominal role | 0.0256 | **0.2787** | Signal is not only a position classifier |
+| StatsBomb 2015/16, 1,061 eligible units | 0.0381 | **0.2031** | External replication at lower magnitude; about 5.3× |
+| Wyscout ratios: raw vs empirical-Bayes shrinkage | — | 0.2539 vs 0.2512 | Pathology fixed per feature, no material retrieval gain |
 
-Requires [`uv`](https://docs.astral.sh/uv/) (manages the Python version and
-virtualenv — no separate Python install needed).
+The important caveat travels with every headline: a role+team+minutes baseline
+reaches MRR 0.589 on Wyscout and 0.602 on StatsBomb because most eligible
+players do not change club mid-season. On transferred players that shortcut
+collapses; the Wyscout feature result remains encouraging at `n=26`, while the
+StatsBomb effect remains inconclusive at `n=19`.
 
+Start with the [feasibility report](docs/feasibility-report.md), then read the
+[robustness checks](docs/robustness-checks.md),
+[transfer analysis](docs/transfer-analysis.md), and
+[StatsBomb replication](docs/statsbomb-replication.md).
+
+## Architecture
+
+Two provider-scoped ingestion and feature pipelines feed a provider-agnostic
+evaluation layer. Small result artifacts carry their config, code revision,
+environment, and input hashes. The flagship web experience will consume a
+separate, versioned showcase contract rather than recomputing research logic in
+the browser.
+
+```mermaid
+flowchart LR
+    W["Wyscout — public showcase source"] --> WA["Wyscout adapter"]
+    S["StatsBomb — aggregate replication"] --> SA["StatsBomb adapter"]
+    WA --> F["Canonical player fingerprints"]
+    SA --> F
+    F --> E["Retrieval, robustness, and uncertainty"]
+    E --> R["Versioned result artifacts + manifests"]
+    R -. planned .-> X["Showcase artifact contract"]
+    X -. planned .-> UI["Interactive Player Fingerprint Lab"]
+    X -. optional .-> AI["Evidence-grounded AI explanation"]
+    AI -. planned .-> UI
 ```
-uv sync
+
+See [docs/architecture.md](docs/architecture.md) for current boundaries,
+planned components, data licensing, reproducibility, and the AI trust model.
+The implementation boundary is now frozen in the
+[vertical-slice specification](docs/flagship-vertical-slice.md) and the
+[versioned showcase artifact contract](docs/showcase-artifact-contract.md).
+
+## Reproduce the research
+
+Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). CI tests the
+supported floor (3.11) and the current development runtime (3.14).
+
+```bash
+uv sync --frozen --all-groups
 ```
 
-## Running the pipeline so far
+### Wyscout / Pappalardo pipeline
 
-```
-# Download the 7 core Wyscout artifacts, verify checksums, convert to Parquet
+```bash
 uv run python -m scoutlens.data.ingestion
-
-# Reconstruct minutes played per player x match (writes minutes.parquet)
 uv run python -m scoutlens.data.minutes
-
-# Run structural + relational validation against the processed data
 uv run python -m scoutlens.data.validation
 
-# Regenerate every number in feasibility-report.md's results sections
-# (retrieval experiments, diagnostics, minutes sensitivity curve) --
-# writes artifacts/gate2_results.json
 uv run python -m scoutlens.evaluation.run_report
-
-# Regenerate every number in robustness-checks.md (standardization/metric
-# ablations, role+team+minutes baseline, feature-family ablation) --
-# writes artifacts/robustness_results.json
 uv run python -m scoutlens.evaluation.run_robustness
-
-# Regenerate every number in transfer-analysis.md (retrieval restricted to
-# players who changed clubs between periods) -- writes
-# artifacts/transfer_analysis_results.json
 uv run python -m scoutlens.evaluation.run_transfer_analysis
-
-# Run the test suite
-uv run pytest
+uv run python -m scoutlens.evaluation.run_shrinkage_experiment
 ```
 
-Raw and processed data are **not** committed — `data/` is gitignored.
-Re-running `ingestion` reproduces `data/raw/` and `data/processed/` from
-scratch, and regenerates [`docs/data-manifest.csv`](docs/data-manifest.csv)
-with fresh checksums and timestamps.
+### StatsBomb external replication
 
-## Data license and attribution
+The pinned four-league ingestion is approximately 5 GB. Review
+[StatsBomb provenance and licence constraints](docs/statsbomb-provenance.md)
+before running it.
 
-Source data is [`Pappalardo, L., Cintia, P., Rossi, A. et al.`](docs/data-provenance.md),
-*A public data set of spatio-temporal match events in soccer competitions*,
-Scientific Data 6:236 (2019), CC BY 4.0. See
-[`DATA_LICENSES.md`](DATA_LICENSES.md) for the full attribution requirement
-and per-artifact verification. **Not redistributed in this repo** — only
-acquisition code and the manifest are tracked; raw files are downloaded
-fresh by `ingestion.py`.
-
-ScoutLens's own code (this repository's Python source, independent of
-the CC BY 4.0 data license above) is licensed under the
-[MIT License](LICENSE) (decided 2026-07-23, D019). The data licenses
-above still govern the data: MIT covers the code only, and any use of
-StatsBomb-derived results additionally carries that source's
-non-commercial and attribution constraints (see
-[`docs/statsbomb-provenance.md`](docs/statsbomb-provenance.md)).
-
-## Repository layout
-
-```
-docs/          — charter, decisions log, data provenance/dictionary/quality docs
-src/scoutlens/ — pipeline code (data/, features/, evaluation/)
-tests/         — pytest suite, mirrors src/ structure
-configs/       — spike configuration (not yet populated)
-notebooks/     — exploratory notebooks (not yet populated); see the brief's
-                 "notebooks ask questions, modules produce answers" rule —
-                 reusable logic belongs in src/, not notebook cells
-data/          — gitignored; raw/processed artifacts live here locally
-artifacts/     — gitignored; spike output artifacts (plots, reports) go here
+```bash
+uv run python -m scoutlens.statsbomb.ingestion
+uv run python -m scoutlens.statsbomb.replication
 ```
 
-Deliberately not created yet: `api/`, `agents/`, `rag/`, `frontend/`,
-`services/` — out of scope for a feasibility spike (see the charter's
-"explicitly out of scope" section).
+### Quality and drift gates
+
+```bash
+uv run --frozen pytest -q
+uv run --frozen ruff check .
+uv run --frozen mypy src/scoutlens
+uv build
+
+# Requires both local processed datasets; recomputes all five result sets.
+SCOUTLENS_DRIFT=1 uv run --frozen pytest tests/evaluation/test_artifact_drift.py
+```
+
+## Read the research trail
+
+1. [Final feasibility report](docs/feasibility-report.md) — claims, results,
+   limitations, and gate decision.
+2. [Frozen original brief](docs/00_ScoutLens_Project_Brief_v1.md) and
+   [project charter](docs/project-charter.md) — the question asked before the
+   result was known.
+3. [Decisions log](docs/decisions-log.md) — append-only changes and their
+   reasoning.
+4. [Feature definitions](docs/feature-definitions.md),
+   [minutes derivation](docs/minutes-derivation.md), and
+   [data quality](docs/data-quality-report.md) — analytical foundations.
+5. [StatsBomb compatibility](docs/statsbomb-feature-compatibility.md),
+   [pipeline](docs/statsbomb-pipeline.md), and
+   [replication](docs/statsbomb-replication.md) — external-validity path.
+6. [Shrinkage experiment](docs/shrinkage-experiment.md) — a documented null
+   and keep/drop decision.
+7. [Recruitment study harness](docs/recruitment-study-harness.md) — a complete
+   optional human-study harness, now deferred because recruitment usefulness
+   is not required for the portfolio flagship claim.
+8. [Flagship vertical slice](docs/flagship-vertical-slice.md) and
+   [showcase artifact contract](docs/showcase-artifact-contract.md) — the public
+   product cut, evidence behavior, typed Python/web boundary, and acceptance
+   budgets.
+
+## Repository map
+
+```text
+config/                         versioned experiment parameters
+src/scoutlens/data/             Wyscout ingestion, minutes, validation
+src/scoutlens/features/         Wyscout feature catalog and shrinkage
+src/scoutlens/statsbomb/        provider-scoped StatsBomb pipeline
+src/scoutlens/evaluation/       provider-agnostic retrieval and robustness
+src/scoutlens/study/            optional blinded human-study harness
+tests/                          unit, integration, snapshot, and drift tests
+artifacts/                      five versioned result summaries; raw data excluded
+docs/                           methods, provenance, decisions, results, architecture
+.beads/                         durable issue graph and project handoff state
+```
+
+The interactive web application, public showcase artifacts, uncertainty layer,
+and grounded AI explanation are the active flagship roadmap, tracked under the
+Beads epic `scoutlens-jtt`.
+
+## Data licences
+
+- **Wyscout/Pappalardo:** CC BY 4.0. The public flagship dataset will use only
+  attributed, derived Wyscout aggregates.
+- **StatsBomb Open Data:** non-commercial, no raw-data redistribution, and logo
+  attribution required for published analysis. ScoutLens exposes StatsBomb only
+  as aggregate replication evidence; raw and per-player derived tables remain
+  local.
+- **ScoutLens code:** [MIT](LICENSE). The MIT licence covers this repository's
+  code, not third-party data or analyses with additional source restrictions.
+
+See [DATA_LICENSES.md](DATA_LICENSES.md) for the complete attribution and usage
+boundary.

@@ -168,15 +168,18 @@ def analyze_study(ratings: list[dict], reliability: list[list[float | None]], se
     b_minus_crole = paired("B", "C_role")
     b_minus_r = paired("B", "R")
 
+    primary_wilcoxon = wilcoxon_signed_rank(b_minus_crole)
+    primary_bootstrap = bootstrap_paired_ci(b_minus_crole, seed=seed)
     primary = {
         "contrast": "B - C_role",
         "n_queries": len(b_minus_crole),
-        "wilcoxon": wilcoxon_signed_rank(b_minus_crole),
-        "bootstrap": bootstrap_paired_ci(b_minus_crole, seed=seed),
+        "wilcoxon": primary_wilcoxon,
+        "bootstrap": primary_bootstrap,
     }
     win_rate = (sum(1 for d in b_minus_crole if d > 0) / len(b_minus_crole)) if b_minus_crole else 0.0
+    b_minus_random = bootstrap_paired_ci(b_minus_r, seed=seed)
     secondary = {
-        "b_minus_random": bootstrap_paired_ci(b_minus_r, seed=seed),
+        "b_minus_random": b_minus_random,
         "win_rate_B_over_Crole": win_rate,
         "mean_rating_by_arm": {
             arm: (sum(v["mean"] for (q, a), v in qam.items() if a == arm)
@@ -187,8 +190,8 @@ def analyze_study(ratings: list[dict], reliability: list[list[float | None]], se
     alpha = krippendorff_alpha_interval(reliability)
     reliability_out = {"krippendorff_alpha": alpha, "gate": ALPHA_GATE, "passes": alpha >= ALPHA_GATE}
 
-    claim_positive = (primary["bootstrap"]["ci_low"] > 0) and (primary["wilcoxon"]["p_value"] < 0.05)
-    floor_ok = secondary["b_minus_random"]["ci_low"] > 0
+    claim_positive = (primary_bootstrap["ci_low"] > 0) and (primary_wilcoxon["p_value"] < 0.05)
+    floor_ok = b_minus_random["ci_low"] > 0
     failures = {
         "claim_fails": not claim_positive,
         "instrument_fails": alpha < ALPHA_GATE,

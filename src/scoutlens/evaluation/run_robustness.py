@@ -33,7 +33,6 @@ from pathlib import Path
 import polars as pl
 
 from scoutlens.evaluation.diagnostics import compute_primary_team
-from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.retrieval import (
     bootstrap_mrr_delta,
     bootstrap_mrr_delta_clustered,
@@ -44,6 +43,7 @@ from scoutlens.evaluation.retrieval import (
     run_global_retrieval_experiment,
     select_eligible_both_periods,
 )
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.similarity import apply_scaler, fit_scaler, impute_and_standardize
 from scoutlens.evaluation.temporal import assign_periods, build_period_profiles
 from scoutlens.features.aggregation import FEATURE_COLUMNS, FEATURE_FAMILIES

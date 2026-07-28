@@ -2,17 +2,13 @@
 
 **Spike duration:** 2026-07-20 to 2026-07-22 (accelerated from the
 charter's 10-working-day estimate — see note on pacing in the closing
-section). **Status: complete. Both gates GO.** Updated 2026-07-22 twice
-with post-spike follow-ups — a robustness battery
-([`robustness-checks.md`](robustness-checks.md)) that found and then a
-transferred-players analysis ([`transfer-analysis.md`](transfer-analysis.md))
-that directly addressed a team-continuity caveat it raised; the gate
-decision is unchanged throughout, now with a more precisely qualified and
-better-supported account of what it showed. **Follow-up work paused here**
-(D012): the natural next step, extending to another season, requires a
-new external dataset (this collection has exactly one season per
-competition) — scoped in Recommended Next Experiment #1 but not started,
-pending feedback and a deliberately separate next project.
+section). **Status: complete. Both gates GO.** Updated through 2026-07-28
+with post-spike robustness, transferred-player analysis, external StatsBomb
+replication, a pre-registered recruitment-study harness, ratio-shrinkage, and
+full five-artifact reproducibility hardening. The gate decision is unchanged,
+but the account is now more precisely qualified and externally supported.
+The feasibility spike is the research foundation for the active ScoutLens
+flagship program (D026), not the current product boundary.
 
 ---
 
@@ -478,11 +474,19 @@ finer-grained sub-role signal, not arbitrary confusion. Full writeup:
     in the versioned [`config/experiment.json`](../config/experiment.json)
     (no more per-runner inlined constants); every artifact embeds a
     `_manifest` with the resolved config + its file hash, git commit,
-    environment versions, and a sha256 per input Parquet; and an opt-in
+    dirty-state flag, exact scientific-source hash, environment versions,
+    and a sha256 per input Parquet; and an opt-in
     fresh-run drift test (`SCOUTLENS_DRIFT=1 uv run pytest
-    tests/evaluation/test_artifact_drift.py`) regenerates all three
-    result sets and compares them to the checked-in artifacts
+    tests/evaluation/test_artifact_drift.py`) originally regenerated the three
+    v0.1 result sets and compared them to the checked-in artifacts
     number-by-number — see [`artifacts/README.md`](../artifacts/README.md).
+    **Extended to every published experiment (2026-07-28, D025):** the
+    StatsBomb replication and ratio-shrinkage runners now consume the same
+    versioned config and emit the same full `_manifest`; the drift suite now
+    covers all five versioned results. StatsBomb integration tests use
+    schema-faithful synthetic fixtures instead of a machine-specific temp
+    path, so provider-pipeline coverage runs in CI without redistributing
+    licensed data.
     Raw and processed data remain local and gitignored, as intended —
     only the results artifacts are inspectable without re-running
     anything.
