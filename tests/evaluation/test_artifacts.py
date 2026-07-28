@@ -28,6 +28,26 @@ def _load(name: str) -> dict:
     return json.loads(path.read_text())
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "gate2_results.json",
+        "robustness_results.json",
+        "transfer_analysis_results.json",
+        "statsbomb_replication_results.json",
+        "shrinkage_experiment_results.json",
+    ],
+)
+def test_published_artifact_has_full_run_manifest(name: str):
+    manifest = _load(name)["_manifest"]
+    assert manifest["config"]["config_version"] == 2
+    assert len(manifest["config_sha256"]) == 64
+    assert manifest["git_commit"] is None or len(manifest["git_commit"]) == 40
+    assert isinstance(manifest["git_dirty"], bool)
+    assert len(manifest["source_sha256"]) == 64
+    assert manifest["inputs"]
+
+
 def test_gate2_results_match_documented_headline_numbers():
     data = _load("gate2_results.json")
     assert data["global"]["baseline_a"]["mrr"] == pytest.approx(0.0256, abs=1e-4)

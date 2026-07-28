@@ -26,7 +26,6 @@ from pathlib import Path
 import polars as pl
 
 from scoutlens.evaluation.diagnostics import compute_primary_team, identify_transferred_players
-from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.retrieval import (
     bootstrap_mrr_delta,
     compute_metrics,
@@ -35,6 +34,7 @@ from scoutlens.evaluation.retrieval import (
     run_baseline_c_retrieval,
     select_eligible_both_periods,
 )
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.similarity import impute_and_standardize
 from scoutlens.evaluation.temporal import assign_periods, build_period_profiles
 from scoutlens.features.aggregation import FEATURE_COLUMNS

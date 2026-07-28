@@ -11,6 +11,7 @@ from scoutlens.evaluation.run_manifest import (
     build_run_manifest,
     load_experiment_config,
     sha256_file,
+    sha256_source_tree,
 )
 
 
@@ -19,6 +20,28 @@ def test_sha256_file_matches_hashlib(tmp_path: Path):
     payload = b"scoutlens" * 10_000
     p.write_bytes(payload)
     assert sha256_file(p) == hashlib.sha256(payload).hexdigest()
+
+
+def test_source_tree_hash_covers_paths_and_contents(tmp_path: Path):
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    (source_root / "a.py").write_text("VALUE = 1\n", encoding="utf-8")
+    nested = source_root / "nested"
+    nested.mkdir()
+    module = nested / "b.py"
+    module.write_text("VALUE = 2\n", encoding="utf-8")
+    (source_root / "ignored.txt").write_text("not scientific source", encoding="utf-8")
+
+    original = sha256_source_tree(source_root)
+    assert len(original) == 64
+    assert sha256_source_tree(source_root) == original
+
+    module.write_text("VALUE = 3\n", encoding="utf-8")
+    assert sha256_source_tree(source_root) != original
+
+    changed_contents = sha256_source_tree(source_root)
+    module.rename(nested / "renamed.py")
+    assert sha256_source_tree(source_root) != changed_contents
 
 
 def test_real_config_loads_and_pins_the_published_experiment():
@@ -32,6 +55,12 @@ def test_real_config_loads_and_pins_the_published_experiment():
     assert config["sensitivity_thresholds"] == [225, 450, 675, 900, 1125, 1350]
     assert config["top_k_for_diagnostics"] == 10
     assert config["bootstrap"] == {"n_resamples": 1000, "seed": 0}
+    assert config["statsbomb_replication"] == {
+        "season": "2015/16",
+        "domestic_leagues": [2, 7, 11, 12],
+        "minutes_threshold": 450,
+        "bootstrap": {"n_resamples": 1000, "seed": 0},
+    }
 
 
 def test_build_run_manifest_ties_config_and_inputs(tmp_path: Path):
@@ -50,6 +79,8 @@ def test_build_run_manifest_ties_config_and_inputs(tmp_path: Path):
     assert manifest["config_sha256"] == sha256_file(config_path)
     assert manifest["generated_at"].endswith("+00:00")
     assert manifest["git_commit"] is None or len(manifest["git_commit"]) == 40
+    assert manifest["git_dirty"] is None or isinstance(manifest["git_dirty"], bool)
+    assert len(manifest["source_sha256"]) == 64
     assert set(manifest["inputs"]) == {"a.parquet", "b.parquet"}
     assert manifest["inputs"]["a.parquet"] == {
         "sha256": hashlib.sha256(b"aaa").hexdigest(),

@@ -1,15 +1,17 @@
 {
   "_manifest": {
-    "generated_at": "2026-07-23T22:48:16.976171+00:00",
-    "git_commit": "20e01a81c5b5fdf7ba8732939d9a1ef6bbd01ce3",
+    "generated_at": "2026-07-28T13:55:00.818120+00:00",
+    "git_commit": "c8ceaaf2528707e84ccedb8fb8ad481e4875cd91",
+    "git_dirty": true,
+    "source_sha256": "8e24c049e2fa13f776f06b9ff2e4597589121a5d4f449ca1da4dc995504f5620",
     "python_version": "3.14.4",
     "polars_version": "1.42.1",
     "platform": "Windows-11-10.0.26200-SP0",
     "config_path": "config/experiment.json",
-    "config_sha256": "19fc83e126b520d3fc6abd744e0eeb5361861cf2389cf0cf9cfccc0a25db4576",
+    "config_sha256": "dc86a8953ed533b908e71c4edd52b7999d38c5aa74be4087c6fc67a720eabf4d",
     "config": {
-      "config_version": 1,
-      "description": "Single versioned source of the experiment parameters consumed by scoutlens.evaluation.run_report / run_robustness / run_transfer_analysis. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "config_version": 2,
+      "description": "Single versioned source of the parameters consumed by every published ScoutLens experiment. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
       "domestic_leagues": [
         364,
         412,
@@ -31,6 +33,20 @@
       "bootstrap": {
         "n_resamples": 1000,
         "seed": 0
+      },
+      "statsbomb_replication": {
+        "season": "2015/16",
+        "domestic_leagues": [
+          2,
+          7,
+          11,
+          12
+        ],
+        "minutes_threshold": 450,
+        "bootstrap": {
+          "n_resamples": 1000,
+          "seed": 0
+        }
       }
     },
     "inputs": {

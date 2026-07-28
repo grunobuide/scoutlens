@@ -54,7 +54,7 @@ def _role_lookup(players: pl.DataFrame) -> pl.DataFrame:
     return players.select(pl.col("wyId").alias("player_id"), pl.col("role").struct.field("name").alias("role"))
 
 
-def _player_meta(players: pl.DataFrame, competitions: pl.DataFrame) -> pl.DataFrame:
+def _player_meta(players: pl.DataFrame, competitions: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame]:
     comp = competitions.select(pl.col("wyId").alias("competitionId"), pl.col("name").alias("league"))
     return players.select(
         pl.col("wyId").alias("player_id"),

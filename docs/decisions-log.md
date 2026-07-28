@@ -765,3 +765,105 @@ scout-facing cards, a feature-weighting model). Aggregation gained a
 purely-additive `with_counts=True` (default byte-identical to v0.1) to
 expose the numerator/denominator counts. Limitation #11 is resolved:
 characterized, fixed, and its (non-)effect measured.
+
+---
+
+## D025 — 2026-07-28 — Reproducibility contract extended to all published experiments
+
+**Decision:** make `config/experiment.json` version 2 the single parameter
+source for all five published result artifacts and require every artifact to
+carry the D015 `_manifest` contract. The StatsBomb replication now reads its
+Wyscout reference from the versioned Gate-2 artifact instead of duplicating
+headline constants. The opt-in fresh-run drift suite covers the original
+three Wyscout artifacts, StatsBomb replication, and ratio shrinkage.
+
+**Why:** D022 and D024 added valuable experiments but bypassed part of the
+reproducibility machinery they were documented as inheriting: their settings
+were hardcoded, their artifacts had no full manifest, and the drift suite did
+not regenerate them. Separately, three StatsBomb integration tests referenced
+one developer's temporary absolute path, so they silently skipped elsewhere.
+Those are presentation and auditability failures even though the numerical
+results themselves reproduce exactly.
+
+**How to apply:** changing any published parameter requires editing
+`config/experiment.json`, regenerating the affected artifact, and running
+`SCOUTLENS_DRIFT=1 uv run pytest tests/evaluation/test_artifact_drift.py`.
+StatsBomb provider integration uses schema-faithful synthetic fixtures in CI;
+licensed raw data stays local. The quality workflow installs from `uv.lock`
+with `--frozen`, tests Python 3.11 and 3.14, and runs Ruff, Mypy, and a package
+build.
+
+---
+
+## D026 — 2026-07-28 — Flagship thesis: an evidence-first Player Fingerprint Lab
+
+**Decision:** reposition ScoutLens from a completed feasibility spike into an
+evidence-first Player Fingerprint Lab. The public claim is temporal stability
+of individual statistical fingerprints — not recruitment usefulness, transfer
+success, player quality, or proof of playing style. The Wyscout-derived public
+showcase will make the fingerprint, feature evidence, confounders, replication,
+and uncertainty explorable. StatsBomb remains aggregate replication evidence
+because of its non-commercial and redistribution constraints.
+
+**Why:** Gate 2, the robustness battery, and external replication are already a
+strong portfolio-grade scientific foundation. Requiring 2–5 unknown scouts to
+complete the optional recruitment study would optimize for a stronger claim the
+flagship does not need while delaying the missing deliverable: a clear public
+experience. The completed harness still demonstrates honest human-in-the-loop
+design and is preserved, but `scoutlens-h00` is deferred and no longer blocks
+modeling work.
+
+**How to apply:** the flagship roadmap is Beads epic `scoutlens-jtt`. Its order
+is reproducibility → public narrative → typed showcase/vertical-slice spec →
+interactive application → uncertainty and evidence-grounded AI → learned-metric
+benchmark → release. The first web implementation is static-first; any backend
+or advanced model must earn its operational or measured value.
+
+---
+
+## D027 — 2026-07-28 — Manifests identify dirty source trees exactly
+
+**Decision:** extend every experiment `_manifest` with `git_dirty` and a
+deterministic `source_sha256` over the relative paths and bytes of every Python
+module under `src/scoutlens/`. Keep `git_commit` as the human-navigable anchor,
+but do not treat it as a complete source identity when the working tree is
+dirty.
+
+**Why:** an artifact can legitimately be regenerated before its implementation
+is committed. Recording only `HEAD` then points to a revision that does not
+contain the code that produced the numbers. Input and config checksums cannot
+close that gap. The source-tree digest makes the exact scientific code state
+comparable without making artifacts self-referential; `git_dirty` makes the
+reason for a commit/hash mismatch explicit.
+
+**How to apply:** compare `source_sha256`, `config_sha256`, and every input hash
+when auditing two runs. Use `git_commit` to navigate history and `git_dirty` to
+decide whether that commit alone is sufficient. Regenerating any of the five
+published artifacts must refresh all four provenance dimensions together.
+
+---
+
+## D028 — 2026-07-28 — Full-catalog, static-first flagship contract
+
+**Decision:** make the first Player Fingerprint Lab a three-route static
+experience over the complete 1,257-unit Wyscout Gate-2 population. Python owns
+features, scalers, retrieval, neighbors, additive cosine evidence, caveats, and
+later uncertainty; the TypeScript application consumes immutable JSON through
+the versioned `scoutlens.showcase/1.0.0` contract. The Lab separates same-player
+identity retrieval from a five-item, self-excluded statistical-neighbor view.
+
+**Why:** a small curated demo would be easier but would introduce selection
+ambiguity exactly where the research claims population-level evidence. A full
+static catalog is still operationally small and makes the portfolio stronger.
+Separating retrieval from neighbors prevents “the model recognizes the same
+player” from being misread as “the model recommends similar signings”. Keeping
+scientific computation in Python creates one audited source of truth and a
+clean future seam for an API without requiring backend operations now.
+
+**How to apply:** implement Beads `scoutlens-jtt.4` against
+[`flagship-vertical-slice.md`](flagship-vertical-slice.md) and
+[`showcase-artifact-contract.md`](showcase-artifact-contract.md). The first
+slice must represent uncertainty as explicitly pending; `scoutlens-jtt.5`
+fills the predeclared match-bootstrap fields without redesigning the UI
+contract. AI remains optional and consumes evidence IDs only after both layers
+exist.

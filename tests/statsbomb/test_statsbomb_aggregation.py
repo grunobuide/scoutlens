@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import polars as pl
 import pytest
 
@@ -15,12 +12,6 @@ from scoutlens.statsbomb.aggregation import (
 )
 from scoutlens.statsbomb.ingestion import EVENTS_SCHEMA
 from scoutlens.statsbomb.replication import derive_roles
-
-SAMPLE = (
-    Path(r"C:\Users\SrGui\AppData\Local\Temp\claude")
-    / "C--Users-SrGui-Documents-sandbox-futebol-scoutlens-scoutlens"
-    / "0682ec49-87dd-4d01-b993-2e2819db7516" / "scratchpad" / "statsbomb"
-)
 
 
 def _ev(rows):
@@ -107,18 +98,16 @@ def test_derive_roles_buckets_positions():
     assert roles == {1: "Goalkeeper", 2: "Defender", 3: "Midfielder", 4: "Forward", 5: "Forward"}
 
 
-@pytest.mark.skipif(not (SAMPLE / "events_3754217.json").exists(),
-                    reason="sample match not present locally")
-def test_aggregation_on_real_sample_produces_all_features():
+def test_aggregation_on_synthetic_sample_produces_all_features(synthetic_statsbomb_match):
     from scoutlens.statsbomb.ingestion import events_frame, normalize_events, team_ids_from_events
     from scoutlens.statsbomb.minutes import derive_match_minutes, minutes_frame
-    raw = json.loads((SAMPLE / "events_3754217.json").read_text(encoding="utf-8"))
-    lu = json.loads((SAMPLE / "lineups_3754217.json").read_text(encoding="utf-8"))
+    raw, lu = synthetic_statsbomb_match
     events = events_frame(normalize_events(raw, 3754217, 2))
     minutes = minutes_frame(derive_match_minutes(3754217, 2, team_ids_from_events(raw), lu, raw))
     feats = compute_player_features(events, minutes.select("player_id", "minutes_played"))
     assert all(c in feats.columns for c in CANONICAL_PLUS_CARRY)
-    # a high-minutes outfielder has a plausible pass volume and completion
+    # The fixture's active outfielder has a complete pass and a native carry.
     outfield = feats.filter(pl.col("minutes_played") > 80).sort("passes_p90", descending=True).row(0, named=True)
-    assert 20 < outfield["passes_p90"] < 150
-    assert 0.5 < outfield["pass_completion_pct"] <= 1.0
+    assert outfield["passes_p90"] > 0
+    assert outfield["pass_completion_pct"] == 1.0
+    assert outfield["carry_proxy_p90"] > 0

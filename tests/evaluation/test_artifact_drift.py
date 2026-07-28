@@ -59,28 +59,43 @@ def _assert_same(fresh, stored, path=""):
         assert fresh == stored, f"{path}: {fresh!r} != {stored!r}"
 
 
-def _drift_check(module_name: str, artifact_name: str):
-    if not PROCESSED_DIR.exists():
-        pytest.skip("data/processed not present — build it first (see README)")
+def _drift_check(module_path: str, artifact_name: str, required_data: Path = PROCESSED_DIR):
+    if not required_data.exists():
+        pytest.skip(f"{required_data} not present — build it first (see README)")
     artifact_path = ARTIFACTS_DIR / artifact_name
     if not artifact_path.exists():
         pytest.skip(f"{artifact_name} not present — run the matching run_* script first")
 
     import importlib
 
-    module = importlib.import_module(f"scoutlens.evaluation.{module_name}")
+    module = importlib.import_module(module_path)
     fresh = json.loads(json.dumps(module.run()))  # normalize via the same JSON round-trip the artifact went through
     stored = json.loads(artifact_path.read_text())
     _assert_same(fresh, stored)
 
 
 def test_gate2_results_have_not_drifted():
-    _drift_check("run_report", "gate2_results.json")
+    _drift_check("scoutlens.evaluation.run_report", "gate2_results.json")
 
 
 def test_robustness_results_have_not_drifted():
-    _drift_check("run_robustness", "robustness_results.json")
+    _drift_check("scoutlens.evaluation.run_robustness", "robustness_results.json")
 
 
 def test_transfer_analysis_results_have_not_drifted():
-    _drift_check("run_transfer_analysis", "transfer_analysis_results.json")
+    _drift_check("scoutlens.evaluation.run_transfer_analysis", "transfer_analysis_results.json")
+
+
+def test_statsbomb_replication_results_have_not_drifted():
+    _drift_check(
+        "scoutlens.statsbomb.replication",
+        "statsbomb_replication_results.json",
+        PROCESSED_DIR / "statsbomb",
+    )
+
+
+def test_shrinkage_experiment_results_have_not_drifted():
+    _drift_check(
+        "scoutlens.evaluation.run_shrinkage_experiment",
+        "shrinkage_experiment_results.json",
+    )

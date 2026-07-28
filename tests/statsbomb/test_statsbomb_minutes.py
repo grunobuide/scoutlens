@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import pytest
 
 from scoutlens.statsbomb.minutes import (
@@ -12,12 +9,6 @@ from scoutlens.statsbomb.minutes import (
     interval_minutes,
     period_bounds,
     player_minutes,
-)
-
-SAMPLE = (
-    Path(r"C:\Users\SrGui\AppData\Local\Temp\claude")
-    / "C--Users-SrGui-Documents-sandbox-futebol-scoutlens-scoutlens"
-    / "0682ec49-87dd-4d01-b993-2e2819db7516" / "scratchpad" / "statsbomb"
 )
 
 
@@ -108,21 +99,12 @@ def test_player_minutes_clips_stint_running_past_the_whistle():
     assert overlap is False
 
 
-@pytest.mark.skipif(not (SAMPLE / "events_3754217.json").exists(),
-                    reason="sample match not present locally")
-def test_derive_match_minutes_matches_real_sample():
-    events = json.loads((SAMPLE / "events_3754217.json").read_text(encoding="utf-8"))
-    lineups = json.loads((SAMPLE / "lineups_3754217.json").read_text(encoding="utf-8"))
+def test_derive_match_minutes_composes_with_portable_sample(synthetic_statsbomb_match):
+    events, lineups = synthetic_statsbomb_match
     from scoutlens.statsbomb.ingestion import team_ids_from_events
     team_ids = team_ids_from_events(events)
     rows = {r.player_id: r for r in derive_match_minutes(3754217, 2, team_ids, lineups, events)}
-    # P1 = [0, 48:38], P2 = [45:00, 95:38] -> P1 dur 48.633, P2 dur 50.633.
-    # Both asserted players have a single clean stint, hand-verifiable.
-    assert rows[3339].minutes_played == pytest.approx(99.267, abs=0.02)   # Begović, full match
-    assert rows[3339].derivation_status == "clean"
-    assert rows[3713].minutes_played == pytest.approx(50.633, abs=0.02)   # Chambers, on at half
-    assert rows[3713].derivation_status == "clean"
-    # Coquelin (3437) has overlapping tactical-shift stints in the source —
-    # flagged, not silently double-counted, and never above a full match.
-    assert rows[3437].derivation_status == "overlap_merged"
-    assert rows[3437].minutes_played <= 99.267 + 0.02
+    assert len(rows) == 22
+    assert rows[100].minutes_played == pytest.approx(90.0)
+    assert rows[100].derivation_status == "clean"
+    assert rows[200].minutes_played == pytest.approx(90.0)

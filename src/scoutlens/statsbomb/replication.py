@@ -35,6 +35,7 @@ from scoutlens.evaluation.retrieval import (
     run_within_role_retrieval_experiment,
     select_eligible_both_periods,
 )
+from scoutlens.evaluation.run_manifest import build_run_manifest, load_experiment_config
 from scoutlens.evaluation.similarity import impute_and_standardize
 from scoutlens.evaluation.temporal import assign_periods
 from scoutlens.statsbomb.aggregation import (
@@ -46,16 +47,6 @@ from scoutlens.statsbomb.aggregation import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PROCESSED_DIR = REPO_ROOT / "data" / "processed" / "statsbomb"
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
-
-DOMESTIC_LEAGUES = [2, 7, 11, 12]  # Premier League, Ligue 1, La Liga, Serie A
-PRIMARY_MINUTES_THRESHOLD = 450
-
-# Wyscout v0.1 headline numbers (artifacts/gate2_results.json) for side-by-side.
-WYSCOUT_V01 = {
-    "global": {"baseline_a_mrr": 0.0256, "baseline_b_mrr": 0.2539, "baseline_b_median_rank": 16},
-    "within_role": {"baseline_b_mrr": 0.2787, "baseline_b_median_rank": 12},
-}
-
 
 def derive_roles(events: pl.DataFrame) -> pl.DataFrame:
     """player_id → nominal role in {Goalkeeper, Defender, Midfielder,
@@ -109,26 +100,54 @@ def _metrics(m) -> dict:
 
 
 def run() -> dict:
-    events = pl.read_parquet(PROCESSED_DIR / "events.parquet")
-    minutes = pl.read_parquet(PROCESSED_DIR / "minutes.parquet")
-    matches = pl.read_parquet(PROCESSED_DIR / "matches.parquet")
+    config = load_experiment_config()
+    replication_config = config["statsbomb_replication"]
+    leagues = replication_config["domestic_leagues"]
+    minutes_threshold = replication_config["minutes_threshold"]
+    n_resamples = replication_config["bootstrap"]["n_resamples"]
+    seed = replication_config["bootstrap"]["seed"]
+    input_paths = [
+        PROCESSED_DIR / "events.parquet",
+        PROCESSED_DIR / "minutes.parquet",
+        PROCESSED_DIR / "matches.parquet",
+        ARTIFACTS_DIR / "gate2_results.json",
+    ]
+
+    events = pl.read_parquet(input_paths[0])
+    minutes = pl.read_parquet(input_paths[1])
+    matches = pl.read_parquet(input_paths[2])
+    gate2 = json.loads(input_paths[3].read_text(encoding="utf-8"))
+    wyscout_v01 = {
+        "global": {
+            "baseline_a_mrr": round(gate2["global"]["baseline_a"]["mrr"], 4),
+            "baseline_b_mrr": round(gate2["global"]["baseline_b"]["mrr"], 4),
+            "baseline_b_median_rank": gate2["global"]["baseline_b"]["median_rank"],
+        },
+        "within_role": {
+            "baseline_b_mrr": round(gate2["within_role"]["baseline_b"]["mrr"], 4),
+            "baseline_b_median_rank": gate2["within_role"]["baseline_b"]["median_rank"],
+        },
+    }
 
     role_lookup = derive_roles(events)
     period_assignment = assign_periods(matches)
     profiles = build_period_profiles(events, minutes, period_assignment)
 
     global_28 = run_global_retrieval_experiment(
-        profiles, role_lookup, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES, feature_columns=CANONICAL_FEATURES
+        profiles, role_lookup, minutes_threshold, leagues, feature_columns=CANONICAL_FEATURES,
+        n_resamples=n_resamples, seed=seed,
     )
     within_role_28 = run_within_role_retrieval_experiment(
-        profiles, role_lookup, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES, feature_columns=CANONICAL_FEATURES
+        profiles, role_lookup, minutes_threshold, leagues, feature_columns=CANONICAL_FEATURES,
+        n_resamples=n_resamples, seed=seed,
     )
     global_30 = run_global_retrieval_experiment(
-        profiles, role_lookup, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES, feature_columns=CANONICAL_PLUS_CARRY
+        profiles, role_lookup, minutes_threshold, leagues, feature_columns=CANONICAL_PLUS_CARRY,
+        n_resamples=n_resamples, seed=seed,
     )
 
     # --- transferred-players follow-up (native-team, D011 analogue) ---
-    eligible = select_eligible_both_periods(profiles, PRIMARY_MINUTES_THRESHOLD, DOMESTIC_LEAGUES)
+    eligible = select_eligible_both_periods(profiles, minutes_threshold, leagues)
     eligible = eligible.join(role_lookup, on="player_id", how="left")
     primary_team = compute_primary_team(minutes, period_assignment)
     transferred = identify_transferred_players(eligible, primary_team)
@@ -157,18 +176,21 @@ def run() -> dict:
             "baseline_c": _metrics(compute_metrics(rc["rank"].to_list())) if rc.height else None,
         }
         if ra.height and rb.height:
-            out["mrr_delta_b_minus_a"] = bootstrap_mrr_delta(ra, rb, n_resamples=1000, seed=0)
+            out["mrr_delta_b_minus_a"] = bootstrap_mrr_delta(
+                ra, rb, n_resamples=n_resamples, seed=seed
+            )
         return out
 
     return {
+        "_manifest": build_run_manifest(config, input_paths),
         "provider": "statsbomb",
-        "season": "2015/16",
+        "season": replication_config["season"],
         "config": {
-            "domestic_leagues": DOMESTIC_LEAGUES,
-            "minutes_threshold": PRIMARY_MINUTES_THRESHOLD,
+            "domestic_leagues": leagues,
+            "minutes_threshold": minutes_threshold,
             "n_canonical_features": len(CANONICAL_FEATURES),
         },
-        "wyscout_v01_reference": WYSCOUT_V01,
+        "wyscout_v01_reference": wyscout_v01,
         "global_28": {
             "n_eligible": global_28["n_eligible_player_competition"],
             "baseline_a": _metrics(global_28["baseline_a"]),
@@ -197,6 +219,6 @@ if __name__ == "__main__":
     results = run()
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = ARTIFACTS_DIR / "statsbomb_replication_results.json"
-    out_path.write_text(json.dumps(results, indent=2))
+    out_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"wrote {out_path}")
     print(json.dumps(results, indent=2))

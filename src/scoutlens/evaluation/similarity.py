@@ -14,6 +14,7 @@ evaluation can run either one through identical harness code.
 from __future__ import annotations
 
 import math
+from typing import cast
 
 import polars as pl
 
@@ -58,7 +59,7 @@ def fit_scaler(profiles: pl.DataFrame, feature_columns: list[str]) -> Scaler:
             scaler[col] = None
             continue
         std_val = profiles[col].fill_null(mean_val).std()
-        scaler[col] = None if not std_val else (mean_val, std_val)
+        scaler[col] = None if not std_val else (cast(float, mean_val), cast(float, std_val))
     return scaler
 
 
