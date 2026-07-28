@@ -890,3 +890,29 @@ or a two-number array. Future contract edits must keep Python validation, strict
 Ajv compilation, generated TypeScript types, and the published manifest in
 lockstep. A change to interval meaning or estimation remains a separately
 versioned scientific decision.
+
+---
+
+## D030 — 2026-07-28 — Content-addressed showcase payload distribution
+
+**Decision:** distribute the 1,257 manifest-declared player profiles as one
+deterministic `tar+gzip` GitHub Release asset instead of committing 147 MB of
+repetitive JSON or requiring provider data during a web build. Pin the dataset
+version, archive byte count, SHA-256, path count, filename, and HTTPS location
+in `config/showcase-payload-pack.json`. The release tag and content-addressed
+filename are immutable publication identifiers by policy; the digest remains
+the consumer's authority.
+
+**Why:** the complete profile population is required for an honest flagship,
+but its source JSON is inappropriate for code review and Git history. A compact
+derived-data pack preserves clean-clone builds and the full population while a
+fail-closed hydrator prevents a mutable or malformed download from silently
+becoming application data. The pack contains only public derived aggregates;
+raw Wyscout/Pappalardo rows remain excluded.
+
+**How to apply:** build archives only from validated exporter output, with
+sorted paths and normalized archive metadata. Hydration must verify the pinned
+archive size and digest, reject unsafe or non-manifest paths, verify every
+profile's manifest size and SHA-256 in staging, and atomically replace
+`public/showcase/v1/players` only after all checks pass. A changed payload or
+dataset requires a new content-addressed filename and release pin.

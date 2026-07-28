@@ -562,11 +562,14 @@ review, Git tracks the manifest/catalog/index/research files while Beads
 `scoutlens-jtt.10` owns a content-addressed immutable player pack and verified
 raw-data-free hydration path.
 
-The Git-tracked release should contain the small contract files and generated
-showcase artifacts needed for a raw-data-free web build. Raw/processed provider
-data remains ignored. If the complete player payload set proves noisy in code
-review, it may be attached as an immutable release asset, but the manifest and
-checksums remain tracked and the application build must pin the asset digest.
+The Git-tracked release contains the small contract files needed to audit the
+showcase: manifest, catalog, player index, and research summary. Raw/processed
+provider data remains ignored. The complete player payload is distributed as a
+content-addressed release asset pinned by
+[`config/showcase-payload-pack.json`](../config/showcase-payload-pack.json).
+The fail-closed hydration path and offline regeneration procedure are specified
+in [`showcase-payload-pack.md`](showcase-payload-pack.md); CI uses that path
+before the production web build.
 
 ## Consumer behavior
 
