@@ -55,7 +55,11 @@ def assign_periods(matches: pl.DataFrame) -> pl.DataFrame:
 
 
 def build_period_profiles(
-    events: pl.DataFrame, minutes: pl.DataFrame, period_assignment: pl.DataFrame
+    events: pl.DataFrame,
+    minutes: pl.DataFrame,
+    period_assignment: pl.DataFrame,
+    *,
+    with_counts: bool = False,
 ) -> pl.DataFrame:
     """One row per `(player_id, competitionId, period)` with `minutes_played`
     plus all 32 features from feature-definitions.md, computed only from
@@ -82,7 +86,7 @@ def build_period_profiles(
             .agg(pl.col("minutes_played").sum())
         )
 
-        features = compute_player_features(period_events, period_minutes)
+        features = compute_player_features(period_events, period_minutes, with_counts=with_counts)
         features = features.with_columns(
             pl.lit(competition_id).alias("competitionId"), pl.lit(period).alias("period")
         )

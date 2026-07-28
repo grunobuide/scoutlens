@@ -200,6 +200,14 @@ interface FeatureDefinition {
 `method_ref` is a stable link or fragment into feature definitions. The web UI
 must not infer labels from `feature_id` or color a higher value as better.
 
+Percentiles are deterministic average-rank percentiles over the same combined
+eligible period-A and period-B population used to fit the global scaler.
+`global_percentile` uses all eligible rows; `within_role_percentile` uses the
+subset with the same frozen nominal role. Null raw values inherit the scaler's
+mean-imputed `z=0` before ranking, so tied nulls receive the same average
+percentile. This display transform does not change the globally standardized
+vectors used by cosine retrieval.
+
 ## `players.index.json`
 
 This is the only artifact needed to populate search and filters. It must stay
@@ -523,6 +531,36 @@ The exporter writes to a new staging directory, validates every invariant,
 serializes UTF-8 JSON with sorted keys and a final newline, computes file
 hashes, writes the manifest last, and only then replaces the versioned public
 directory. A failed build leaves the previous dataset untouched.
+
+The reference implementation is:
+
+```bash
+uv run python -m scoutlens.showcase.export
+```
+
+It consumes `data/processed/{period_profiles,events,matches,minutes,players,
+teams,competitions}.parquet`, `config/experiment.json`, and the five checked-in
+research result artifacts. Ratio attempts/successes are recomputed from events
+with the frozen feature code and must equal the checked period profiles before
+publication.
+
+`dataset_version` is derived without a circular self-hash: the exporter first
+canonically serializes every non-manifest semantic artifact with the stable
+placeholder `__DATASET_VERSION__`, hashes each sorted logical path plus
+length-prefixed bytes, and uses the first 12 lowercase SHA-256 characters.
+It then injects the resulting version into every artifact. `generated_at` and
+producer environment fields live only in the manifest and do not change the
+semantic dataset identity.
+
+The first complete local export, `wyscout-2017-18-v1-0e48066f37cc`, contains
+1,257 profiles and 1,261 JSON files including the manifest. The player payloads
+measure 147,054,404 bytes uncompressed and 17,151,006 bytes as the sum of
+deterministic individual gzip streams; the largest profile is 14,325 bytes
+gzip and the catalog index is 69,867 bytes gzip. Both public performance
+budgets pass. Because the uncompressed payload set is too noisy for code
+review, Git tracks the manifest/catalog/index/research files while Beads
+`scoutlens-jtt.10` owns a content-addressed immutable player pack and verified
+raw-data-free hydration path.
 
 The Git-tracked release should contain the small contract files and generated
 showcase artifacts needed for a raw-data-free web build. Raw/processed provider

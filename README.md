@@ -99,7 +99,19 @@ uv run python -m scoutlens.evaluation.run_report
 uv run python -m scoutlens.evaluation.run_robustness
 uv run python -m scoutlens.evaluation.run_transfer_analysis
 uv run python -m scoutlens.evaluation.run_shrinkage_experiment
+
+# Build, validate, and atomically publish scoutlens.showcase/1.0.0.
+uv run python -m scoutlens.showcase.export
 ```
+
+The showcase exporter consumes the local processed Wyscout Parquets and the
+five checked-in research summaries. It writes `public/showcase/v1`, validates
+all schemas, cross-artifact references and checksums, and fails before replacing
+an existing export if any invariant or gzip budget is violated. The reviewable
+manifest, feature catalog, player index, and research summary are versioned in
+Git. The reproducible 1,257-file player payload directory is excluded from Git
+because its compact JSON totals about 147 MB; immutable raw-data-free packaging
+is tracked in Beads as `scoutlens-jtt.10`.
 
 ### StatsBomb external replication
 
@@ -157,9 +169,11 @@ src/scoutlens/data/             Wyscout ingestion, minutes, validation
 src/scoutlens/features/         Wyscout feature catalog and shrinkage
 src/scoutlens/statsbomb/        provider-scoped StatsBomb pipeline
 src/scoutlens/evaluation/       provider-agnostic retrieval and robustness
+src/scoutlens/showcase/         versioned public artifact builders and validators
 src/scoutlens/study/            optional blinded human-study harness
 tests/                          unit, integration, snapshot, and drift tests
 artifacts/                      five versioned result summaries; raw data excluded
+public/showcase/v1/             generated public contract, index, evidence, and profiles
 docs/                           methods, provenance, decisions, results, architecture
 .beads/                         durable issue graph and project handoff state
 ```

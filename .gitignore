@@ -11,6 +11,10 @@ artifacts/*
 !artifacts/statsbomb_replication_results.json
 !artifacts/shrinkage_experiment_results.json
 *.parquet
+# The complete showcase player set is reproducible but ~147 MB as JSON.
+# Reviewable contract/index/manifest/research files remain tracked; the player
+# pack is distributed separately as an immutable, content-addressed asset.
+public/showcase/v1/players/
 .venv/
 __pycache__/
 *.pyc
