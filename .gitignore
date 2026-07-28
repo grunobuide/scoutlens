@@ -15,6 +15,12 @@ artifacts/*
 # Reviewable contract/index/manifest/research files remain tracked; the player
 # pack is distributed separately as an immutable, content-addressed asset.
 public/showcase/v1/players/
+web/node_modules/
+web/.next/
+web/out/
+web/coverage/
+web/public/showcase/
+web/*.tsbuildinfo
 .venv/
 __pycache__/
 *.pyc
