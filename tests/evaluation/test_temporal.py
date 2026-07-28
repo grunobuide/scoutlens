@@ -108,6 +108,28 @@ def test_build_period_profiles_scopes_events_and_minutes_per_period():
     assert by_period["A"]["minutes_played"] == 90
 
 
+def test_build_period_profiles_can_preserve_ratio_support_counts():
+    period_assignment = pl.DataFrame({
+        "match_id": [1],
+        "competitionId": [100],
+        "period": ["A"],
+    })
+    events = pl.DataFrame(
+        [_event(1, 1, tags=[1801]), _event(1, 1, tags=[1802])],
+        schema={
+            "playerId": pl.Int64, "matchId": pl.Int64, "eventName": pl.String, "subEventName": pl.String,
+            "tags": pl.List(pl.Struct({"id": pl.Int64})), "positions": pl.List(pl.Struct({"x": pl.Int64, "y": pl.Int64})),
+        },
+    )
+    minutes = pl.DataFrame({"player_id": [1], "match_id": [1], "minutes_played": [90]})
+
+    result = build_period_profiles(events, minutes, period_assignment, with_counts=True).row(0, named=True)
+
+    assert result["pass_completion_pct"] == 0.5
+    assert result["_sum_pass_accurate"] == 1
+    assert result["_sum_pass_not_accurate"] == 1
+
+
 def test_build_period_profiles_keeps_same_player_separate_across_competitions():
     """Regression case for D007: a player appearing in two competitions in
     the same period label must produce two distinct rows, not collide."""

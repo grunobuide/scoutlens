@@ -1,0 +1,681 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scoutlens.dev/schemas/showcase-1.0.0.schema.json",
+  "title": "ScoutLens showcase artifacts 1.0.0",
+  "oneOf": [
+    {"$ref": "#/$defs/manifest"},
+    {"$ref": "#/$defs/feature_catalog_artifact"},
+    {"$ref": "#/$defs/player_index_artifact"},
+    {"$ref": "#/$defs/player_profile_artifact"},
+    {"$ref": "#/$defs/research_summary_artifact"}
+  ],
+  "$defs": {
+    "dataset_version": {
+      "type": "string",
+      "pattern": "^wyscout-2017-18-v1-[a-f0-9]{12}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "player_key": {"type": "string", "pattern": "^wy-[0-9]+$"},
+    "profile_key": {"type": "string", "pattern": "^wy-[0-9]+-c-[0-9]+$"},
+    "role": {"enum": ["Goalkeeper", "Defender", "Midfielder", "Forward"]},
+    "family": {
+      "enum": [
+        "passing",
+        "progression",
+        "chance_creation",
+        "shooting",
+        "defensive",
+        "spatial",
+        "possession",
+        "carrying_proxy"
+      ]
+    },
+    "caveat_code": {
+      "enum": [
+        "fingerprint_not_style_proof",
+        "similarity_not_recruitment",
+        "same_season_team_confound",
+        "small_transfer_sample",
+        "provider_replication_lower_magnitude",
+        "within_role_display_differs_from_global_model",
+        "uncertainty_pending",
+        "uncertainty_sampling_only",
+        "goalkeeper_feature_coverage_weak"
+      ]
+    },
+    "caveat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "evidence_refs"],
+      "properties": {
+        "code": {"$ref": "#/$defs/caveat_code"},
+        "severity": {"enum": ["context", "important", "critical"]},
+        "message": {"type": "string", "minLength": 1},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "competition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "country"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1},
+        "name": {"type": "string", "minLength": 1},
+        "country": {"type": "string", "minLength": 1}
+      }
+    },
+    "team_minutes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "minutes"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1},
+        "name": {"type": "string", "minLength": 1},
+        "minutes": {"type": "number", "minimum": 0}
+      }
+    },
+    "period_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minutes", "match_count", "teams"],
+      "properties": {
+        "minutes": {"type": "number", "minimum": 0},
+        "match_count": {"type": "integer", "minimum": 0},
+        "teams": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/team_minutes"}}
+      }
+    },
+    "feature_uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "valid_resamples", "raw_ci_95", "within_role_percentile_ci_95"],
+      "properties": {
+        "status": {"enum": ["pending", "available", "insufficient"]},
+        "valid_resamples": {"type": ["integer", "null"], "minimum": 0},
+        "raw_ci_95": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "items": false}
+          ]
+        },
+        "within_role_percentile_ci_95": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "array",
+              "prefixItems": [
+                {"type": "number", "minimum": 0, "maximum": 100},
+                {"type": "number", "minimum": 0, "maximum": 100}
+              ],
+              "items": false
+            }
+          ]
+        }
+      }
+    },
+    "feature_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_id",
+        "raw_value",
+        "global_z_score",
+        "global_percentile",
+        "within_role_percentile",
+        "imputed_for_model",
+        "support",
+        "uncertainty"
+      ],
+      "properties": {
+        "feature_id": {"type": "string", "minLength": 1},
+        "raw_value": {"type": ["number", "null"]},
+        "global_z_score": {"type": "number"},
+        "global_percentile": {"type": "number", "minimum": 0, "maximum": 100},
+        "within_role_percentile": {"type": "number", "minimum": 0, "maximum": 100},
+        "imputed_for_model": {"type": "boolean"},
+        "support": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minutes", "attempts", "successes"],
+          "properties": {
+            "minutes": {"type": "number", "minimum": 0},
+            "attempts": {"type": ["integer", "null"], "minimum": 0},
+            "successes": {"type": ["integer", "null"], "minimum": 0}
+          }
+        },
+        "uncertainty": {"$ref": "#/$defs/feature_uncertainty"}
+      }
+    },
+    "period_fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "date_start", "date_end", "minutes", "match_count", "features"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "date_start": {"type": "string", "format": "date"},
+        "date_end": {"type": "string", "format": "date"},
+        "minutes": {"type": "number", "minimum": 0},
+        "match_count": {"type": "integer", "minimum": 0},
+        "features": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"$ref": "#/$defs/feature_value"}}
+      }
+    },
+    "rank_uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "valid_resamples",
+        "median_rank",
+        "rank_ci_95",
+        "recall_at_1_rate",
+        "recall_at_5_rate",
+        "recall_at_10_rate"
+      ],
+      "properties": {
+        "status": {"enum": ["pending", "available", "insufficient"]},
+        "valid_resamples": {"type": ["integer", "null"], "minimum": 0},
+        "median_rank": {"type": ["number", "null"], "minimum": 1},
+        "rank_ci_95": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "array", "prefixItems": [{"type": "number", "minimum": 1}, {"type": "number", "minimum": 1}], "items": false}
+          ]
+        },
+        "recall_at_1_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "recall_at_5_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "recall_at_10_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "retrieval_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_count", "self_rank", "reciprocal_rank", "cosine_similarity", "evidence_refs", "uncertainty"],
+      "properties": {
+        "candidate_count": {"type": "integer", "minimum": 1},
+        "self_rank": {"type": "integer", "minimum": 1},
+        "reciprocal_rank": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "cosine_similarity": {"type": ["number", "null"], "minimum": -1.000000001, "maximum": 1.000000001},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "uncertainty": {"$ref": "#/$defs/rank_uncertainty"}
+      }
+    },
+    "identity_retrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query_period", "candidate_period", "method", "global", "within_role", "baseline_role_minutes"],
+      "properties": {
+        "query_period": {"const": "a"},
+        "candidate_period": {"const": "b"},
+        "method": {"const": "combined_scaler_cosine_v1"},
+        "global": {"$ref": "#/$defs/retrieval_outcome"},
+        "within_role": {"$ref": "#/$defs/retrieval_outcome"},
+        "baseline_role_minutes": {"$ref": "#/$defs/retrieval_outcome"}
+      }
+    },
+    "neighbor_stability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "valid_resamples", "top_5_selection_rate", "median_rank", "rank_ci_95"],
+      "properties": {
+        "status": {"enum": ["pending", "available", "insufficient"]},
+        "valid_resamples": {"type": ["integer", "null"], "minimum": 0},
+        "top_5_selection_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "median_rank": {"type": ["number", "null"], "minimum": 1},
+        "rank_ci_95": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "array", "prefixItems": [{"type": "number", "minimum": 1}, {"type": "number", "minimum": 1}], "items": false}
+          ]
+        }
+      }
+    },
+    "statistical_neighbor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank",
+        "player_key",
+        "profile_key",
+        "display_name",
+        "role",
+        "competition",
+        "teams",
+        "candidate_period",
+        "cosine_similarity",
+        "evidence_refs",
+        "stability"
+      ],
+      "properties": {
+        "rank": {"enum": [1, 2, 3, 4, 5]},
+        "player_key": {"$ref": "#/$defs/player_key"},
+        "profile_key": {"$ref": "#/$defs/profile_key"},
+        "display_name": {"type": "string", "minLength": 1},
+        "role": {"$ref": "#/$defs/role"},
+        "competition": {"$ref": "#/$defs/competition"},
+        "teams": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name"],
+            "properties": {
+              "id": {"type": "integer", "minimum": 1},
+              "name": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "candidate_period": {"const": "b"},
+        "cosine_similarity": {"type": "number", "minimum": -1.000000001, "maximum": 1.000000001},
+        "evidence_refs": {"type": "array", "minItems": 40, "maxItems": 40, "items": {"type": "string"}, "uniqueItems": true},
+        "stability": {"$ref": "#/$defs/neighbor_stability"}
+      }
+    },
+    "evidence_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "subject",
+        "kind",
+        "feature_id",
+        "family",
+        "query_global_z",
+        "candidate_global_z",
+        "contribution",
+        "interpretation"
+      ],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "subject": {
+          "anyOf": [
+            {"const": "self_retrieval"},
+            {"type": "string", "pattern": "^neighbor:wy-[0-9]+-c-[0-9]+$"}
+          ]
+        },
+        "kind": {"enum": ["feature_contribution", "family_contribution"]},
+        "feature_id": {"type": ["string", "null"]},
+        "family": {"$ref": "#/$defs/family"},
+        "query_global_z": {"type": ["number", "null"]},
+        "candidate_global_z": {"type": ["number", "null"]},
+        "contribution": {"type": "number"},
+        "interpretation": {"enum": ["alignment", "disagreement", "neutral"]}
+      }
+    },
+    "uncertainty_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "design_version",
+        "seed",
+        "requested_resamples",
+        "valid_resamples",
+        "interval",
+        "resampling_unit",
+        "cohort_policy",
+        "warning"
+      ],
+      "properties": {
+        "status": {"enum": ["pending", "available", "insufficient"]},
+        "design_version": {"enum": ["match_bootstrap_v1", null]},
+        "seed": {"enum": [1729, null]},
+        "requested_resamples": {"enum": [500, null]},
+        "valid_resamples": {"type": ["integer", "null"], "minimum": 0},
+        "interval": {"enum": ["percentile_95", null]},
+        "resampling_unit": {"enum": ["whole_match_stratified_by_competition_and_period", null]},
+        "cohort_policy": {"enum": ["fixed_observed_eligible_cohort", null]},
+        "warning": {"type": "string", "minLength": 1}
+      }
+    },
+    "feature_definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_id",
+        "label",
+        "short_label",
+        "family",
+        "order",
+        "description",
+        "unit",
+        "display_precision",
+        "raw_null_meaning",
+        "model_null_handling",
+        "direction_semantics",
+        "support_kind",
+        "method_ref"
+      ],
+      "properties": {
+        "feature_id": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "short_label": {"type": "string", "minLength": 1},
+        "family": {"$ref": "#/$defs/family"},
+        "order": {"type": "integer", "minimum": 0, "maximum": 31},
+        "description": {"type": "string", "minLength": 1},
+        "unit": {"enum": ["per_90", "ratio", "pitch_percent", "distance_per_90"]},
+        "display_precision": {"type": "integer", "minimum": 0, "maximum": 6},
+        "raw_null_meaning": {"enum": ["no_attempts", "not_observed", null]},
+        "model_null_handling": {"const": "population_mean_then_z_zero"},
+        "direction_semantics": {"const": "descriptive_not_quality"},
+        "support_kind": {"enum": ["minutes", "attempts"]},
+        "method_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "feature_catalog_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "schema_version", "dataset_version", "features"],
+      "properties": {
+        "contract": {"const": "scoutlens.showcase"},
+        "schema_version": {"const": "1.0.0"},
+        "dataset_version": {"$ref": "#/$defs/dataset_version"},
+        "features": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"$ref": "#/$defs/feature_definition"}}
+      }
+    },
+    "player_index_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "player_key",
+        "profile_key",
+        "display_name",
+        "role",
+        "competition",
+        "period_contexts",
+        "total_minutes",
+        "self_rank_within_role",
+        "uncertainty_status",
+        "artifact_path"
+      ],
+      "properties": {
+        "player_key": {"$ref": "#/$defs/player_key"},
+        "profile_key": {"$ref": "#/$defs/profile_key"},
+        "display_name": {"type": "string", "minLength": 1},
+        "role": {"$ref": "#/$defs/role"},
+        "competition": {"$ref": "#/$defs/competition"},
+        "period_contexts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["a", "b"],
+          "properties": {"a": {"$ref": "#/$defs/period_context"}, "b": {"$ref": "#/$defs/period_context"}}
+        },
+        "total_minutes": {"type": "number", "minimum": 0},
+        "self_rank_within_role": {"type": "integer", "minimum": 1},
+        "uncertainty_status": {"enum": ["pending", "available", "insufficient"]},
+        "artifact_path": {"type": "string", "pattern": "^players/wy-[0-9]+-c-[0-9]+\\.json$"}
+      }
+    },
+    "player_index_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "schema_version", "dataset_version", "profiles"],
+      "properties": {
+        "contract": {"const": "scoutlens.showcase"},
+        "schema_version": {"const": "1.0.0"},
+        "dataset_version": {"$ref": "#/$defs/dataset_version"},
+        "profiles": {"type": "array", "items": {"$ref": "#/$defs/player_index_item"}}
+      }
+    },
+    "player_profile_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "schema_version",
+        "dataset_version",
+        "profile_key",
+        "identity",
+        "cohort",
+        "periods",
+        "retrieval",
+        "neighbors",
+        "uncertainty",
+        "caveats",
+        "evidence_index",
+        "provenance_ref"
+      ],
+      "properties": {
+        "contract": {"const": "scoutlens.showcase"},
+        "schema_version": {"const": "1.0.0"},
+        "dataset_version": {"$ref": "#/$defs/dataset_version"},
+        "profile_key": {"$ref": "#/$defs/profile_key"},
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["player_key", "display_name", "role", "competition", "season", "period_contexts"],
+          "properties": {
+            "player_key": {"$ref": "#/$defs/player_key"},
+            "display_name": {"type": "string", "minLength": 1},
+            "role": {"$ref": "#/$defs/role"},
+            "competition": {"$ref": "#/$defs/competition"},
+            "season": {"const": "2017/18"},
+            "period_contexts": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["a", "b"],
+              "properties": {"a": {"$ref": "#/$defs/period_context"}, "b": {"$ref": "#/$defs/period_context"}}
+            }
+          }
+        },
+        "cohort": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "global_profile_count",
+            "within_role_profile_count",
+            "minutes_threshold_per_period",
+            "scaler_scope",
+            "default_display_percentile_scope"
+          ],
+          "properties": {
+            "global_profile_count": {"type": "integer", "minimum": 1},
+            "within_role_profile_count": {"type": "integer", "minimum": 1},
+            "minutes_threshold_per_period": {"const": 450},
+            "scaler_scope": {"const": "eligible_period_a_and_b_combined"},
+            "default_display_percentile_scope": {"const": "within_role"}
+          }
+        },
+        "periods": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["a", "b"],
+          "properties": {"a": {"$ref": "#/$defs/period_fingerprint"}, "b": {"$ref": "#/$defs/period_fingerprint"}}
+        },
+        "retrieval": {"$ref": "#/$defs/identity_retrieval"},
+        "neighbors": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/statistical_neighbor"}},
+        "uncertainty": {"$ref": "#/$defs/uncertainty_block"},
+        "caveats": {"type": "array", "minItems": 5, "items": {"$ref": "#/$defs/caveat"}},
+        "evidence_index": {"type": "array", "minItems": 240, "items": {"$ref": "#/$defs/evidence_item"}},
+        "provenance_ref": {"const": "manifest.json"}
+      }
+    },
+    "research_metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric_id", "label", "value", "ci_95", "unit", "display_precision"],
+      "properties": {
+        "metric_id": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "value": {"type": "number"},
+        "ci_95": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "items": false}
+          ]
+        },
+        "unit": {"enum": ["mrr", "median_rank", "recall", "count"]},
+        "display_precision": {"type": "integer", "minimum": 0, "maximum": 6}
+      }
+    },
+    "research_experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "experiment_id",
+        "title",
+        "provider",
+        "population",
+        "metrics",
+        "conclusion",
+        "caveat_codes",
+        "source_artifact",
+        "report_url"
+      ],
+      "properties": {
+        "experiment_id": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "provider": {"enum": ["wyscout_pappalardo", "statsbomb_open_data"]},
+        "population": {"type": "string", "minLength": 1},
+        "metrics": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/research_metric"}},
+        "conclusion": {"type": "string", "minLength": 1},
+        "caveat_codes": {"type": "array", "items": {"$ref": "#/$defs/caveat_code"}, "uniqueItems": true},
+        "source_artifact": {"type": "string", "pattern": "^artifacts/[a-z0-9_-]+\\.json$"},
+        "report_url": {"type": "string", "minLength": 1}
+      }
+    },
+    "research_summary_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "schema_version",
+        "dataset_version",
+        "supported_claim",
+        "unsupported_claims",
+        "experiments",
+        "narrative_steps",
+        "caveats"
+      ],
+      "properties": {
+        "contract": {"const": "scoutlens.showcase"},
+        "schema_version": {"const": "1.0.0"},
+        "dataset_version": {"$ref": "#/$defs/dataset_version"},
+        "supported_claim": {"type": "string", "minLength": 1},
+        "unsupported_claims": {"type": "array", "minItems": 3, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "experiments": {"type": "array", "minItems": 8, "items": {"$ref": "#/$defs/research_experiment"}},
+        "narrative_steps": {
+          "type": "array",
+          "minItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["order", "kind", "title", "summary", "experiment_ids"],
+            "properties": {
+              "order": {"type": "integer", "minimum": 1},
+              "kind": {"enum": ["question", "result", "challenge", "correction", "replication", "null_result"]},
+              "title": {"type": "string", "minLength": 1},
+              "summary": {"type": "string", "minLength": 1},
+              "experiment_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+            }
+          }
+        },
+        "caveats": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/caveat"}}
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "schema_version",
+        "dataset_version",
+        "generated_at",
+        "featured_profile",
+        "source",
+        "population",
+        "producer",
+        "inputs",
+        "files"
+      ],
+      "properties": {
+        "contract": {"const": "scoutlens.showcase"},
+        "schema_version": {"const": "1.0.0"},
+        "dataset_version": {"$ref": "#/$defs/dataset_version"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "featured_profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profile_key", "editorial", "reason"],
+          "properties": {
+            "profile_key": {"$ref": "#/$defs/profile_key"},
+            "editorial": {"const": true},
+            "reason": {"type": "string", "minLength": 1}
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "season", "title", "citation", "source_url", "licence", "licence_url", "redistribution_note"],
+          "properties": {
+            "provider": {"const": "wyscout_pappalardo"},
+            "season": {"const": "2017/18"},
+            "title": {"type": "string", "minLength": 1},
+            "citation": {"type": "string", "minLength": 1},
+            "source_url": {"type": "string", "minLength": 1},
+            "licence": {"const": "CC BY 4.0"},
+            "licence_url": {"type": "string", "minLength": 1},
+            "redistribution_note": {"type": "string", "minLength": 1}
+          }
+        },
+        "population": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["analytical_unit", "chronological_periods", "domestic_competition_ids", "minutes_threshold_per_period", "profile_count", "feature_count"],
+          "properties": {
+            "analytical_unit": {"const": "player_competition"},
+            "chronological_periods": {"const": ["a", "b"]},
+            "domestic_competition_ids": {"type": "array", "minItems": 1, "items": {"type": "integer"}, "uniqueItems": true},
+            "minutes_threshold_per_period": {"const": 450},
+            "profile_count": {"type": "integer", "minimum": 1},
+            "feature_count": {"const": 32}
+          }
+        },
+        "producer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["git_commit", "git_dirty", "source_sha256", "config_path", "config_sha256", "python_version", "polars_version"],
+          "properties": {
+            "git_commit": {"type": ["string", "null"], "pattern": "^[a-f0-9]{40}$"},
+            "git_dirty": {"type": ["boolean", "null"]},
+            "source_sha256": {"$ref": "#/$defs/sha256"},
+            "config_path": {"const": "config/experiment.json"},
+            "config_sha256": {"$ref": "#/$defs/sha256"},
+            "python_version": {"type": "string", "minLength": 1},
+            "polars_version": {"type": "string", "minLength": 1}
+          }
+        },
+        "inputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["logical_name", "sha256", "bytes", "public"],
+            "properties": {
+              "logical_name": {"type": "string", "minLength": 1},
+              "sha256": {"$ref": "#/$defs/sha256"},
+              "bytes": {"type": "integer", "minimum": 1},
+              "public": {"const": false}
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "media_type", "sha256", "bytes", "records"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "media_type": {"const": "application/json"},
+              "sha256": {"$ref": "#/$defs/sha256"},
+              "bytes": {"type": "integer", "minimum": 1},
+              "records": {"type": "integer", "minimum": 1}
+            }
+          }
+        }
+      }
+    }
+  }
+}
