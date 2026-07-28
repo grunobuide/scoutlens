@@ -170,6 +170,7 @@ src/scoutlens/features/         Wyscout feature catalog and shrinkage
 src/scoutlens/statsbomb/        provider-scoped StatsBomb pipeline
 src/scoutlens/evaluation/       provider-agnostic retrieval and robustness
 src/scoutlens/showcase/         versioned public artifact builders and validators
+web/                            static Next.js showcase and typed artifact consumer
 src/scoutlens/study/            optional blinded human-study harness
 tests/                          unit, integration, snapshot, and drift tests
 artifacts/                      five versioned result summaries; raw data excluded
@@ -178,9 +179,9 @@ docs/                           methods, provenance, decisions, results, archite
 .beads/                         durable issue graph and project handoff state
 ```
 
-The interactive web application, public showcase artifacts, uncertainty layer,
-and grounded AI explanation are the active flagship roadmap, tracked under the
-Beads epic `scoutlens-jtt`.
+The static web foundation and public showcase contract now form the flagship
+delivery boundary. Interactive Lab screens, the uncertainty layer, and grounded
+AI explanation remain tracked under the Beads epic `scoutlens-jtt`.
 
 ## Data licences
 
