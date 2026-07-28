@@ -19,6 +19,13 @@ const meaningfulStaticContent = {
     "Keep a useful correction out",
     "Audit the full provenance chain",
   ],
+  "lab/index.html": [
+    "Compare one player with himself.",
+    "Complete eligible catalog",
+    "Period A / B fingerprint",
+    "All 32 measurements",
+    "uncertainty pending",
+  ],
 };
 
 for (const route of routes) {
@@ -36,7 +43,13 @@ for (const route of routes) {
       throw new Error(`${route} is missing meaningful static content: ${expected}`);
     }
   }
-  for (const forbidden of ["% match", "match percentage", "recommended replacement", "recruitment target"]) {
+  for (const forbidden of [
+    "% match",
+    "match percentage",
+    "percentage match",
+    "recommended replacement",
+    "recruitment target",
+  ]) {
     if (html.toLowerCase().includes(forbidden)) {
       throw new Error(`${route} contains forbidden recommendation wording: ${forbidden}`);
     }

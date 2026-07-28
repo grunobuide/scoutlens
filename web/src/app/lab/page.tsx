@@ -1,53 +1,53 @@
 import type { Metadata } from "next";
 
+import { LabExplorer, LabProblemPanel } from "@/components/lab-explorer";
+import { loadShowcaseLab } from "@/content/load-showcase-lab";
+
 export const metadata: Metadata = {
   title: "Fingerprint Lab",
-  description: "Explore period-to-period player fingerprints with evidence attached.",
+  description:
+    "Search 1,257 player profiles and compare 32 event-derived measurements across two chronological periods.",
 };
 
-const contractSteps = [
-  "Choose a player × competition profile",
-  "Compare the first and second chronological periods",
-  "Inspect the nearest statistical profiles",
-  "Trace each similarity back to feature evidence",
-] as const;
+export default async function LabPage() {
+  const lab = await loadShowcaseLab();
 
-export default function LabPage() {
   return (
-    <main id="main-content" className="shell page-shell">
-      <header className="page-intro">
-        <p className="eyebrow">Interactive surface</p>
-        <h1>Fingerprint Lab</h1>
+    <main id="main-content" className="shell page-shell lab-page">
+      <header className="page-intro page-intro--wide lab-page-intro">
+        <p className="eyebrow">Interactive evidence surface</p>
+        <h1>Compare one player with himself.</h1>
         <p className="lede">
-          The product shell is ready. Search, comparison, and visual explanation will land here
-          on top of the validated static showcase contract.
+          Search every eligible player × competition profile, then inspect how the same 32
+          event-derived measurements move between the first and second half of the season.
+        </p>
+        <p className="lab-page-intro__boundary">
+          This is a statistical fingerprint—not a quality score, style proof, recruitment ranking,
+          or automated verdict.
         </p>
       </header>
 
-      <section className="lab-frame" aria-labelledby="lab-contract-heading">
-        <div className="lab-frame__status">
-          <span className="status-dot" aria-hidden="true" />
-          Static contract connected
-        </div>
-        <h2 id="lab-contract-heading">The interaction contract</h2>
-        <ol className="step-list">
-          {contractSteps.map((step, index) => (
-            <li key={step}>
-              <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-              {step}
-            </li>
-          ))}
-        </ol>
-      </section>
+      <noscript>
+        <section className="lab-state lab-state--unavailable">
+          <p className="eyebrow">JavaScript required for interaction</p>
+          <h2>The evidence remains available</h2>
+          <p>
+            Enable JavaScript to search and switch profiles. The landing and scientific record
+            remain fully readable without it.
+          </p>
+        </section>
+      </noscript>
 
-      <section className="boundary-note" aria-labelledby="lab-boundary-heading">
-        <h2 id="lab-boundary-heading">What this Lab will not do</h2>
-        <p>
-          It will not calculate research results in the browser, hide caveats, or turn similarity
-          into an automated scouting verdict. The interface consumes versioned, checksummed
-          artifacts produced offline.
-        </p>
-      </section>
+      {lab.status === "ready" ? (
+        <LabExplorer
+          datasetVersion={lab.datasetVersion}
+          catalog={lab.catalog}
+          profiles={lab.profiles}
+          initialProfile={lab.initialProfile}
+        />
+      ) : (
+        <LabProblemPanel problem={lab.problem} datasetVersion={lab.datasetVersion} />
+      )}
     </main>
   );
 }
