@@ -6,12 +6,39 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
 const routes = ["index.html", "lab/index.html", "science/index.html"];
 const landmarks = ["<header", "<nav", "<main", "<footer"];
+const meaningfulStaticContent = {
+  "index.html": [
+    "A player leaves a reproducible fingerprint",
+    "Critical confound",
+    "StatsBomb Open Data",
+    "Not supported",
+  ],
+  "science/index.html": [
+    "The science is the sequence",
+    "First chronological half",
+    "Keep a useful correction out",
+    "Audit the full provenance chain",
+  ],
+};
 
 for (const route of routes) {
   const html = await readFile(resolve(webRoot, "out", route), "utf8");
   for (const landmark of landmarks) {
     if (!html.includes(landmark)) {
       throw new Error(`${route} is missing semantic landmark ${landmark}`);
+    }
+  }
+  if ((html.match(/<h1[ >]/g) ?? []).length !== 1) {
+    throw new Error(`${route} must contain exactly one h1`);
+  }
+  for (const expected of meaningfulStaticContent[route] ?? []) {
+    if (!html.includes(expected)) {
+      throw new Error(`${route} is missing meaningful static content: ${expected}`);
+    }
+  }
+  for (const forbidden of ["% match", "match percentage", "recommended replacement", "recruitment target"]) {
+    if (html.toLowerCase().includes(forbidden)) {
+      throw new Error(`${route} contains forbidden recommendation wording: ${forbidden}`);
     }
   }
 }
