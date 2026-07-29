@@ -25,7 +25,7 @@ assets as one-year `immutable` resources.
 
 | Surface | Frozen profile | Failure rule |
 |---|---|---|
-| Browser E2E | Chromium; 1280x900 desktop and 360x800 touch viewport; English/UTC/light | Any required flow, failure fixture, local link, cache header or responsive baseline fails |
+| Browser E2E | Chromium; 1280x900 desktop and 360x800 touch viewport; English/UTC/light; platform-qualified visual baselines | Any required flow, failure fixture, local link, cache header or responsive baseline fails |
 | Automated accessibility | axe default rules, no excluded elements or disabled rules; all routes and open comparison drawer | Any `serious` or `critical` violation fails |
 | Lighthouse | Three `/lab/` runs; median run; 360x800 mobile; Chromium Fast 4G preset (60 ms RTT, 9 Mbps down) and 4x CPU slowdown | Performance, Accessibility, Best Practices or SEO below 0.90; LCP above 2,500 ms; CLS above 0.10 |
 | Interaction latency | Chromium Event Timing API during the percentile-toggle keyboard interaction | Longest interaction above 200 ms fails |
@@ -35,6 +35,12 @@ The Event Timing assertion exercises the browser mechanism used by INP, but is
 a synthetic release proxy rather than a field Core Web Vital. A real public
 deployment would still need field telemetry before making a population-level
 INP claim.
+
+Visual snapshots include Playwright's `{platform}` token in their path so
+Windows and Linux font rasterization are reviewed independently without
+loosening the 3% pixel-difference limit. Linux baselines are generated and
+verified with the official `mcr.microsoft.com/playwright:v1.62.0-noble` image,
+which matches the pinned test dependency and GitHub runner browser.
 
 ## Covered product states
 
