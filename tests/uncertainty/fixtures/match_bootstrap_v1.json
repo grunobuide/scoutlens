@@ -1,0 +1,88 @@
+{
+  "fixture_version": "match_bootstrap_v1-fixture-1",
+  "description": "Small two-competition truth fixture for sampling, missingness, duplicate weighting, ties and qualitative interval behavior.",
+  "feature_formulas": {
+    "signal_p90": "90 * signal_events / minutes",
+    "success_pct": "successes / attempts when attempts > 0, otherwise null"
+  },
+  "matches": [
+    {"match_id": 101, "competition_id": 10, "period": "A"},
+    {"match_id": 102, "competition_id": 10, "period": "A"},
+    {"match_id": 103, "competition_id": 10, "period": "B"},
+    {"match_id": 104, "competition_id": 10, "period": "B"},
+    {"match_id": 201, "competition_id": 20, "period": "A"},
+    {"match_id": 202, "competition_id": 20, "period": "A"},
+    {"match_id": 203, "competition_id": 20, "period": "B"},
+    {"match_id": 204, "competition_id": 20, "period": "B"}
+  ],
+  "players": [
+    {"player_id": 1001, "competition_id": 10, "role": "Midfielder", "case_tags": ["invariant_player"]},
+    {"player_id": 1002, "competition_id": 10, "role": "Midfielder", "case_tags": ["tied_candidate_low_id"]},
+    {"player_id": 1003, "competition_id": 10, "role": "Midfielder", "case_tags": ["tied_candidate_high_id"]},
+    {"player_id": 1004, "competition_id": 10, "role": "Midfielder", "case_tags": ["high_variance_low_support"]},
+    {"player_id": 1005, "competition_id": 10, "role": "Midfielder", "case_tags": ["missing_in_resample"]},
+    {"player_id": 2001, "competition_id": 20, "role": "Midfielder", "case_tags": ["multi_competition_stratum"]}
+  ],
+  "player_match_observations": [
+    {"match_id": 101, "player_id": 1001, "minutes": 90, "signal_events": 9, "attempts": 4, "successes": 3},
+    {"match_id": 102, "player_id": 1001, "minutes": 90, "signal_events": 9, "attempts": 4, "successes": 3},
+    {"match_id": 103, "player_id": 1001, "minutes": 90, "signal_events": 9, "attempts": 4, "successes": 3},
+    {"match_id": 104, "player_id": 1001, "minutes": 90, "signal_events": 9, "attempts": 4, "successes": 3},
+    {"match_id": 101, "player_id": 1002, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 102, "player_id": 1002, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 103, "player_id": 1002, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 104, "player_id": 1002, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 101, "player_id": 1003, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 102, "player_id": 1003, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 103, "player_id": 1003, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 104, "player_id": 1003, "minutes": 90, "signal_events": 8, "attempts": 4, "successes": 2},
+    {"match_id": 101, "player_id": 1004, "minutes": 15, "signal_events": 0, "attempts": 1, "successes": 0},
+    {"match_id": 102, "player_id": 1004, "minutes": 15, "signal_events": 8, "attempts": 1, "successes": 1},
+    {"match_id": 103, "player_id": 1004, "minutes": 15, "signal_events": 0, "attempts": 1, "successes": 0},
+    {"match_id": 104, "player_id": 1004, "minutes": 15, "signal_events": 8, "attempts": 1, "successes": 1},
+    {"match_id": 101, "player_id": 1005, "minutes": 30, "signal_events": 4, "attempts": 1, "successes": 1},
+    {"match_id": 103, "player_id": 1005, "minutes": 30, "signal_events": 4, "attempts": 1, "successes": 1},
+    {"match_id": 201, "player_id": 2001, "minutes": 90, "signal_events": 6, "attempts": 3, "successes": 2},
+    {"match_id": 202, "player_id": 2001, "minutes": 90, "signal_events": 6, "attempts": 3, "successes": 2},
+    {"match_id": 203, "player_id": 2001, "minutes": 90, "signal_events": 6, "attempts": 3, "successes": 2},
+    {"match_id": 204, "player_id": 2001, "minutes": 90, "signal_events": 6, "attempts": 3, "successes": 2}
+  ],
+  "forced_draw_plans": [
+    {"replicate_id": 0, "draws": {"10:A": [101, 102], "10:B": [103, 104], "20:A": [201, 202], "20:B": [203, 204]}},
+    {"replicate_id": 1, "draws": {"10:A": [102, 102], "10:B": [104, 104], "20:A": [201, 201], "20:B": [204, 204]}},
+    {"replicate_id": 2, "draws": {"10:A": [101, 101], "10:B": [103, 103], "20:A": [202, 202], "20:B": [203, 203]}}
+  ],
+  "truth_cases": [
+    {
+      "case_id": "invariant_player",
+      "subject": {"player_id": 1001, "competition_id": 10},
+      "expected": "signal_p90 and success_pct have zero-width intervals because every source match has identical rates"
+    },
+    {
+      "case_id": "high_variance_low_support",
+      "subject": {"player_id": 1004, "competition_id": 10},
+      "expected": "both feature intervals are wider than the invariant player's intervals"
+    },
+    {
+      "case_id": "missing_in_resample",
+      "subject": {"player_id": 1005, "competition_id": 10},
+      "forced_absent_replicate": 1,
+      "expected": "absence is not converted to zero; feature measures are invalid and candidate ranks are placed after present candidates"
+    },
+    {
+      "case_id": "tied_candidates",
+      "query": {"player_id": 1001, "competition_id": 10},
+      "candidates": [{"player_id": 1002, "competition_id": 10}, {"player_id": 1003, "competition_id": 10}],
+      "expected_order": [{"player_id": 1002, "competition_id": 10}, {"player_id": 1003, "competition_id": 10}]
+    },
+    {
+      "case_id": "multi_competition_strata",
+      "expected": "every replicate draws the observed count independently within each competition-period stratum"
+    },
+    {
+      "case_id": "duplicate_match_weighting",
+      "forced_replicate": 1,
+      "expected": "a match drawn twice contributes exactly twice its events and minutes"
+    }
+  ]
+}
