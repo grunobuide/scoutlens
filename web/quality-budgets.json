@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "gzip_bytes": {
+    "initial_route_javascript": 204800,
+    "feature_catalog": 409600,
+    "player_profile_max": 30720,
+    "lab_initial_transfer_excluding_fonts": 768000
+  },
+  "lighthouse": {
+    "category_minimum": 0.9,
+    "largest_contentful_paint_ms": 2500,
+    "interaction_to_next_paint_ms": 200,
+    "cumulative_layout_shift": 0.1
+  }
+}

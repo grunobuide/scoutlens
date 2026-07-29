@@ -11,10 +11,19 @@ versioned `scoutlens.showcase/1.0.0` artifacts.
 
 ## Clean install and quality gates
 
+From a clean repository clone, hydrate the pinned public player pack before
+installing the web toolchain:
+
 ```bash
+uv sync --frozen
+uv run --frozen python -m scoutlens.showcase.payload hydrate
+
 cd web
+corepack enable
+corepack install --global pnpm@11.9.0
 pnpm install --frozen-lockfile
-pnpm quality
+pnpm exec playwright install --with-deps chromium
+pnpm release:check
 ```
 
 `pnpm build` copies the four Git-tracked showcase artifacts into the static
@@ -25,6 +34,13 @@ API route, authentication, or live network service is required.
 
 The dependency build allowlist is explicit in `pnpm-workspace.yaml`. A newly
 introduced dependency install script therefore fails closed until reviewed.
+
+`pnpm release:check` runs the deterministic contract, lint, type, unit, static
+build, gzip budget, Playwright, axe and Lighthouse gates. Playwright and
+Lighthouse both exercise `web/out` through the same local production server;
+the development server is never used for release evidence. The exact device,
+network, cache and manual-keyboard protocol is recorded in
+[`docs/flagship-quality-gates.md`](../docs/flagship-quality-gates.md).
 
 ## Contract workflow
 

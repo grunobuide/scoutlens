@@ -50,7 +50,7 @@ export function ExperimentCard({
             <div key={metric.metric_id}>
               <dt>{metric.label}</dt>
               <dd>{formatMetric(metric)}</dd>
-              {interval === null ? null : <p>95% CI: {interval}</p>}
+              {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
             </div>
           );
         })}
@@ -130,12 +130,12 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
               </div>
               <div className="fingerprint-track">
                 <span
-                  aria-label={`${feature.label}, period A percentile: ${feature.periodA.toFixed(0)}`}
+                  aria-hidden="true"
                   className="fingerprint-mark fingerprint-mark--a"
                   style={{ left: `${feature.periodA}%` }}
                 />
                 <span
-                  aria-label={`${feature.label}, period B percentile: ${feature.periodB.toFixed(0)}`}
+                  aria-hidden="true"
                   className="fingerprint-mark fingerprint-mark--b"
                   style={{ left: `${feature.periodB}%` }}
                 />

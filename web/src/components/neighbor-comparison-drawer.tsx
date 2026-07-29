@@ -90,9 +90,27 @@ export function NeighborComparisonDrawer({
       aria-describedby="neighbor-drawer-summary"
       onClose={onClose}
       onKeyDown={(event) => {
+        const dialog = dialogRef.current;
+        if (event.key === "Tab" && dialog !== null) {
+          const focusableElements = Array.from(
+            dialog.querySelectorAll<HTMLElement>(
+              'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+            ),
+          );
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements.at(-1);
+
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement?.focus();
+          } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement?.focus();
+          }
+        }
         if (event.key === "Escape") {
           event.preventDefault();
-          dialogRef.current?.close();
+          dialog?.close();
         }
       }}
     >
