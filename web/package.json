@@ -9,14 +9,20 @@
   },
   "scripts": {
     "assets:sync": "node scripts/sync-showcase.mjs",
+    "budget:check": "node scripts/check-budgets.mjs",
     "build": "pnpm assets:sync && next build && pnpm static:check",
     "contracts:check": "node scripts/generate-contracts.mjs --check",
     "contracts:generate": "node scripts/generate-contracts.mjs",
     "dev": "pnpm assets:sync && next dev",
+    "lighthouse": "node scripts/run-lighthouse-ci.mjs",
     "lint": "eslint . --max-warnings=0",
     "quality": "pnpm contracts:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "release:check": "pnpm quality && pnpm budget:check && pnpm test:e2e && pnpm lighthouse",
+    "serve:static": "node scripts/serve-static.mjs --port 4173",
     "static:check": "node scripts/check-static-output.mjs",
     "test": "pnpm assets:sync && vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test e2e/visual.spec.ts --update-snapshots",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -28,12 +34,16 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@lhci/cli": "0.15.1",
+    "@playwright/test": "1.62.0",
     "@types/node": "24.13.3",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.12",
     "json-schema-to-typescript": "15.0.4",
+    "puppeteer-core": "24.43.1",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }

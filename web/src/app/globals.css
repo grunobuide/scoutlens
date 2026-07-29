@@ -32,7 +32,7 @@ body {
   background:
     radial-gradient(circle at 83% 8%, rgb(216 255 79 / 16%), transparent 24rem),
     var(--paper);
-  font-family: "Inter Variable", Inter, system-ui, sans-serif;
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
   font-size: 1rem;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
@@ -847,13 +847,15 @@ h3 {
   color: var(--signal);
 }
 
-.experiment-metrics p {
+.experiment-metric__interval {
   margin: 0.25rem 0 0;
   color: var(--ink-600);
   font-size: 0.66rem;
+  font-weight: 450;
+  letter-spacing: normal;
 }
 
-.experiment-card--signal .experiment-metrics p {
+.experiment-card--signal .experiment-metric__interval {
   color: rgb(255 255 255 / 58%);
 }
 
@@ -943,7 +945,7 @@ h3 {
 .source-mark--statsbomb {
   display: inline-block;
   padding: 0.35rem 0.55rem;
-  background: #e24585;
+  background: #a80f4d;
   color: #fff;
   font-size: 0.78rem;
   letter-spacing: -0.01em;
@@ -1010,6 +1012,10 @@ h3 {
   border-radius: var(--radius-lg);
   background: var(--ink-950);
   color: var(--white);
+}
+
+.frozen-question > .research-step__marker {
+  color: var(--signal);
 }
 
 .frozen-question h2 {
@@ -1494,7 +1500,7 @@ h3 {
 }
 
 .period-context-card li span {
-  color: var(--ink-600);
+  color: var(--ink-800);
 }
 
 .lab-analysis-grid {
@@ -1625,7 +1631,7 @@ h3 {
 }
 
 .lab-feature-family h3 span {
-  color: var(--ink-600);
+  color: var(--ink-800);
   font-size: 0.68rem;
   font-weight: 550;
 }
@@ -2166,6 +2172,10 @@ h3 {
 .neighbor-drawer__header h2 {
   margin-bottom: 0.5rem;
   font-size: clamp(1.8rem, 4vw, 3.2rem);
+}
+
+.neighbor-drawer__header .eyebrow {
+  color: var(--signal);
 }
 
 .neighbor-drawer__header > div > p:last-child {
