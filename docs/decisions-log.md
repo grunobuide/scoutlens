@@ -916,3 +916,36 @@ archive size and digest, reject unsafe or non-manifest paths, verify every
 profile's manifest size and SHA-256 in staging, and atomically replace
 `public/showcase/v1/players` only after all checks pass. A changed payload or
 dataset requires a new content-addressed filename and release pin.
+
+---
+
+## D031 — 2026-07-29 — Match-bootstrap v1 is frozen before execution
+
+**Decision:** preregister `match_bootstrap_v1` before inspecting production
+uncertainty results. Resample whole matches with replacement inside frozen
+competition-period strata; keep the observed 1,257-profile cohort fixed; use
+500 draws from seed 1729; rebuild minutes, all 32 features, the combined-period
+scaler, percentiles, similarities, ranks, and observed-neighbor stability; and
+publish type-7 95% percentile intervals only with at least 450 valid replicate
+observations. The normative method is
+[`uncertainty-method.md`](uncertainty-method.md), with machine pins in
+[`config/uncertainty.json`](../config/uncertainty.json).
+
+**Why:** sampling already-aggregated players would ignore match dependence,
+while silently dropping players absent from a replicate would make stability
+look better than it is. The fixed universe therefore keeps missing candidates
+in the denominator and ranks them after present candidates; an absent query
+invalidates only that subject-replicate. Duplicate matches weight both events
+and minutes by their multiplicity. These decisions, the missingness rules,
+ordering, quantile algorithm, and tolerances are fixed before real results so
+the method cannot be tuned toward a cleaner portfolio story. Counter-addressed
+SHA-256 rejection sampling makes every draw independent of Python version,
+execution order, and partial failures while avoiding modulo bias.
+
+**How to apply:** implement Bead `scoutlens-jtt.5.2` against the versioned
+config and the synthetic truth fixture under `tests/uncertainty/fixtures`.
+Generate the complete deterministic draw plan before computing subjects,
+record its hash and invalid-reason counts, and fail closed on contract drift.
+`scoutlens-jtt.5.3` may fill the existing showcase fields but may not change
+their estimands. Any analytical change requires a new design version and
+decision before production re-execution.
