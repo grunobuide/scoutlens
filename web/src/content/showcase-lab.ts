@@ -1,9 +1,11 @@
 import type {
+  EvidenceItem,
   FeatureCatalogArtifact,
   FeatureDefinition,
   FeatureValue,
   PlayerIndexItem,
   PlayerProfileArtifact,
+  StatisticalNeighbor,
 } from "@/contracts/generated/showcase";
 
 export type PercentileScope = "within_role" | "global";
@@ -33,6 +35,23 @@ export interface FingerprintFamily {
   rows: ReadonlyArray<FingerprintRow>;
 }
 
+export interface ContributionEvidence {
+  features: ReadonlyArray<EvidenceItem>;
+  families: ReadonlyArray<EvidenceItem>;
+  featureSum: number;
+  familySum: number;
+}
+
+export interface NeighborEvidence {
+  neighbor: StatisticalNeighbor;
+  evidence: ContributionEvidence;
+}
+
+export interface ProfileEvidence {
+  self: ContributionEvidence;
+  neighbors: ReadonlyArray<NeighborEvidence>;
+}
+
 export type LabProblemKind =
   | "unknown-profile"
   | "missing-asset"
@@ -52,6 +71,8 @@ const identityCollator = new Intl.Collator("en", {
   numeric: true,
   sensitivity: "base",
 });
+
+const CONTRIBUTION_TOLERANCE = 1e-9;
 
 export const EMPTY_PROFILE_FILTERS: ProfileFilters = {
   query: "",
@@ -189,6 +210,185 @@ export function groupFingerprintRows(
     label: familyLabel(family),
     rows: familyRows,
   }));
+}
+
+function contributionSum(items: ReadonlyArray<EvidenceItem>): number {
+  return items.reduce((sum, item) => sum + item.contribution, 0);
+}
+
+function assertContributionSum(
+  actual: number,
+  expected: number,
+  label: string,
+): void {
+  if (Math.abs(actual - expected) > CONTRIBUTION_TOLERANCE) {
+    throw new Error(`${label} contribution sum ${actual} does not reconstruct cosine ${expected}`);
+  }
+}
+
+function sameOrderedIds(
+  actual: ReadonlyArray<EvidenceItem>,
+  expected: ReadonlyArray<EvidenceItem>,
+): boolean {
+  return actual.every((item, index) => item.evidence_id === expected[index]?.evidence_id);
+}
+
+export function resolveContributionEvidence(
+  catalog: FeatureCatalogArtifact,
+  profile: PlayerProfileArtifact,
+  evidenceRefs: ReadonlyArray<string>,
+  subject: string,
+  expectedCosine: number,
+): ContributionEvidence {
+  if (new Set(evidenceRefs).size !== evidenceRefs.length) {
+    throw new Error(`${subject} repeats an evidence reference`);
+  }
+
+  const evidenceById = new Map<string, EvidenceItem>();
+  for (const item of profile.evidence_index) {
+    if (evidenceById.has(item.evidence_id)) {
+      throw new Error(`Evidence index repeats ${item.evidence_id}`);
+    }
+    evidenceById.set(item.evidence_id, item);
+  }
+
+  const resolved = evidenceRefs.map((reference) => {
+    const item = evidenceById.get(reference);
+    if (item === undefined) {
+      throw new Error(`${subject} cannot resolve evidence ${reference}`);
+    }
+    if (item.subject !== subject) {
+      throw new Error(`${reference} belongs to ${item.subject}, not ${subject}`);
+    }
+    return item;
+  });
+  const features = resolved.filter((item) => item.kind === "feature_contribution");
+  const families = resolved.filter((item) => item.kind === "family_contribution");
+  if (features.length !== 32 || families.length !== 8) {
+    throw new Error(`${subject} must resolve 32 feature and eight family contributions`);
+  }
+
+  const definitions = [...catalog.features].sort((left, right) => left.order - right.order);
+  const featureOrder = new Map(definitions.map((definition, index) => [definition.feature_id, index]));
+  const familyOrder = new Map<string, number>();
+  for (const definition of definitions) {
+    if (!familyOrder.has(definition.family)) {
+      familyOrder.set(definition.family, familyOrder.size);
+    }
+  }
+  if (featureOrder.size !== 32 || familyOrder.size !== 8) {
+    throw new Error("The evidence contract requires 32 features across eight families");
+  }
+
+  const observedFeatures = new Set<string>();
+  for (const item of features) {
+    if (item.feature_id === null || !featureOrder.has(item.feature_id) || observedFeatures.has(item.feature_id)) {
+      throw new Error(`${subject} has an invalid or repeated feature contribution`);
+    }
+    observedFeatures.add(item.feature_id);
+  }
+  const observedFamilies = new Set<string>(families.map((item) => item.family));
+  if (observedFamilies.size !== 8 || [...familyOrder.keys()].some((family) => !observedFamilies.has(family))) {
+    throw new Error(`${subject} family contributions do not match the feature catalog`);
+  }
+
+  const sortedFeatures = [...features].sort(
+    (left, right) =>
+      Math.abs(right.contribution) - Math.abs(left.contribution) ||
+      (featureOrder.get(left.feature_id ?? "") ?? Number.MAX_SAFE_INTEGER) -
+        (featureOrder.get(right.feature_id ?? "") ?? Number.MAX_SAFE_INTEGER) ||
+      identityCollator.compare(left.evidence_id, right.evidence_id),
+  );
+  const sortedFamilies = [...families].sort(
+    (left, right) =>
+      Math.abs(right.contribution) - Math.abs(left.contribution) ||
+      (familyOrder.get(left.family) ?? Number.MAX_SAFE_INTEGER) -
+        (familyOrder.get(right.family) ?? Number.MAX_SAFE_INTEGER) ||
+      identityCollator.compare(left.evidence_id, right.evidence_id),
+  );
+  if (!sameOrderedIds(features, sortedFeatures) || !sameOrderedIds(families, sortedFamilies)) {
+    throw new Error(`${subject} contribution evidence is not in deterministic contract order`);
+  }
+
+  const featureSum = contributionSum(features);
+  const familySum = contributionSum(families);
+  assertContributionSum(featureSum, expectedCosine, `${subject} feature`);
+  assertContributionSum(familySum, expectedCosine, `${subject} family`);
+  return { features, families, featureSum, familySum };
+}
+
+export function buildProfileEvidence(
+  catalog: FeatureCatalogArtifact,
+  profile: PlayerProfileArtifact,
+): ProfileEvidence {
+  if (profile.neighbors.length !== 5) {
+    throw new Error("The retrieval evidence contract requires exactly five neighbors");
+  }
+
+  const globalCosine = profile.retrieval.global.cosine_similarity;
+  const withinRoleCosine = profile.retrieval.within_role.cosine_similarity;
+  if (globalCosine === null || withinRoleCosine === null) {
+    throw new Error("Combined-scaler retrieval must expose a stored cosine score");
+  }
+  if (
+    profile.retrieval.global.evidence_refs.join("\u0000") !==
+    profile.retrieval.within_role.evidence_refs.join("\u0000")
+  ) {
+    throw new Error("Global and within-role retrieval must reference the same stored self evidence");
+  }
+  const self = resolveContributionEvidence(
+    catalog,
+    profile,
+    profile.retrieval.global.evidence_refs,
+    "self_retrieval",
+    globalCosine,
+  );
+  assertContributionSum(self.featureSum, withinRoleCosine, "within-role self feature");
+  if (
+    profile.retrieval.baseline_role_minutes.cosine_similarity !== null ||
+    profile.retrieval.baseline_role_minutes.evidence_refs.length !== 0
+  ) {
+    throw new Error("Role-and-minutes baseline cannot expose cosine evidence");
+  }
+
+  const seenProfiles = new Set<string>();
+  const seenPlayers = new Set<string>();
+  const neighbors = profile.neighbors.map((neighbor, index) => {
+    if (
+      neighbor.rank !== index + 1 ||
+      neighbor.candidate_period !== "b" ||
+      neighbor.role !== profile.identity.role ||
+      neighbor.player_key === profile.identity.player_key ||
+      seenProfiles.has(neighbor.profile_key) ||
+      seenPlayers.has(neighbor.player_key)
+    ) {
+      throw new Error(`Neighbor rank ${index + 1} violates the stored non-self within-role contract`);
+    }
+    seenProfiles.add(neighbor.profile_key);
+    seenPlayers.add(neighbor.player_key);
+    return {
+      neighbor,
+      evidence: resolveContributionEvidence(
+        catalog,
+        profile,
+        neighbor.evidence_refs,
+        `neighbor:${neighbor.profile_key}`,
+        neighbor.cosine_similarity,
+      ),
+    };
+  });
+  return { self, neighbors };
+}
+
+export function formatCosine(value: number): string {
+  return value.toFixed(4);
+}
+
+export function formatContribution(value: number): string {
+  if (Math.abs(value) < 0.00005) {
+    return "0.0000";
+  }
+  return `${value > 0 ? "+" : ""}${value.toFixed(4)}`;
 }
 
 export function percentileFor(value: FeatureValue, scope: PercentileScope): number {

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -22,11 +24,14 @@ import {
   EMPTY_PROFILE_FILTERS,
   buildFingerprintRows,
   buildFingerprintSummary,
+  buildProfileEvidence,
   buildProfileFilterOptions,
   decodeIdentityText,
   describeLabError,
   filterProfiles,
   formatPercentile,
+  formatContribution,
+  formatCosine,
   formatRawValue,
   formatSupport,
   formatZScore,
@@ -34,11 +39,19 @@ import {
   percentileFor,
   profileHref,
   profileTeamNames,
+  familyLabel,
   type FingerprintRow,
   type LabProblem,
+  type NeighborEvidence,
   type PercentileScope,
   type ProfileFilters,
 } from "@/content/showcase-lab";
+
+const NeighborComparisonDrawer = lazy(() =>
+  import("@/components/neighbor-comparison-drawer").then((module) => ({
+    default: module.NeighborComparisonDrawer,
+  })),
+);
 
 const PAGE_SIZE = 18;
 const requiredCaveats = new Set([
@@ -312,7 +325,12 @@ export function LabExplorer({
           />
         ) : null}
         {loadState.status === "ready" ? (
-          <FingerprintProfile catalog={catalog} profile={loadState.profile} />
+          <FingerprintProfile
+            key={loadState.profile.profile_key}
+            catalog={catalog}
+            profiles={profiles}
+            profile={loadState.profile}
+          />
         ) : null}
       </section>
     </>
@@ -441,19 +459,258 @@ function caveatFor(profile: PlayerProfileArtifact, code: string): Caveat | undef
   return profile.caveats.find((caveat) => caveat.code === code);
 }
 
-export function FingerprintProfile({ catalog, profile }: {
+type RetrievalOutcome = PlayerProfileArtifact["retrieval"]["global"];
+
+function rankStabilityText(outcome: RetrievalOutcome): string {
+  if (outcome.uncertainty.status === "pending") {
+    return "Stability pending · no resampled rank interval is available yet.";
+  }
+  if (outcome.uncertainty.status === "insufficient") {
+    return "Insufficient resamples · no stable rank interval is reported.";
+  }
+  const interval = outcome.uncertainty.rank_ci_95;
+  return `Available from ${outcome.uncertainty.valid_resamples?.toLocaleString("en-US") ?? 0} valid resamples · median rank ${outcome.uncertainty.median_rank ?? "not reported"}${interval === null ? "" : ` · rank interval ${interval[0]}–${interval[1]}`}.`;
+}
+
+function RetrievalOutcomeCard({
+  label,
+  detail,
+  outcome,
+}: {
+  label: string;
+  detail: string;
+  outcome: RetrievalOutcome;
+}) {
+  return (
+    <article className="retrieval-outcome" data-retrieval-scope={label.toLowerCase().replaceAll(" ", "-")}>
+      <header>
+        <p>{label}</p>
+        <span>{detail}</span>
+      </header>
+      <p className="retrieval-outcome__rank">
+        Rank {outcome.self_rank}
+        <span>of {outcome.candidate_count.toLocaleString("en-US")}</span>
+      </p>
+      <dl>
+        <div><dt>Reciprocal rank</dt><dd>{outcome.reciprocal_rank.toFixed(4)}</dd></div>
+        <div>
+          <dt>Cosine</dt>
+          <dd>{outcome.cosine_similarity === null ? "Not used" : formatCosine(outcome.cosine_similarity)}</dd>
+        </div>
+      </dl>
+      <p className="retrieval-outcome__stability">{rankStabilityText(outcome)}</p>
+    </article>
+  );
+}
+
+function RetrievalReplay({ profile }: { profile: PlayerProfileArtifact }) {
+  const teamConfound = caveatFor(profile, "same_season_team_confound");
+  return (
+    <section className="retrieval-replay" aria-labelledby="retrieval-replay-heading">
+      <header className="lab-narrative-heading">
+        <div>
+          <p className="eyebrow">Stored experiment replay</p>
+          <h2 id="retrieval-replay-heading">Identity retrieval, one query at a time</h2>
+        </div>
+        <p>
+          Period A is the query. The experiment asks where the same player × competition unit
+          appears in the eligible period-B pool.
+        </p>
+      </header>
+
+      <div className="retrieval-period-line" aria-label="Retrieval direction">
+        <span>Query · period {profile.retrieval.query_period.toUpperCase()}</span>
+        <i aria-hidden="true">→</i>
+        <span>Candidate pool · period {profile.retrieval.candidate_period.toUpperCase()}</span>
+        <code>{profile.retrieval.method}</code>
+      </div>
+
+      <div className="retrieval-outcome-grid">
+        <RetrievalOutcomeCard
+          label="Global"
+          detail="All eligible profiles"
+          outcome={profile.retrieval.global}
+        />
+        <RetrievalOutcomeCard
+          label="Within role"
+          detail={`Only ${profile.identity.role.toLowerCase()} profiles`}
+          outcome={profile.retrieval.within_role}
+        />
+        <RetrievalOutcomeCard
+          label="Role + minutes baseline"
+          detail="Context-only control"
+          outcome={profile.retrieval.baseline_role_minutes}
+        />
+      </div>
+
+      <aside className="retrieval-boundary" aria-label="Identity retrieval interpretation boundary">
+        <div>
+          <strong>The rank is an identity-test result, not a player rating.</strong>
+          <p>{teamConfound?.message}</p>
+        </div>
+        <Link href="/science/#stage-02">How the aggregate retrieval test was computed →</Link>
+      </aside>
+    </section>
+  );
+}
+
+function StatisticalNeighbors({
+  catalog,
+  profile,
+  profilesByKey,
+  neighbors,
+}: {
   catalog: FeatureCatalogArtifact;
+  profile: PlayerProfileArtifact;
+  profilesByKey: ReadonlyMap<string, PlayerIndexItem>;
+  neighbors: ReadonlyArray<NeighborEvidence>;
+}) {
+  const [selected, setSelected] = useState<NeighborEvidence | null>(null);
+  const returnFocus = useRef<HTMLButtonElement | null>(null);
+  const featureLabels = useMemo(
+    () => new Map(catalog.features.map((feature) => [feature.feature_id, feature.short_label])),
+    [catalog],
+  );
+  const fingerprintCaveat = caveatFor(profile, "fingerprint_not_style_proof");
+  const recruitmentCaveat = caveatFor(profile, "similarity_not_recruitment");
+
+  const closeComparison = () => {
+    setSelected(null);
+    window.setTimeout(() => returnFocus.current?.focus(), 0);
+  };
+
+  return (
+    <section className="statistical-neighbors" aria-labelledby="statistical-neighbors-heading">
+      <header className="lab-narrative-heading">
+        <div>
+          <p className="eyebrow">Self-excluded exploration</p>
+          <h2 id="statistical-neighbors-heading">Five other period-B profiles</h2>
+        </div>
+        <p>
+          These are the stored nearest profiles within the same nominal role after every profile
+          belonging to the query player is excluded.
+        </p>
+      </header>
+
+      <div className="neighbor-boundaries">
+        <p>{fingerprintCaveat?.message}</p>
+        <p>{recruitmentCaveat?.message}</p>
+      </div>
+
+      <ol className="neighbor-grid">
+        {neighbors.map(({ neighbor, evidence }) => {
+          const indexItem = profilesByKey.get(neighbor.profile_key);
+          const alignments = evidence.families.filter((item) => item.contribution > 0).slice(0, 2);
+          const disagreement = evidence.features.find((item) => item.contribution < 0);
+          const titleId = `neighbor-${neighbor.rank}-title`;
+          return (
+            <li key={neighbor.profile_key}>
+              <article className="neighbor-card" data-neighbor-rank={neighbor.rank}>
+                <header>
+                  <span className="neighbor-card__rank">{String(neighbor.rank).padStart(2, "0")}</span>
+                  <div>
+                    <h3 id={titleId}>{decodeIdentityText(neighbor.display_name)}</h3>
+                    <p>{neighbor.role} · {decodeIdentityText(neighbor.competition.name)}</p>
+                  </div>
+                </header>
+                <dl className="neighbor-card__context">
+                  <div><dt>Stored cosine</dt><dd>{formatCosine(neighbor.cosine_similarity)}</dd></div>
+                  <div>
+                    <dt>Period-B minutes</dt>
+                    <dd>{indexItem?.period_contexts.b.minutes.toLocaleString("en-US") ?? "Unavailable"}</dd>
+                  </div>
+                  <div><dt>Team context</dt><dd>{neighbor.teams.map((team) => decodeIdentityText(team.name)).join(" / ")}</dd></div>
+                </dl>
+                <div className="neighbor-card__evidence">
+                  <p>Largest family alignments</p>
+                  <ul>
+                    {alignments.map((item) => (
+                      <li key={item.evidence_id}>
+                        <span>{familyLabel(item.family)}</span>
+                        <strong>{formatContribution(item.contribution)}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                  <p>
+                    Strongest disagreement · {disagreement === undefined
+                      ? "none stored"
+                      : `${featureLabels.get(disagreement.feature_id ?? "") ?? disagreement.feature_id} ${formatContribution(disagreement.contribution)}`}
+                  </p>
+                </div>
+                <p className="neighbor-card__stability">
+                  Selection stability · {neighbor.stability.status === "pending" ? "pending, no interval" : neighbor.stability.status}
+                </p>
+                <button
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-describedby={titleId}
+                  onClick={(event) => {
+                    returnFocus.current = event.currentTarget;
+                    setSelected({ neighbor, evidence });
+                  }}
+                >
+                  Open evidence comparison
+                </button>
+              </article>
+            </li>
+          );
+        })}
+      </ol>
+
+      {selected === null ? null : (
+        <Suspense fallback={<p className="neighbor-drawer-loading" role="status">Preparing exact contribution evidence…</p>}>
+          <NeighborComparisonDrawer
+            catalog={catalog}
+            profile={profile}
+            neighbor={selected.neighbor}
+            evidence={selected.evidence}
+            candidateMinutes={profilesByKey.get(selected.neighbor.profile_key)?.period_contexts.b.minutes ?? null}
+            onClose={closeComparison}
+          />
+        </Suspense>
+      )}
+    </section>
+  );
+}
+
+export function FingerprintProfile({ catalog, profiles, profile }: {
+  catalog: FeatureCatalogArtifact;
+  profiles: ReadonlyArray<PlayerIndexItem>;
   profile: PlayerProfileArtifact;
 }) {
   const [scope, setScope] = useState<PercentileScope>("within_role");
   const fingerprint = useMemo(() => {
     try {
       const rows = buildFingerprintRows(catalog, profile);
-      return { rows, families: groupFingerprintRows(rows), problem: null };
+      const evidence = buildProfileEvidence(catalog, profile);
+      const profilesByKey = new Map(profiles.map((item) => [item.profile_key, item]));
+      for (const { neighbor } of evidence.neighbors) {
+        const indexItem = profilesByKey.get(neighbor.profile_key);
+        if (
+          indexItem === undefined ||
+          indexItem.player_key !== neighbor.player_key ||
+          indexItem.role !== neighbor.role
+        ) {
+          throw new Error(`Neighbor ${neighbor.profile_key} does not resolve to the catalog`);
+        }
+      }
+      return {
+        rows,
+        families: groupFingerprintRows(rows),
+        evidence,
+        profilesByKey,
+        problem: null,
+      };
     } catch (error) {
-      return { rows: [], families: [], problem: describeLabError(error) };
+      return {
+        rows: [],
+        families: [],
+        evidence: null,
+        profilesByKey: new Map<string, PlayerIndexItem>(),
+        problem: describeLabError(error),
+      };
     }
-  }, [catalog, profile]);
+  }, [catalog, profile, profiles]);
 
   if (fingerprint.problem !== null) {
     return <LabProblemPanel problem={fingerprint.problem} datasetVersion={profile.dataset_version} />;
@@ -561,6 +818,14 @@ export function FingerprintProfile({ catalog, profile }: {
           <Link href="/science/">How the evidence was computed →</Link>
         </aside>
       </div>
+
+      <RetrievalReplay profile={profile} />
+      <StatisticalNeighbors
+        catalog={catalog}
+        profile={profile}
+        profilesByKey={fingerprint.profilesByKey}
+        neighbors={fingerprint.evidence!.neighbors}
+      />
 
       <section className="fingerprint-table-section" aria-labelledby="fingerprint-table-heading">
         <header>
