@@ -23,6 +23,8 @@ const meaningfulStaticContent = {
     "Compare one player with himself.",
     "Complete eligible catalog",
     "Period A / B fingerprint",
+    "Identity retrieval, one query at a time",
+    "Five other period-B profiles",
     "All 32 measurements",
     "uncertainty pending",
   ],
