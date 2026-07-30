@@ -6,6 +6,8 @@ events data during SLS-013 — see that document for the evidence.
 
 from __future__ import annotations
 
+from typing import overload
+
 import polars as pl
 
 # Tag ids (see docs/data-dictionary.md / tags2name.parquet)
@@ -67,7 +69,17 @@ def dest_y(pos_col: pl.Expr = pl.col("positions")) -> pl.Expr:
     return pos_col.list.get(1, null_on_oob=True).struct.field("y")
 
 
-def add_event_helper_columns(events: pl.DataFrame) -> pl.DataFrame:
+@overload
+def add_event_helper_columns(events: pl.DataFrame) -> pl.DataFrame: ...
+
+
+@overload
+def add_event_helper_columns(events: pl.LazyFrame) -> pl.LazyFrame: ...
+
+
+def add_event_helper_columns(
+    events: pl.DataFrame | pl.LazyFrame,
+) -> pl.DataFrame | pl.LazyFrame:
     """Adds the boolean/numeric per-event columns the aggregation groups
     and sums. Kept as a separate, inspectable step rather than inlined
     into one giant group_by().agg() expression."""

@@ -1,6 +1,12 @@
 import polars as pl
+import pytest
+from polars.testing import assert_frame_equal
 
-from scoutlens.features.aggregation import compute_player_features
+from scoutlens.features.aggregation import (
+    build_player_match_statistics,
+    compute_player_features,
+    compute_weighted_player_features,
+)
 
 
 def _event(player_id, event_name, sub_event_name="", tags=None, positions=None):
@@ -242,3 +248,80 @@ def test_player_id_zero_sentinel_is_excluded():
     result = compute_player_features(events, minutes)
     assert result.height == 1
     assert result.row(0, named=True)["passes_p90"] == 1.0
+
+
+def _match_fixture() -> tuple[pl.DataFrame, pl.DataFrame]:
+    events = _events_df(
+        _event(1, "Pass", tags=[1801], positions=[{"x": 10, "y": 20}, {"x": 40, "y": 20}]),
+        _event(1, "Shot", tags=[101], positions=[{"x": 80, "y": 60}]),
+        _event(1, "Pass", tags=[1802], positions=[{"x": 70, "y": 40}, {"x": 75, "y": 40}]),
+        _event(2, "Duel", tags=[703], positions=[{"x": 50, "y": 50}]),
+    ).with_columns(pl.Series("matchId", [10, 10, 11, 11]))
+    minutes = pl.DataFrame(
+        {
+            "player_id": [1, 1, 2, 2],
+            "match_id": [10, 11, 10, 11],
+            "minutes_played": [90, 45, 90, 45],
+        }
+    )
+    return events, minutes
+
+
+def test_match_statistics_reproduce_unweighted_feature_aggregation():
+    events, minutes = _match_fixture()
+    statistics = build_player_match_statistics(events, minutes)
+    weights = pl.DataFrame({"match_id": [10, 11], "multiplicity": [1, 1]})
+
+    weighted = compute_weighted_player_features(statistics, weights).sort("player_id")
+    ordinary = compute_player_features(
+        events,
+        minutes.group_by("player_id").agg(pl.col("minutes_played").sum()),
+    ).sort("player_id")
+
+    assert_frame_equal(weighted, ordinary, check_dtypes=False, abs_tol=1e-12)
+
+
+def test_match_statistics_are_independent_of_event_and_minutes_input_order():
+    events, minutes = _match_fixture()
+    expected = build_player_match_statistics(events, minutes).sort("player_id", "match_id")
+    reversed_input = build_player_match_statistics(
+        events.reverse(),
+        minutes.reverse(),
+    ).sort("player_id", "match_id")
+
+    assert_frame_equal(reversed_input, expected)
+
+
+def test_match_statistics_weight_duplicates_events_minutes_and_spatial_denominators():
+    events, minutes = _match_fixture()
+    statistics = build_player_match_statistics(events, minutes)
+    weights = pl.DataFrame({"match_id": [10, 11], "multiplicity": [2, 1]})
+    weighted = compute_weighted_player_features(statistics, weights).sort("player_id")
+
+    duplicated_events = pl.concat(
+        [events.filter(pl.col("matchId") == 10), events.filter(pl.col("matchId") == 10), events.filter(pl.col("matchId") == 11)]
+    )
+    duplicated_minutes = (
+        minutes.join(weights, on="match_id")
+        .with_columns((pl.col("minutes_played") * pl.col("multiplicity")).alias("minutes_played"))
+        .group_by("player_id")
+        .agg(pl.col("minutes_played").sum())
+    )
+    ordinary = compute_player_features(duplicated_events, duplicated_minutes).sort("player_id")
+
+    assert_frame_equal(weighted, ordinary, check_dtypes=False, abs_tol=1e-12)
+
+
+@pytest.mark.parametrize(
+    "weights",
+    [
+        pl.DataFrame({"match_id": [10], "multiplicity": [0]}),
+        pl.DataFrame({"match_id": [10], "multiplicity": [-1]}),
+        pl.DataFrame({"match_id": [10, 10], "multiplicity": [1, 1]}),
+    ],
+)
+def test_weighted_feature_aggregation_rejects_invalid_multiplicities(weights: pl.DataFrame):
+    events, minutes = _match_fixture()
+    statistics = build_player_match_statistics(events, minutes)
+    with pytest.raises(ValueError, match="multiplicit|one row"):
+        compute_weighted_player_features(statistics, weights)
