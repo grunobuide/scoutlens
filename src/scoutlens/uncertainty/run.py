@@ -32,6 +32,7 @@ MEMORY_TARGET_BYTES = 4 * 1024**3
 def peak_resident_memory_bytes() -> int:
     """Return native-process peak RSS, including Polars/Arrow allocations."""
     if os.name == "nt":
+        ctypes_windows: Any = ctypes
         size_type = ctypes.c_size_t
 
         class ProcessMemoryCounters(ctypes.Structure):
@@ -50,8 +51,8 @@ def peak_resident_memory_bytes() -> int:
 
         counters = ProcessMemoryCounters()
         counters.cb = ctypes.sizeof(counters)
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        psapi = ctypes.WinDLL("psapi", use_last_error=True)
+        kernel32 = ctypes_windows.WinDLL("kernel32", use_last_error=True)
+        psapi = ctypes_windows.WinDLL("psapi", use_last_error=True)
         get_current_process = kernel32.GetCurrentProcess
         get_current_process.restype = ctypes.c_void_p
         get_process_memory_info = psapi.GetProcessMemoryInfo
@@ -63,7 +64,7 @@ def peak_resident_memory_bytes() -> int:
         get_process_memory_info.restype = ctypes.c_int
         process = get_current_process()
         if not get_process_memory_info(process, ctypes.byref(counters), counters.cb):
-            raise ctypes.WinError(ctypes.get_last_error())
+            raise ctypes_windows.WinError(ctypes_windows.get_last_error())
         return int(counters.PeakWorkingSetSize)
 
     resource_module = importlib.import_module("resource")

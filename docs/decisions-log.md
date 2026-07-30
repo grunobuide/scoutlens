@@ -959,7 +959,7 @@ projecting only consumed Parquet columns, aggregating the 3.25 million event
 rows through a lazy/streaming Polars plan, and reading checkpoint columns in
 narrow feature/retrieval/neighbor projections during summarization. Keep both
 worker counts supported. The production reference uses two workers and records
-500/500 completed resamples in 50.44 seconds, 1,127,751,680 bytes peak RSS,
+500/500 completed resamples in 50.83 seconds, 1,134,657,536 bytes peak RSS,
 288,373,735 checkpoint bytes, and 1,664,262 final Parquet bytes on Windows.
 
 **Rationale:** the first correct eager implementation met the 15-minute target

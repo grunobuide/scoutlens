@@ -257,7 +257,7 @@ An existing checkpoint manifest must match config, source, inputs, environment,
 cohort and draw plan exactly; otherwise the run refuses reuse.
 
 The 2026-07-29 Windows reference run used two workers and completed 500/500
-resamples for 1,257 profiles in 50.44 seconds at 1,127,751,680 bytes peak RSS.
+resamples for 1,257 profiles in 50.83 seconds at 1,134,657,536 bytes peak RSS.
 It wrote 288,373,735 checkpoint bytes and 1,664,262 final Parquet bytes. These
 measurements and both frozen performance-target results are recorded in
 `run.json`; see D032 for the bounded-memory design and reference output hashes.
