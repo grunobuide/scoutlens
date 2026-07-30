@@ -239,3 +239,25 @@ quantile method requires a new decision entry and `design_version`. Corrections
 that affect the public artifact shape also require the appropriate showcase
 schema version change. Performance optimization may not change draw plans or
 numeric outputs beyond the frozen assertion tolerances.
+
+## Production execution
+
+Run the complete offline pipeline from the repository root:
+
+```bash
+uv run --frozen python -m scoutlens.uncertainty.run --workers 2 --chunk-size 10
+```
+
+The command validates the preregistered synthetic fixture before reading the
+production data, prepares the fixed cohort, resumes only exact-compatible
+Parquet checkpoints under `data/uncertainty/match_bootstrap_v1`, and writes
+summary Parquets plus `run.json` under
+`artifacts/uncertainty/match_bootstrap_v1`. Both directories are gitignored.
+An existing checkpoint manifest must match config, source, inputs, environment,
+cohort and draw plan exactly; otherwise the run refuses reuse.
+
+The 2026-07-29 Windows reference run used two workers and completed 500/500
+resamples for 1,257 profiles in 50.83 seconds at 1,134,657,536 bytes peak RSS.
+It wrote 288,373,735 checkpoint bytes and 1,664,262 final Parquet bytes. These
+measurements and both frozen performance-target results are recorded in
+`run.json`; see D032 for the bounded-memory design and reference output hashes.

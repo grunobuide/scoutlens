@@ -949,3 +949,51 @@ record its hash and invalid-reason counts, and fail closed on contract drift.
 `scoutlens-jtt.5.3` may fill the existing showcase fields but may not change
 their estimands. Any analytical change requires a new design version and
 decision before production re-execution.
+
+---
+
+## D032 — 2026-07-29 — Bootstrap memory is bounded by projected streaming aggregation
+
+**Decision:** preserve `match_bootstrap_v1` unchanged and bound its memory by
+projecting only consumed Parquet columns, aggregating the 3.25 million event
+rows through a lazy/streaming Polars plan, and reading checkpoint columns in
+narrow feature/retrieval/neighbor projections during summarization. Keep both
+worker counts supported. The production reference uses two workers and records
+500/500 completed resamples in 50.83 seconds, 1,134,657,536 bytes peak RSS,
+288,373,735 checkpoint bytes, and 1,664,262 final Parquet bytes on Windows.
+
+**Rationale:** the first correct eager implementation met the 15-minute target
+but breached the 4 GiB limit with both two workers (52.06 seconds,
+4,991,041,536 bytes) and one worker (63.52 seconds, 4,991,221,760 bytes).
+Phase isolation showed that preparation alone could peak at 4,994,580,480
+bytes, so reducing concurrency or merely separating execution from summary
+could not solve the underlying materialization. Column projection lowered
+eager preparation to 4,193,447,936 bytes; lazy/streaming sufficient-statistic
+aggregation lowered it further to 1,129,742,336 bytes. The optimized full run
+retains 74% headroom under the frozen memory ceiling and finishes in under one
+minute.
+
+**Alternatives considered:** one worker was rejected because it was slower and
+had the same peak. Process-isolated replicate/summary stages were rejected
+because the eager preparation already exceeded the limit and would add
+orchestration without addressing the cause. Reducing the 500 draws, changing
+the cohort, weakening validity, or relaxing the 4 GiB threshold was ruled out
+because it would change or evade the preregistered contract. A more complex
+external compute backend was unnecessary after local streaming met both
+targets.
+
+**How to apply:** build per-match sufficient statistics through the canonical
+feature expressions; never introduce a second feature implementation. A memory
+optimization is acceptable only when worker-1, worker-2, reversed-input, and
+resume tests agree and the three summary Parquets remain byte-identical. The
+reference SHA-256 values are
+`77838def0b4eb0fca2628f18a0b1e0ee12cc1a4d55fc7a742bc6029246485b9c`
+(features),
+`7cafb989f9bf9c1ad58f76b22175f8bb9afb57ea3e1a62502a50eebd5f6f247d`
+(retrieval), and
+`8d88ca823c494ec665470331a8322a2d101455551887d0c6724f0570f37dbcb9`
+(neighbors) across eager worker-1, eager worker-2, and streaming runs. The CLI
+must record both target booleans; a future breach fails the gate and requires a
+new decision rather than silent degradation. Checkpoint reuse remains
+fail-closed on the exact manifest, so a source change requires fresh production
+checkpoints.
