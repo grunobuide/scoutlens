@@ -997,3 +997,64 @@ must record both target booleans; a future breach fails the gate and requires a
 new decision rather than silent degradation. Checkpoint reuse remains
 fail-closed on the exact manifest, so a source change requires fresh production
 checkpoints.
+
+---
+
+## D033 — 2026-08-04 — Frontend delegation contract and CSS ownership layers
+
+**Decision:** freeze `frontend-agent-contract.md` as the authority for any agent
+executing a `scoutlens-uze` child, and select an eight-file, selector-driven split
+of the 2,654-line `web/src/app/globals.css` in a fixed cascade order: tokens,
+base, primitives, shell, research-story, landing, science, lab.
+`globals.css` becomes an import manifest only.
+Ownership is expressed as an allow / conditional / deny table covering every
+current frontend directory, with a named reviewer for every conditional entry.
+Generated contracts, published showcase artifacts, research outputs, frozen
+configs and the Python pipeline are denied outright, and a bead that needs one
+of them stops rather than bundling the change.
+
+**Rationale:** the stylesheet has no section markers and ownership interleaves
+throughout — lab rules occupy lines 1091–2441 while landing, science and shared
+research-story rules are scattered from 165 to 2518 — so parallel delegation
+without a file map would have two beads editing the same lines. The split is
+component-driven rather than route-driven for one case that matters:
+`research-story.tsx` renders on both landing and `/science`, so a route-named
+file would give `scoutlens-uze.4` and a future landing bead a competing claim on
+the same 79 rules. Keeping the lab as one file keeps `scoutlens-uze.5`
+disjoint from `scoutlens-uze.4`, which is what makes them parallelisable.
+
+The reorder was checked before being frozen. A per-owner split cannot preserve
+global source order, and reordering changes rendering when two rules can match
+the same element, declare the same property and have equal specificity. Static
+analysis over all 473 selectors under the chosen order found zero such pairs and
+zero unassigned selectors. It also found 22 fully dead rule blocks — 2,839 bytes, 5.6%
+of the stylesheet — whose classes no component renders, plus two partially dead
+shared selector lists.
+
+**Alternatives considered:** inferring ownership per task was rejected because
+the user requires low-interpretation handoff. CSS-only permission was rejected
+because responsive hierarchy and accessibility sometimes require semantic markup
+changes. Permitting all of `web/**` was rejected because generated contracts,
+artifact copies and the evidence-loading boundary are scientifically sensitive.
+A design-system rewrite first was rejected as scope. Within the split, `@layer`
+and `:where()` were rejected: both change cascade semantics, so a mechanical move
+could no longer be proved visually neutral. A route-named `landing.css` /
+`science.css` pair owning the research-story rules was rejected for the
+concurrency reason above. Splitting the 206-rule lab layer into selector,
+profile and neighbor files was rejected after measurement: 11 selector lists span
+two or three of the proposed files, so the split would duplicate and reorder
+declarations during the one pass that must not change rendering, and it buys no
+concurrency because a single bead owns the whole Lab.
+
+**How to apply:** implement `scoutlens-uze.3` as a pure move — intra-layer source
+order preserved verbatim, media queries distributed into their owning layer with
+the `64rem` block before the `48rem` block, no declaration edited or reformatted.
+Delete the 22 fully dead blocks rather than carrying them, and split the two
+partially dead shared selectors: `.step-list span, .research-step__marker` (line 419) keeps its
+live marker half, and the `48rem` group at line 2488 keeps its `.experiment-grid`
+halves. `.experiment-card--*`, `.caveat--*`, `.research-stage--*` and
+`.lab-state--*` are composed at runtime through template literals and are live
+despite looking unreferenced to a grep. Acceptance is a byte-identical
+`getComputedStyle()` diff over every element on every route and audited state,
+before and after — the static result is conservative, not a proof, and a
+screenshot comparison cannot see a sub-pixel cascade change.
