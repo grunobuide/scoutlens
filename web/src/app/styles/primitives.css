@@ -1,0 +1,149 @@
+/* primitives.css
+   Cross-route primitives: layout shell, buttons, section headings, page intros.
+
+   Extracted from globals.css by scoutlens-uze.3. Ownership map and cascade
+   order are frozen in docs/frontend-agent-contract.md section 4. */
+
+.shell {
+  width: var(--shell);
+  margin-inline: auto;
+}
+
+.eyebrow {
+  margin-bottom: 1rem;
+  color: var(--teal);
+  font-size: 0.76rem;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.lede {
+  max-width: 44rem;
+  margin-bottom: 2rem;
+  color: var(--ink-600);
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding-inline: 1.15rem;
+  border: 1px solid var(--ink-950);
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.button--primary {
+  background: var(--ink-950);
+  color: var(--white);
+}
+
+.button--secondary {
+  background: transparent;
+}
+
+.button:hover,
+.button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgb(16 26 23 / 12%);
+}
+
+.section-heading {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  align-items: start;
+  margin-bottom: 3rem;
+}
+
+.section-heading h2 {
+  max-width: 16ch;
+}
+
+.page-shell {
+  min-height: calc(100vh - 11rem);
+  padding-block: clamp(3.5rem, 7vw, 6.5rem);
+}
+
+.page-intro {
+  max-width: 53rem;
+  margin-bottom: 4rem;
+}
+
+.page-intro--wide {
+  max-width: 64rem;
+}
+
+.page-intro h1 {
+  font-size: clamp(3rem, 6vw, 5.25rem);
+}
+
+.section-heading--fingerprint {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.85fr);
+}
+
+.section-intro {
+  max-width: 44rem;
+  color: rgb(255 255 255 / 65%);
+}
+
+.text-button {
+  min-height: 2.75rem;
+  padding: 0.4rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--teal);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  cursor: pointer;
+}
+
+.text-button:disabled {
+  color: var(--ink-600);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button--dark {
+  background: var(--ink-950);
+  color: var(--white);
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--ink-950);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 48rem) {
+  .section-heading,
+  .section-heading--fingerprint {
+      grid-template-columns: 1fr;
+
+  }
+
+  .button-row .button {
+      width: 100%;
+
+  }
+}

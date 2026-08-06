@@ -1,0 +1,141 @@
+/* landing.css
+   Landing route only (app/page.tsx).
+
+   Extracted from globals.css by scoutlens-uze.3. Ownership map and cascade
+   order are frozen in docs/frontend-agent-contract.md section 4. */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.7fr);
+  gap: clamp(3rem, 8vw, 8rem);
+  align-items: center;
+  min-height: min(50rem, calc(100vh - 5rem));
+  padding-block: 4rem;
+}
+
+.hero__signal {
+  position: relative;
+  display: grid;
+  min-height: 24rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgb(255 253 247 / 74%);
+  box-shadow: var(--shadow);
+  isolation: isolate;
+}
+
+.hero__signal > div {
+  z-index: 1;
+  width: 68%;
+}
+
+.signal-orbit {
+  position: absolute;
+  border: 1px solid rgb(20 103 90 / 26%);
+  border-radius: 50%;
+}
+
+.signal-orbit--outer {
+  width: 82%;
+  aspect-ratio: 1;
+}
+
+.signal-orbit--inner {
+  width: 47%;
+  aspect-ratio: 1;
+  background: rgb(216 255 79 / 28%);
+}
+
+.signal-label {
+  margin-bottom: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.signal-copy {
+  margin-bottom: 0;
+  font-size: 1rem;
+  font-weight: 590;
+  line-height: 1.4;
+}
+
+.signal-caveat {
+  margin: 1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-600);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.proof-band {
+  padding-block: 6rem;
+  background: var(--ink-950);
+  color: var(--white);
+}
+
+.proof-band .eyebrow {
+  color: var(--signal);
+}
+
+.hero__copy {
+  max-width: 52rem;
+}
+
+.hero h1 {
+  max-width: 17ch;
+  font-size: clamp(3.2rem, 5.3vw, 5.25rem);
+}
+
+.hero__boundary {
+  max-width: 46rem;
+  margin: -0.5rem 0 1.6rem;
+  padding-left: 1rem;
+  border-left: 3px solid var(--teal);
+  color: var(--ink-800);
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.initial-boundaries {
+  padding-block: 1.25rem 6rem;
+}
+
+.replication-section {
+  padding-block: clamp(5rem, 9vw, 8rem);
+}
+
+.replication-section .section-intro {
+  color: var(--ink-600);
+}
+
+.landing-provenance {
+  padding-bottom: 7rem;
+}
+
+@media (max-width: 48rem) {
+  .hero {
+      grid-template-columns: 1fr;
+      padding-block: 4rem;
+
+  }
+
+  .hero h1 {
+      font-size: clamp(2.8rem, 13vw, 3.4rem);
+
+  }
+
+  .hero__signal {
+      min-height: 20rem;
+
+  }
+
+  .initial-boundaries {
+      padding-top: 0;
+
+  }
+}

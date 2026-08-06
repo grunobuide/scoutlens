@@ -1,0 +1,31 @@
+/* tokens.css
+   Design tokens. Owned by the design system; a change here is cross-cutting.
+
+   Extracted from globals.css by scoutlens-uze.3. Ownership map and cascade
+   order are frozen in docs/frontend-agent-contract.md section 4. */
+
+:root {
+  --ink-950: #101a17;
+  --ink-800: #293a34;
+  --ink-600: #5f7069;
+  --paper: #f5f2e9;
+  --paper-deep: #eae5d7;
+  --white: #fffdf7;
+  --signal: #d8ff4f;
+  --signal-dark: #294913;
+  --teal: #14675a;
+  --line: color-mix(in srgb, var(--ink-950) 17%, transparent);
+  --shadow: 0 24px 70px rgb(25 39 34 / 10%);
+  --radius-sm: 0.75rem;
+  --radius-md: 1.3rem;
+  --radius-lg: 2rem;
+  --shell: min(72rem, calc(100% - 2rem));
+  color-scheme: light;
+}
+
+@media (max-width: 48rem) {
+  :root {
+      --shell: min(100% - 1.25rem, 72rem);
+
+  }
+}

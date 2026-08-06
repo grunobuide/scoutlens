@@ -1,0 +1,114 @@
+/* science.css
+   Science route only (app/science/page.tsx).
+
+   Extracted from globals.css by scoutlens-uze.3. Ownership map and cascade
+   order are frozen in docs/frontend-agent-contract.md section 4. */
+
+.research-step__marker {
+  color: var(--teal);
+  font-size: 0.75rem;
+  font-weight: 720;
+  letter-spacing: 0.1em;
+}
+
+.science-page {
+  max-width: 90rem;
+}
+
+.frozen-question {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 2rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--ink-950);
+  color: var(--white);
+}
+
+.frozen-question > .research-step__marker {
+  color: var(--signal);
+}
+
+.frozen-question h2 {
+  max-width: 18ch;
+}
+
+.frozen-question > div > p {
+  color: rgb(255 255 255 / 68%);
+}
+
+.split-definition {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin: 2rem 0 0;
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: var(--radius-sm);
+  background: rgb(255 255 255 / 15%);
+}
+
+.split-definition div {
+  padding: 1rem;
+  background: var(--ink-950);
+}
+
+.split-definition dt {
+  color: var(--signal);
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.split-definition dd {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+}
+
+.research-stage {
+  padding-block: clamp(4rem, 8vw, 7rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.research-stage > header {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.research-stage > header h2 {
+  max-width: 18ch;
+}
+
+.research-stage > header p:last-child {
+  max-width: 48rem;
+  color: var(--ink-600);
+}
+
+.research-stage--warning {
+  margin-inline: 0;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+  border-radius: var(--radius-lg);
+  background: #fff5df;
+}
+
+.science-claims {
+  padding-block: clamp(5rem, 9vw, 8rem);
+}
+
+@media (max-width: 48rem) {
+  .split-definition {
+      grid-template-columns: 1fr;
+
+  }
+
+  .frozen-question,
+  .research-stage > header {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+      gap: 1rem;
+
+  }
+}
