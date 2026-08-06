@@ -185,12 +185,16 @@ tests/                          unit, integration, snapshot, and drift tests
 artifacts/                      five versioned result summaries; raw data excluded
 public/showcase/v1/             generated public contract, index, evidence, and profiles
 docs/                           methods, provenance, decisions, results, architecture
-.beads/                         durable issue graph and project handoff state
 ```
 
 The static web foundation and public showcase contract now form the flagship
 delivery boundary. Interactive Lab screens, the uncertainty layer, and grounded
-AI explanation remain tracked under the Beads epic `scoutlens-jtt`.
+AI explanation remain planned, not delivered.
+
+This repository contains the project and what is needed to run it after a
+clone. The agent/orchestration tooling used during development (issue tracker,
+agent pool, personas, per-tool configs) lives in a separate template and is
+deliberately not versioned here.
 
 ## Data licences
 

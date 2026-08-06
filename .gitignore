@@ -35,3 +35,21 @@ __pycache__/
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# ── Ferramental de IA / orquestração ────────────────────────────────────────
+# Este repositório contém o projeto e o necessário para rodá-lo ao cloná-lo.
+# O workflow de agentes (beads, orquestrador, personas, configs por
+# ferramenta) vive num template separado e fica fora do git aqui — os
+# arquivos continuam em disco para uso local, apenas não são versionados.
+.beads/
+.agents/
+.claude/
+.codex/
+.continue/
+.orchestrator/
+personas/
+bd_orchestrator.py
+bd_recover.py
+CLAUDE.md
+AGENTS.md
+docs/frontend-agent-contract.md
