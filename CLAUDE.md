@@ -59,6 +59,31 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 - If a required sync or push is blocked, stop and report the exact command and error.
 <!-- END BEADS INTEGRATION -->
 
+## Frontend work under `web/`
+
+Before editing anything under `web/`, read
+[`docs/frontend-agent-contract.md`](docs/frontend-agent-contract.md). It is
+binding for any agent or human executing a child of `scoutlens-uze`, and it
+governs any frontend change regardless of which bead prompted it.
+
+It answers, without interpretation:
+
+- which files you may edit, which need a named reviewer, and which are denied
+  outright (§1) — plus the scientific invariants no presentation change may touch;
+- what to do at the three recurring boundaries: presentation-only markup,
+  evidence-loading or content change, and generated-contract or artifact change (§2);
+- the one-bead/one-branch/one-PR protocol, including preserving an unrelated
+  dirty worktree and not committing without current authority (§3);
+- the frozen CSS layer map and cascade order for `web/src/app/globals.css` (§4);
+- when a visual snapshot may be regenerated (§5);
+- the handoff template and Definition of Done (§6, §7).
+
+Short version: presentation is yours; values, ids, orderings, caveats, generated
+contracts and published artifacts are not. Crossing a boundary stops the task and
+creates a dependency — it is never bundled into a frontend PR.
+
+The current route-by-route defect inventory and the frozen viewport/state matrix
+live in [`docs/frontend-qa-audit.md`](docs/frontend-qa-audit.md).
 
 ## Build & Test
 
