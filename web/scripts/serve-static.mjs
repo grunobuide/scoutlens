@@ -1,5 +1,5 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { dirname, extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -63,6 +63,48 @@ async function fileFor(pathname) {
   return null;
 }
 
+const notFoundPath = resolve(outputRoot, "404.html");
+
+async function serveNotFound(request, response) {
+  let body = null;
+  try {
+    if ((await stat(notFoundPath)).isFile()) {
+      body = await readFile(notFoundPath);
+    }
+  } catch (error) {
+    if (error?.code !== "ENOENT") {
+      throw error;
+    }
+  }
+  if (body === null) {
+    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }).end("Not found");
+    return;
+  }
+
+  const useGzip = /(?:^|,)\s*gzip\s*(?:,|$)/i.test(request.headers["accept-encoding"] ?? "");
+  response.setHeader("Cache-Control", "no-cache");
+  response.setHeader("Content-Type", "text/html; charset=utf-8");
+  response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  if (useGzip) {
+    response.setHeader("Content-Encoding", "gzip");
+    response.setHeader("Vary", "Accept-Encoding");
+  }
+  if (request.method === "HEAD") {
+    response.writeHead(404).end();
+    return;
+  }
+  response.writeHead(404);
+  if (useGzip) {
+    const gzip = createGzip({ level: 9 });
+    gzip.on("error", (error) => response.destroy(error));
+    gzip.end(body);
+    gzip.pipe(response);
+  } else {
+    response.end(body);
+  }
+}
+
 const server = createServer(async (request, response) => {
   try {
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -72,7 +114,7 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
     const path = await fileFor(url.pathname);
     if (path === null) {
-      response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }).end("Not found");
+      await serveNotFound(request, response);
       return;
     }
 
