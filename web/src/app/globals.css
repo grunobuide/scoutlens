@@ -14,6 +14,7 @@
   --radius-md: 1.3rem;
   --radius-lg: 2rem;
   --shell: min(72rem, calc(100% - 2rem));
+  color-scheme: light;
 }
 
 * {
@@ -1903,6 +1904,7 @@ h3 {
   font-weight: 760;
   letter-spacing: -0.05em;
   line-height: 0.95;
+  font-variant-numeric: tabular-nums;
 }
 
 .retrieval-outcome__rank span {
