@@ -105,7 +105,15 @@
 
   }
 
-  .frozen-question,
+  /* F-1: the frozen-question marker ("01 · question") is wider than a fixed
+     2.5rem track at mobile widths and collides with the heading line boxes.
+     Let the track size to its content, like the desktop 5rem track does. */
+  .frozen-question {
+      grid-template-columns: minmax(2.5rem, max-content) minmax(0, 1fr);
+      gap: 1rem;
+
+  }
+
   .research-stage > header {
       grid-template-columns: 2.5rem minmax(0, 1fr);
       gap: 1rem;
