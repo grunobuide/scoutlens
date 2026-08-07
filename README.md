@@ -39,6 +39,7 @@ null — is the central evidence behind the project.
 | Wyscout, candidate pool restricted within nominal role | 0.0256 | **0.2787** | Signal is not only a position classifier |
 | StatsBomb 2015/16, 1,061 eligible units | 0.0381 | **0.2031** | External replication at lower magnitude; about 5.3× |
 | Wyscout ratios: raw vs empirical-Bayes shrinkage | — | 0.2539 vs 0.2512 | Pathology fixed per feature, no material retrieval gain |
+| Wyscout, chance-level control (lift over uniform-target floor) | 4.2× | **41.4×** | Signal is 41× above design luck globally, 38.9× for transferred players; the role+team baseline collapses to 1.6× there |
 
 The important caveat travels with every headline: a role+team+minutes baseline
 reaches MRR 0.589 on Wyscout and 0.602 on StatsBomb because most eligible
@@ -48,8 +49,10 @@ StatsBomb effect remains inconclusive at `n=19`.
 
 Start with the [feasibility report](docs/feasibility-report.md), then read the
 [robustness checks](docs/robustness-checks.md),
-[transfer analysis](docs/transfer-analysis.md), and
-[StatsBomb replication](docs/statsbomb-replication.md).
+[transfer analysis](docs/transfer-analysis.md),
+[StatsBomb replication](docs/statsbomb-replication.md), and the
+[chance-level control](docs/chance-level-control.md) that pins every MRR to
+the design's uniform-target floor.
 
 ## Architecture
 
@@ -141,7 +144,7 @@ uv run --frozen ruff check .
 uv run --frozen mypy src/scoutlens
 uv build
 
-# Requires both local processed datasets; recomputes all five result sets.
+# Requires both local processed datasets; recomputes all six result sets.
 SCOUTLENS_DRIFT=1 uv run --frozen pytest tests/evaluation/test_artifact_drift.py
 ```
 
@@ -162,10 +165,12 @@ SCOUTLENS_DRIFT=1 uv run --frozen pytest tests/evaluation/test_artifact_drift.py
    [replication](docs/statsbomb-replication.md) — external-validity path.
 6. [Shrinkage experiment](docs/shrinkage-experiment.md) — a documented null
    and keep/drop decision.
-7. [Recruitment study harness](docs/recruitment-study-harness.md) — a complete
+7. [Chance-level control](docs/chance-level-control.md) — every MRR pinned to
+   the design's uniform-target floor (the absolute scale for "above chance").
+8. [Recruitment study harness](docs/recruitment-study-harness.md) — a complete
    optional human-study harness, now deferred because recruitment usefulness
    is not required for the portfolio flagship claim.
-8. [Flagship vertical slice](docs/flagship-vertical-slice.md) and
+9. [Flagship vertical slice](docs/flagship-vertical-slice.md) and
    [showcase artifact contract](docs/showcase-artifact-contract.md) — the public
    product cut, evidence behavior, typed Python/web boundary, and acceptance
    budgets.
@@ -182,7 +187,7 @@ src/scoutlens/showcase/         versioned public artifact builders and validator
 web/                            static Next.js showcase and typed artifact consumer
 src/scoutlens/study/            optional blinded human-study harness
 tests/                          unit, integration, snapshot, and drift tests
-artifacts/                      five versioned result summaries; raw data excluded
+artifacts/                      six versioned result summaries; raw data excluded
 public/showcase/v1/             generated public contract, index, evidence, and profiles
 docs/                           methods, provenance, decisions, results, architecture
 ```

@@ -540,6 +540,15 @@ confirmed the signal survives that confound.
   advantage over Baseline A holds essentially unchanged (delta identical
   to three decimal places, though the CI is wide at this sample size).
   Direct, encouraging confirmation — not proof at n=26.
+- ~~Pin every MRR to its design floor~~ — (2026-08-07, D034/SLS-024)
+  [`chance-level-control.md`](chance-level-control.md) adds the sixth
+  versioned artifact (`chance_control_results.json`): each Baseline A/B/C
+  MRR is now reported against the uniform-random-target floor H_N/N and a
+  seeded 10,000-draw permutation null. Baseline B holds a 38.9x lift over
+  the floor for transferred players (p < 0.0001); Baseline C collapses to
+  1.6x (p = 0.116), giving the D010 team-continuity reframing an absolute
+  scale. The transfer null itself stays coarse at n=26 — the larger-sample
+  need below is unchanged.
 
 **Remaining, in priority order:**
 

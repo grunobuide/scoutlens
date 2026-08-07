@@ -40,7 +40,7 @@ flowchart TB
         EV["Provider-agnostic retrieval and baselines"]
         RB["Robustness, transfer, shrinkage, external replication"]
         MF["Config v2 + code/data manifests"]
-        RA["Five versioned result artifacts"]
+        RA["Six versioned result artifacts"]
     end
 
     subgraph Flagship["Flagship experience — planned"]
@@ -96,7 +96,7 @@ runner. Each result artifact embeds:
 - SHA-256 and byte size of every consumed input;
 - deterministic seeds and resample counts through the resolved config.
 
-The full drift gate regenerates all five results from local data and compares
+The full drift gate regenerates all six results from local data and compares
 their non-volatile content number by number.
 
 ### Optional recruitment study

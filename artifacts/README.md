@@ -1,7 +1,7 @@
 # artifacts/
 
 Mostly gitignored — generated experiment outputs (plots, exported tables) land
-here locally and aren't committed. **Five small exceptions, versioned
+here locally and aren't committed. **Six small exceptions, versioned
 because they're the machine-readable numbers backing the docs in
 [`../docs/`](../docs)**, not because raw data belongs here:
 
@@ -10,6 +10,7 @@ because they're the machine-readable numbers backing the docs in
 - `transfer_analysis_results.json` — [`run_transfer_analysis.py`](../src/scoutlens/evaluation/run_transfer_analysis.py); backs `transfer-analysis.md`.
 - `statsbomb_replication_results.json` — [`statsbomb/replication.py`](../src/scoutlens/statsbomb/replication.py); backs `statsbomb-replication.md`.
 - `shrinkage_experiment_results.json` — [`run_shrinkage_experiment.py`](../src/scoutlens/evaluation/run_shrinkage_experiment.py); backs `shrinkage-experiment.md`.
+- `chance_control_results.json` — [`run_chance_control.py`](../src/scoutlens/evaluation/run_chance_control.py); backs `chance-level-control.md`.
 
 Each is small, always regenerated fresh by its script (never
 hand-edited), and small enough that committing them lets a clone inspect
@@ -37,7 +38,7 @@ Two test layers keep artifacts, docs, and code in agreement:
   headline numbers quoted in `docs/*.md`.
 - [`tests/evaluation/test_artifact_drift.py`](../tests/evaluation/test_artifact_drift.py)
   (opt-in — needs both local datasets, takes a few minutes) regenerates all
-  five result sets from scratch and compares them against the checked-in
+  six result sets from scratch and compares them against the checked-in
   artifact number-by-number, CI bounds included:
 
   ```
