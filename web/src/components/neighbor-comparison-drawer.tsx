@@ -11,7 +11,6 @@ import type {
   StatisticalNeighbor,
 } from "@/contracts/generated/showcase";
 import {
-  decodeIdentityText,
   familyLabel,
   formatContribution,
   formatCosine,
@@ -119,7 +118,7 @@ export function NeighborComparisonDrawer({
           <div>
             <p className="eyebrow">Period A query / period B neighbor</p>
             <h2 id="neighbor-drawer-title">
-              {decodeIdentityText(profile.identity.display_name)} / {decodeIdentityText(neighbor.display_name)}
+              {profile.identity.display_name} / {neighbor.display_name}
             </h2>
             <p id="neighbor-drawer-summary">
               The selected query remains fixed. This drawer explains the stored additive cosine

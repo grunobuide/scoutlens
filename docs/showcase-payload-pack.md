@@ -10,13 +10,13 @@ data.
 
 | Property | Value |
 |---|---|
-| Dataset | `wyscout-2017-18-v1-0e48066f37cc` |
+| Dataset | `wyscout-2017-18-v1-31d2ccc6af37` |
 | Manifest-declared paths | 1,257 |
 | Archive format | deterministic `tar+gzip` |
-| Archive bytes | 16,686,443 |
-| SHA-256 | `4398018f1be1cc9bf2040139fb9ff3a45a55a24f97ae4d93f867354611ad4e7d` |
-| Immutable tag | `showcase-wyscout-2017-18-v1-0e48066f37cc` |
-| Asset | [`scoutlens-showcase-wyscout-2017-18-v1-0e48066f37cc-4398018f1be1cc9bf2040139fb9ff3a45a55a24f97ae4d93f867354611ad4e7d.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v1-0e48066f37cc/scoutlens-showcase-wyscout-2017-18-v1-0e48066f37cc-4398018f1be1cc9bf2040139fb9ff3a45a55a24f97ae4d93f867354611ad4e7d.tar.gz) |
+| Archive bytes | 16,687,629 |
+| SHA-256 | `9a57719458cc6666169f5e38c169e1dafbe8a9a5aabce79db3a1e76e9ac3dc32` |
+| Immutable tag | `showcase-wyscout-2017-18-v1-31d2ccc6af37` |
+| Asset | [`scoutlens-showcase-wyscout-2017-18-v1-31d2ccc6af37-9a57719458cc6666169f5e38c169e1dafbe8a9a5aabce79db3a1e76e9ac3dc32.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v1-31d2ccc6af37/scoutlens-showcase-wyscout-2017-18-v1-31d2ccc6af37-9a57719458cc6666169f5e38c169e1dafbe8a9a5aabce79db3a1e76e9ac3dc32.tar.gz) |
 
 The machine-readable authority is
 [`config/showcase-payload-pack.json`](../config/showcase-payload-pack.json).
@@ -57,12 +57,12 @@ the archive from exporter output only:
 
 ```bash
 uv run --frozen python -m scoutlens.showcase.payload build \
-  --output artifacts/showcase-payload/scoutlens-showcase-wyscout-2017-18-v1-0e48066f37cc-4398018f1be1cc9bf2040139fb9ff3a45a55a24f97ae4d93f867354611ad4e7d.tar.gz
+  --output artifacts/showcase-payload/scoutlens-showcase-wyscout-2017-18-v1-31d2ccc6af37-9a57719458cc6666169f5e38c169e1dafbe8a9a5aabce79db3a1e76e9ac3dc32.tar.gz
 ```
 
 The builder validates the source set and all manifest checksums first, sorts
 paths, and normalizes timestamps, ownership, permissions, gzip headers, and tar
-metadata. Two builds must reproduce the pinned 16,686,443 bytes and SHA-256.
+metadata. Two builds must reproduce the pinned 16,687,629 bytes and SHA-256.
 
 ## Licence and redistribution boundary
 

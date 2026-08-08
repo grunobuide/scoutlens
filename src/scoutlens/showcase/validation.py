@@ -5,6 +5,7 @@ from __future__ import annotations
 import gzip
 import json
 import math
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,26 @@ from scoutlens.showcase.schema import validate_schema
 
 CATALOG_GZIP_BUDGET = 400 * 1024
 PROFILE_GZIP_BUDGET = 30 * 1024
+
+_UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})")
+
+
+def _reject_literal_identity_escape(value: str, label: str) -> None:
+    if _UNICODE_ESCAPE.search(value):
+        raise ValueError(f"{label}: literal \\uXXXX escape text must be normalized before publication")
+
+
+def _validate_identity_text(item: dict, base: str) -> None:
+    _reject_literal_identity_escape(str(item["display_name"]), f"{base}.display_name")
+    competition = item.get("competition")
+    if competition is not None:
+        _reject_literal_identity_escape(str(competition["name"]), f"{base}.competition.name")
+        _reject_literal_identity_escape(str(competition["country"]), f"{base}.competition.country")
+    for period in item.get("period_contexts", {}).values():
+        for team in period["teams"]:
+            _reject_literal_identity_escape(str(team["name"]), f"{base}.period_contexts.teams.name")
+    for team in item.get("teams", []):
+        _reject_literal_identity_escape(str(team["name"]), f"{base}.teams.name")
 
 
 def _walk_numbers(value: Any, path: str = "root") -> None:
@@ -189,11 +210,17 @@ def validate_bundle(
     if FEATURED_PROFILE_KEY not in index_by_key:
         raise ValueError(f"featured profile is outside the eligible population: {FEATURED_PROFILE_KEY}")
 
+    for position, item in enumerate(profiles):
+        _validate_identity_text(item, f"players.index.json.profiles[{position}]")
+
     for path in sorted(actual_paths):
         profile = artifacts[path]
         if path != f"players/{profile['profile_key']}.json":
             raise ValueError(f"{path}: file name and profile key differ")
         _validate_profile(profile, index_by_key, feature_ids)
+        _validate_identity_text(profile["identity"], f"{path}.identity")
+        for rank, neighbor in enumerate(profile["neighbors"], start=1):
+            _validate_identity_text(neighbor, f"{path}.neighbors[{rank}]")
 
     research = artifacts["research-summary.json"]
     if research_sources is not None:

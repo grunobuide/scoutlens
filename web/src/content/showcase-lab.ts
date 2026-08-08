@@ -81,14 +81,8 @@ export const EMPTY_PROFILE_FILTERS: ProfileFilters = {
   team: "",
 };
 
-export function decodeIdentityText(value: string): string {
-  return value.replace(/\\u([0-9a-fA-F]{4})/g, (_, code: string) =>
-    String.fromCodePoint(Number.parseInt(code, 16)),
-  );
-}
-
 export function normalizeSearchText(value: string): string {
-  return decodeIdentityText(value)
+  return value
     .normalize("NFKD")
     .replace(/\p{M}/gu, "")
     .toLocaleLowerCase("en")
@@ -98,9 +92,7 @@ export function normalizeSearchText(value: string): string {
 export function profileTeamNames(profile: PlayerIndexItem): ReadonlyArray<string> {
   return [
     ...new Set(
-      [...profile.period_contexts.a.teams, ...profile.period_contexts.b.teams].map((team) =>
-        decodeIdentityText(team.name),
-      ),
+      [...profile.period_contexts.a.teams, ...profile.period_contexts.b.teams].map((team) => team.name),
     ),
   ].sort(identityCollator.compare);
 }
@@ -109,7 +101,7 @@ export function buildProfileFilterOptions(
   profiles: ReadonlyArray<PlayerIndexItem>,
 ): ProfileFilterOptions {
   const uniqueSorted = (values: ReadonlyArray<string>) =>
-    [...new Set(values.map(decodeIdentityText))].sort(identityCollator.compare);
+    [...new Set(values)].sort(identityCollator.compare);
 
   return {
     roles: uniqueSorted(profiles.map((profile) => profile.role)),
@@ -120,10 +112,7 @@ export function buildProfileFilterOptions(
 
 function compareProfiles(left: PlayerIndexItem, right: PlayerIndexItem): number {
   return (
-    identityCollator.compare(
-      decodeIdentityText(left.display_name),
-      decodeIdentityText(right.display_name),
-    ) ||
+    identityCollator.compare(left.display_name, right.display_name) ||
     identityCollator.compare(left.competition.name, right.competition.name) ||
     identityCollator.compare(left.profile_key, right.profile_key)
   );

@@ -5,6 +5,7 @@ from __future__ import annotations
 import bisect
 import dataclasses
 import math
+import re
 import unicodedata
 from collections import defaultdict
 from pathlib import Path
@@ -30,6 +31,19 @@ from scoutlens.showcase.io import canonical_content_digest
 from scoutlens.showcase.research import build_research_summary, load_research_sources
 
 VERSION_PLACEHOLDER = "__DATASET_VERSION__"
+
+_UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})")
+
+
+def normalize_identity_text(value: str) -> str:
+    """Decode well-formed literal ``\\uXXXX`` escapes into real characters.
+
+    The Wyscout identity sources occasionally carry literal escape text
+    (e.g. ``\\u00c1``) instead of the accented character itself. Decode
+    only valid four-hex-digit escapes; ordinary backslashes and malformed
+    escape text are preserved verbatim so unrelated text never changes.
+    """
+    return _UNICODE_ESCAPE.sub(lambda match: chr(int(match.group(1), 16)), value)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -114,8 +128,9 @@ def _build_percentile_lookup(standardized: pl.DataFrame) -> tuple[dict, dict]:
 def _identity_lookups(inputs: ShowcaseInputs) -> tuple[dict[int, dict], dict[int, dict], dict[int, str]]:
     players = {
         int(row["wyId"]): {
-            "display_name": row["shortName"] or " ".join(
-                part for part in (row["firstName"], row["lastName"]) if part
+            "display_name": normalize_identity_text(
+                row["shortName"]
+                or " ".join(part for part in (row["firstName"], row["lastName"]) if part)
             ),
             "role": row["role"]["name"],
         }
@@ -124,12 +139,15 @@ def _identity_lookups(inputs: ShowcaseInputs) -> tuple[dict[int, dict], dict[int
     competitions = {
         int(row["wyId"]): {
             "id": int(row["wyId"]),
-            "name": row["name"],
-            "country": row["area"]["name"],
+            "name": normalize_identity_text(row["name"]),
+            "country": normalize_identity_text(row["area"]["name"]),
         }
         for row in inputs.competitions.select("wyId", "name", "area").to_dicts()
     }
-    teams = {int(row["wyId"]): str(row["name"]) for row in inputs.teams.select("wyId", "name").to_dicts()}
+    teams = {
+        int(row["wyId"]): normalize_identity_text(str(row["name"]))
+        for row in inputs.teams.select("wyId", "name").to_dicts()
+    }
     return players, competitions, teams
 
 

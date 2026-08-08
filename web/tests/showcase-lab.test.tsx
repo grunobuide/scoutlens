@@ -15,7 +15,6 @@ import {
   EMPTY_PROFILE_FILTERS,
   buildFingerprintRows,
   buildProfileEvidence,
-  decodeIdentityText,
   describeLabError,
   filterProfiles,
   formatRawValue,
@@ -50,8 +49,13 @@ describe("searchable period fingerprint Lab", () => {
     expect(lab.initialProfile.profile_key).toBe("wy-8287-c-795");
   });
 
-  it("preserves displayed accents while search matches decoded names and combined filters", () => {
-    expect(decodeIdentityText("L. Modri\\u0107")).toBe("L. Modrić");
+  it("preserves displayed accents and matches plain UTF-8 names in search and combined filters", () => {
+    const correa = index.profiles.find((item) => item.profile_key === "wy-254408-c-795");
+    if (correa === undefined) {
+      throw new Error("Production fixture is missing the Correa profile");
+    }
+    expect(correa.display_name).toBe("Á. Correa");
+    expect(correa.period_contexts.a.teams[0]?.name).toBe("Atlético Madrid");
 
     const results = filterProfiles(index.profiles, {
       query: "Á Correa",
@@ -63,7 +67,7 @@ describe("searchable period fingerprint Lab", () => {
     expect(results.map((item) => item.profile_key)).toContain("wy-254408-c-795");
     expect(results.every((item) => item.role === "Forward")).toBe(true);
     expect(filterProfiles(index.profiles, EMPTY_PROFILE_FILTERS)).toHaveLength(index.profiles.length);
-    expect(index.profiles[0]?.profile_key).toBe("wy-254408-c-795");
+    expect(index.profiles[0]?.profile_key).toBe("wy-20401-c-795");
   });
 
   it("builds exactly the 32 catalog-ordered features and renders an equivalent table", () => {
@@ -166,7 +170,7 @@ describe("searchable period fingerprint Lab", () => {
     for (const neighbor of profile.neighbors) {
       expect(neighbor.player_key).not.toBe(profile.identity.player_key);
       expect(neighbor.role).toBe(profile.identity.role);
-      const position = html.indexOf(decodeIdentityText(neighbor.display_name));
+      const position = html.indexOf(neighbor.display_name);
       expect(position).toBeGreaterThan(priorPosition);
       priorPosition = position;
     }

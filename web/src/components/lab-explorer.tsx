@@ -26,7 +26,6 @@ import {
   buildFingerprintSummary,
   buildProfileEvidence,
   buildProfileFilterOptions,
-  decodeIdentityText,
   describeLabError,
   filterProfiles,
   formatPercentile,
@@ -287,7 +286,7 @@ export function LabExplorer({
                       onClick={() => void loadProfile(profile.profile_key, "push")}
                     >
                       <span>
-                        <strong>{decodeIdentityText(profile.display_name)}</strong>
+                        <strong>{profile.display_name}</strong>
                         <small>
                           {profile.role} · {profile.competition.name}
                         </small>
@@ -404,7 +403,7 @@ function PeriodCard({ label, context, dateStart, dateEnd }: {
       <ul>
         {context.teams.map((team) => (
           <li key={team.id}>
-            <strong>{decodeIdentityText(team.name)}</strong>
+            <strong>{team.name}</strong>
             <span>{team.minutes.toLocaleString("en-US")} min</span>
           </li>
         ))}
@@ -609,8 +608,8 @@ function StatisticalNeighbors({
                 <header>
                   <span className="neighbor-card__rank">{String(neighbor.rank).padStart(2, "0")}</span>
                   <div>
-                    <h3 id={titleId}>{decodeIdentityText(neighbor.display_name)}</h3>
-                    <p>{neighbor.role} · {decodeIdentityText(neighbor.competition.name)}</p>
+                    <h3 id={titleId}>{neighbor.display_name}</h3>
+                    <p>{neighbor.role} · {neighbor.competition.name}</p>
                   </div>
                 </header>
                 <dl className="neighbor-card__context">
@@ -619,7 +618,7 @@ function StatisticalNeighbors({
                     <dt>Period-B minutes</dt>
                     <dd>{indexItem?.period_contexts.b.minutes.toLocaleString("en-US") ?? "Unavailable"}</dd>
                   </div>
-                  <div><dt>Team context</dt><dd>{neighbor.teams.map((team) => decodeIdentityText(team.name)).join(" / ")}</dd></div>
+                    <div><dt>Team context</dt><dd>{neighbor.teams.map((team) => team.name).join(" / ")}</dd></div>
                 </dl>
                 <div className="neighbor-card__evidence">
                   <p>Largest family alignments</p>
@@ -724,7 +723,7 @@ export function FingerprintProfile({ catalog, profiles, profile }: {
       <header className="selected-profile__header">
         <div>
           <p className="eyebrow">Selected player × competition</p>
-          <h2>{decodeIdentityText(profile.identity.display_name)}</h2>
+          <h2>{profile.identity.display_name}</h2>
           <p className="selected-profile__identity">
             {profile.identity.role} · {profile.identity.competition.name} · {profile.identity.season}
           </p>

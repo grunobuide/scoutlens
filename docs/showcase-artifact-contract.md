@@ -552,11 +552,11 @@ It then injects the resulting version into every artifact. `generated_at` and
 producer environment fields live only in the manifest and do not change the
 semantic dataset identity.
 
-The first complete local export, `wyscout-2017-18-v1-0e48066f37cc`, contains
+The complete local export, `wyscout-2017-18-v1-31d2ccc6af37`, contains
 1,257 profiles and 1,261 JSON files including the manifest. The player payloads
-measure 147,054,404 bytes uncompressed and 17,151,006 bytes as the sum of
-deterministic individual gzip streams; the largest profile is 14,325 bytes
-gzip and the catalog index is 69,867 bytes gzip. Both public performance
+measure 147,041,069 bytes uncompressed and 17,153,243 bytes as the sum of
+deterministic individual gzip streams; the largest profile is 14,328 bytes
+gzip and the catalog index is 69,705 bytes gzip. Both public performance
 budgets pass. Because the uncompressed payload set is too noisy for code
 review, Git tracks the manifest/catalog/index/research files while Beads
 `scoutlens-jtt.10` owns a content-addressed immutable player pack and verified

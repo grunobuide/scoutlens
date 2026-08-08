@@ -1132,3 +1132,41 @@ unpushed backlog the same way as uncommitted code. The contradiction also
 exists upstream in `../ai-workflow-template/project-files/CLAUDE.md`, where it
 would propagate to every future project installed from the template —
 `scoutlens-iex.7` owns correcting it there.
+
+---
+
+## D037 — 2026-08-08 — Identity strings are unescaped once at the showcase producer boundary
+
+**Decision:** normalize literal `\uXXXX` escape text in player, team, and
+competition identity fields exactly once, before showcase artifact
+construction, rather than decoding per-view in the web application
+(`scoutlens-jtt.12`). Decode only well-formed four-hex-digit escapes;
+ordinary backslashes and malformed escape text are preserved verbatim. The
+showcase validator rejects any remaining literal escape in identity fields
+fail-closed, and the web-only decode workaround (`decodeIdentityText` /
+`decodeEscapedUnicode`) is removed.
+
+**Why:** the Wyscout provider data itself contains literal escape text
+(2,081 player fields and 8 team names, e.g. `\u00c1. Correa` and
+`Atl\u00e9tico Madrid`), which the canonical UTF-8 writer emitted verbatim.
+The web layer worked around it per-component, which duplicated decode logic,
+let index sorting collate on escape text instead of display text, and left
+artifact consumers outside the web app (API, future AI layer) with the raw
+escapes. Normalizing once at the producer boundary keeps artifacts
+self-describing and every consumer on the same value.
+
+**Impact:** the regenerated dataset publishes real UTF-8 names with the new
+content-addressed version `wyscout-2017-18-v1-31d2ccc6af37`; 205 team names
+and 266 of 1,257 display names changed on screen-equivalent bytes. The
+payload pack was rebuilt, repinned (`config/showcase-payload-pack.json`),
+and published as a new immutable release asset per D030. Index sorting now
+collates on display text (e.g. `A. Aquilani` sorts before `Á. Correa`
+instead of after the escaped form). All values, metrics, ranks, and evidence
+are numerically identical to the prior export — only identity text bytes
+changed.
+
+**How to apply:** any future identity-bearing source or pipeline change must
+normalize through `scoutlens.showcase.builder.normalize_identity_text` and
+satisfy the fail-closed validator; do not reintroduce per-view decoders in
+the web layer. A changed dataset still requires a new content-addressed
+payload pin and release asset before the pin test can be updated.

@@ -80,12 +80,6 @@ export function caveatsFor(
   });
 }
 
-function decodeEscapedUnicode(value: string): string {
-  return value.replace(/\\u([0-9a-fA-F]{4})/g, (_, code: string) =>
-    String.fromCodePoint(Number.parseInt(code, 16)),
-  );
-}
-
 function selectFingerprintFeatures(
   catalog: FeatureCatalogArtifact,
   profile: PlayerProfileArtifact,
@@ -142,7 +136,7 @@ export function buildShowcaseStory(
     manifest,
     research,
     featuredProfile,
-    featuredName: decodeEscapedUnicode(featuredProfile.identity.display_name),
+    featuredName: featuredProfile.identity.display_name,
     featuredTeam: teams.join(" / "),
     fingerprintFeatures: selectFingerprintFeatures(catalog, featuredProfile),
     experiments,
