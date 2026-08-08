@@ -540,7 +540,7 @@ confirmed the signal survives that confound.
   advantage over Baseline A holds essentially unchanged (delta identical
   to three decimal places, though the CI is wide at this sample size).
   Direct, encouraging confirmation — not proof at n=26.
-- ~~Pin every MRR to its design floor~~ — (2026-08-07, D034/SLS-024)
+- ~~Pin every MRR to its design floor~~ — (2026-08-07, D035/SLS-024)
   [`chance-level-control.md`](chance-level-control.md) adds the sixth
   versioned artifact (`chance_control_results.json`): each Baseline A/B/C
   MRR is now reported against the uniform-random-target floor H_N/N and a

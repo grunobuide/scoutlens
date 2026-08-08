@@ -6,7 +6,12 @@ import { fileURLToPath } from "node:url";
 import { createGzip } from "node:zlib";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const outputRoot = resolve(scriptDirectory, "..", "out");
+// --root lets the same built-in server point at the delegated fixture export
+// (out-fixtures/**) for the scoutlens-uze.7 fixture gate; the default `out`
+// keeps every existing release command unchanged.
+const rootArgument = process.argv.indexOf("--root");
+const rootArgumentValue = rootArgument === -1 ? "out" : process.argv[rootArgument + 1];
+const outputRoot = resolve(scriptDirectory, "..", rootArgumentValue);
 const portArgument = process.argv.indexOf("--port");
 const port = Number(portArgument === -1 ? 4173 : process.argv[portArgument + 1]);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {

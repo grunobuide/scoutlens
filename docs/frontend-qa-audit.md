@@ -73,9 +73,9 @@ state. `C` = full 8-viewport sweep, `E` = 320/360/768/1280/zoom200.
 | lab incompatible artifact | profile route → `{}` (checksum mismatch) | E | PASS | PASS | – | PASS | – | PASS | – | PASS |
 | lab neighbor drawer open | rank-1 `Open evidence comparison` | C | **D5** | **D5** | PASS | PASS | PASS | PASS | PASS | PASS |
 | lab max content, stored | `/lab/?player=wy-25999-c-412` | E | **D5** | **D5** | – | **D5** | – | PASS | – | PASS |
-| lab max content, synthetic | long Unicode identity via HTTP fixture | E | **D5** | **D5** | – | **D5** | – | PASS | – | PASS |
-| lab uncertainty available | synthetic `status: available` | E | **D5** | **D5** | – | **D5** | – | PASS | – | PASS |
-| lab uncertainty insufficient | synthetic `status: insufficient` | E | **D5** | **D5** | – | **D5** | – | PASS | – | PASS |
+| lab max content, fixture `wy-900001-c-901` | max identity via fixture pack | E | **D5** | **D5** | – | **D5** | – | PASS | – | PASS |
+| lab uncertainty available, fixture `wy-900002-c-902` | fixture `status: available` | E | **D5** | **D5** | – | **D5** | – | PASS | – | PASS |
+| lab uncertainty insufficient, fixture `wy-900003-c-903` | fixture `status: insufficient` | E | **D5** | **D5** | – | **D5** | – | PASS | – | PASS |
 | unknown route | `/this-route-does-not-exist/` | 320/360/1280 | **D2/D4** | **D2/D4** | – | **D2/D4** | – | – | – | – |
 
 Notes on cells that are not a plain pass:
@@ -100,8 +100,8 @@ Notes on cells that are not a plain pass:
 
 | Cell | Why | Owner |
 |---|---|---|
-| Lab selector list under maximum identity content | `players.index.json` is consumed by a server component and baked into the static export. HTTP-boundary interception cannot change the rendered result list, only the lazily fetched profile. Stretching it would require editing a production artifact. | `scoutlens-uze.7` (new) |
-| Uncertainty `available` / `insufficient`, as published data | All 1,257 stored profiles carry `uncertainty_status: "pending"`. Both other states were audited through an HTTP fixture with a recomputed manifest checksum, which is a valid substitute for layout evidence but is not published data. | `scoutlens-uze.7` (new), depends on `scoutlens-jtt.5.3` |
+| Lab selector list under maximum identity content | `players.index.json` is consumed by a server component and baked into the static export. HTTP-boundary interception cannot change the rendered result list, only the lazily fetched profile. Stretching it would require editing a production artifact. | Now delivered by `scoutlens-uze.7` as the deterministic fixture pack `web/e2e/fixtures/lab-max-content`, rendered by the test-only fixture export through synthetic profile `wy-900001-c-901`. Audit rows that referenced "long Unicode identity via HTTP fixture" should now read the fixture IDs below. |
+| Uncertainty `available` / `insufficient`, as published data | All 1,257 stored profiles carry `uncertainty_status: "pending"`. Both other states were audited through an HTTP fixture with a recomputed manifest checksum, which is a valid substitute for layout evidence but is not published data. | Now delivered by `scoutlens-uze.7` through synthetic profiles `wy-900002-c-902` (`available`) and `wy-900003-c-903` (`insufficient`) in the same fixture pack. |
 | Open neighbor / open challenge states beyond the comparison drawer | Not implemented on this commit. | `scoutlens-9a3.6` |
 
 No cell was left blank and no cell was closed on a subjective judgement.
@@ -355,7 +355,7 @@ states at mobile widths; the unknown-route response (F-2).
 | `scoutlens-uze.4` | refined | F-1 with the corrected locator, the `Range.getClientRects()` acceptance assertion and the measured 320–768 px failing range; F-4 with measured target sizes and the computed 2.5.8 verdict |
 | `scoutlens-uze.5` | refined | F-3 with per-viewport scroll ratios and the sticky-row-header requirement |
 | `scoutlens-uze.6` | refined | The coverage gaps in §5, cell by cell |
-| `scoutlens-uze.7` | created | Deterministic maximum-content and uncertainty-state fixtures for the two blocked cells |
+| `scoutlens-uze.7` | created, delivered | Deterministic maximum-content and uncertainty-state Lab fixtures for the two blocked cells: fixture pack `lab-max-content` (profiles `wy-900001-c-901`, `wy-900002-c-902`, `wy-900003-c-903`), isolated fixture export, and fixture viewport projects in the Playwright suite |
 | `scoutlens-uze.8` | created | F-2, the unknown-route response in the release fixture |
 | `scoutlens-uze.9` | created | F-5 and F-6, the two low-severity polish items |
 

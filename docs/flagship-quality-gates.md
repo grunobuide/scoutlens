@@ -29,7 +29,15 @@ assets as one-year `immutable` resources.
 | Automated accessibility | axe default rules, no excluded elements or disabled rules; all routes and open comparison drawer | Any `serious` or `critical` violation fails |
 | Lighthouse | Three `/lab/` runs; median run; 360x800 mobile; Chromium Fast 4G preset (60 ms RTT, 9 Mbps down) and 4x CPU slowdown | Performance, Accessibility, Best Practices or SEO below 0.90; LCP above 2,500 ms; CLS above 0.10 |
 | Interaction latency | Chromium Event Timing API during the percentile-toggle keyboard interaction | Longest interaction above 200 ms fails |
-| Static budgets | Deterministic gzip level 9 over the production export | Initial JS above 204,800 B; catalog above 409,600 B; any profile above 30,720 B; initial `/lab` HTML+CSS+JS above 768,000 B |
+| Static budgets | Deterministic gzip level 9 over the production export | Module-browser initial JS (scripts without `noModule`) above 204,800 B; catalog above 409,600 B; any profile above 30,720 B; initial `/lab` HTML+CSS+JS above 768,000 B |
+
+The static JS budget counts only `<script>` assets that module-capable browsers
+actually fetch (decision D038). Next.js emits a legacy-only `noModule` polyfill
+(core-js + whatwg-fetch, ~39.5 KB gzip) that module-capable browsers and every
+measured surface — Chromium, Playwright, axe and Lighthouse — never download;
+the gate asserts and reports that payload separately instead of counting it as
+initial JavaScript, so it can never be dropped silently and the thresholds
+themselves are unchanged.
 
 The Event Timing assertion exercises the browser mechanism used by INP, but is
 a synthetic release proxy rather than a field Core Web Vital. A real public
