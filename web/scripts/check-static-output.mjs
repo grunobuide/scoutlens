@@ -2,10 +2,13 @@ import { readFile, readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { FIXTURE_MARKERS, SYNTHETIC_PROFILE_KEYS } from "./fixture-pack.mjs";
+
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
 const routes = ["index.html", "lab/index.html", "science/index.html"];
 const landmarks = ["<header", "<nav", "<main", "<footer"];
+const fixtureMarkers = [...FIXTURE_MARKERS, ...SYNTHETIC_PROFILE_KEYS];
 const meaningfulStaticContent = {
   "index.html": [
     "A player leaves a reproducible fingerprint",
@@ -54,6 +57,11 @@ for (const route of routes) {
   ]) {
     if (html.toLowerCase().includes(forbidden)) {
       throw new Error(`${route} contains forbidden recommendation wording: ${forbidden}`);
+    }
+  }
+  for (const marker of fixtureMarkers) {
+    if (html.includes(marker)) {
+      throw new Error(`${route} contains test-only fixture identity: ${marker}`);
     }
   }
 }

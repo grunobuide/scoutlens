@@ -11,6 +11,7 @@
     "assets:sync": "node scripts/sync-showcase.mjs",
     "budget:check": "node scripts/check-budgets.mjs",
     "build": "pnpm assets:sync && next build && pnpm static:check",
+    "build:fixtures": "node scripts/fixture-pack.mjs generate && node scripts/build-fixture-export.mjs",
     "contracts:check": "node scripts/generate-contracts.mjs --check",
     "contracts:generate": "node scripts/generate-contracts.mjs",
     "dev": "pnpm assets:sync && next dev",
@@ -21,7 +22,7 @@
     "serve:static": "node scripts/serve-static.mjs --port 4173",
     "static:check": "node scripts/check-static-output.mjs",
     "test": "pnpm assets:sync && vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "pnpm build:fixtures && pnpm build && playwright test",
     "test:e2e:update": "playwright test e2e/visual.spec.ts --update-snapshots",
     "typecheck": "tsc --noEmit"
   },

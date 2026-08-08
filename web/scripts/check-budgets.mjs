@@ -1,3 +1,13 @@
+// Initial-JavaScript budget semantics (D038, scoutlens-jtt.14):
+// "Initial /lab JavaScript" counts only <script> assets that module-capable
+// browsers actually fetch and execute. Scripts carrying the `noModule`
+// attribute are legacy-only polyfills (Next emits one core-js bundle of
+// ~39,520 gzip bytes in production exports); browsers with module support
+// and every measured surface (Chromium, Playwright, Lighthouse) never
+// download them, so counting them would overstate the real initial transfer.
+// The legacy noModule payload is still asserted and reported separately so it
+// can never be dropped silently. Thresholds in quality-budgets.json are
+// frozen and unchanged by this definition.
 import { gzipSync } from "node:zlib";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
@@ -69,9 +79,32 @@ assertLighthouseThreshold(
 );
 console.log("Lighthouse assertions match the versioned quality budgets");
 
+// Split initial <script> assets by whether a module-capable browser fetches
+// them. Scripts with the `noModule` attribute are legacy-only (see the file
+// header for the budget semantics decision D035).
+function localScriptAssets(html) {
+  const tags = html.match(/<script\b[^>]*>/gi) ?? [];
+  const modulePaths = [];
+  const noModulePaths = [];
+  for (const tag of tags) {
+    const src = tag.match(/\bsrc=(["'])([^"']+)\1/i)?.[2];
+    if (!src?.startsWith("/")) {
+      continue;
+    }
+    if (/\bnoModule\b/i.test(tag)) {
+      noModulePaths.push(src.slice(1));
+    } else {
+      modulePaths.push(src.slice(1));
+    }
+  }
+  return { module: [...new Set(modulePaths)], noModule: [...new Set(noModulePaths)] };
+}
+
 const labHtmlBytes = await readFile(resolve(outputRoot, "lab", "index.html"));
 const labHtml = labHtmlBytes.toString("utf8");
-const scriptPaths = [...new Set(localAssetPaths(labHtml, "script", "src"))];
+const scriptAssets = localScriptAssets(labHtml);
+const scriptPaths = scriptAssets.module;
+const legacyNoModulePaths = scriptAssets.noModule;
 const stylesheetPaths = [
   ...new Set(
     localAssetPaths(labHtml, "link", "href").filter((path) => path.endsWith(".css")),
@@ -83,6 +116,9 @@ if (scriptPaths.length === 0 || stylesheetPaths.length === 0) {
 
 const initialJavaScript = (
   await Promise.all(scriptPaths.map((path) => gzipFile(path)))
+).reduce((total, bytes) => total + bytes, 0);
+const legacyNoModuleJavaScript = (
+  await Promise.all(legacyNoModulePaths.map((path) => gzipFile(path)))
 ).reduce((total, bytes) => total + bytes, 0);
 const initialStyles = (
   await Promise.all(stylesheetPaths.map((path) => gzipFile(path)))
@@ -109,6 +145,13 @@ assertBudget(
   initialJavaScript,
   budgets.gzip_bytes.initial_route_javascript,
 );
+if (legacyNoModulePaths.length > 0) {
+  console.log(
+    `Legacy noModule polyfill(s) excluded from modern-browser initial JS (${legacyNoModulePaths.join(", ")}): ${legacyNoModuleJavaScript.toLocaleString("en-US")} gzip bytes`,
+  );
+} else {
+  console.log("No legacy noModule polyfill present in the /lab export");
+}
 assertBudget("Feature catalog", catalog, budgets.gzip_bytes.feature_catalog);
 assertBudget(
   `Largest player profile (${largestProfile.path})`,
