@@ -1086,3 +1086,49 @@ sample, per the existing next-experiment priority.
 
 ---
 
+## D036 — 2026-08-07 — `.beads/` stays untracked; D-record `scoutlens-dij` is superseded
+
+**Decision:** `.beads/` remains fully untracked, as `3ef206c` left it. The
+earlier policy recorded in the agent instruction files — "`.beads/issues.jsonl`
+is tracked in git deliberately, so backlog changes ride along with PRs as
+reviewable diffs" (`scoutlens-dij`, 2026-07-23) — is superseded and must not be
+reinstalled when the agent instruction files are restored from
+`../ai-workflow-template` (`scoutlens-iex.1`).
+
+The Dolt database remains the source of truth. Backlog durability is carried by
+`bd dolt push` to `refs/dolt/data` on the git remote, not by a tracked export.
+
+**Why:** the two records cannot both hold, and the newer one is both broader and
+already executed. `3ef206c` untracked roughly ten scaffolding paths on one
+principle — the repository contains the project and what a clean clone needs to
+run it, not the tooling used to build it. Reverting a single file out of that
+set would leave the boundary incoherent while keeping none of its benefit.
+
+The durability argument that motivated `scoutlens-dij` is satisfied by a
+different mechanism that is verified working here: `refs/dolt/data` exists on
+`origin`, and `core.longpaths` is set globally, so the documented Windows
+failure mode for `bd dolt push` (embedded Dolt cache paths exceeding 260 chars,
+surfacing as a misleading `Filename too long` wrapped in credential hints) does
+not apply on this machine.
+
+The reviewable-diff argument is weaker than it first appears. `issues.jsonl` is
+a passive export, currently 324 KB, and the same policy that tracked it also
+forbids hand-merging it on conflict — take the newest export or regenerate from
+the DB. A diff that may not be merged is a poor review artifact, and a large
+generated file in every PR crowds out the changes a reviewer is there to read.
+
+**Cost accepted:** tracking gave an incidental off-machine backup for free.
+`bd dolt push` is manual, so untracking transfers that cost to a habit. Left
+implicit, this recreates precisely the failure the workflow template exists to
+prevent — its own README records the orchestrator having lived three weeks only
+on one machine, unversioned. The decision is "untracked **and** pushed
+explicitly", not "untracked".
+
+**How to apply:** when installing the agent instruction files from the template,
+replace the JSONL policy paragraph with this decision rather than copying it
+forward, and do not re-add `.beads/` to `.gitignore` exceptions. Run
+`bd dolt push` at the end of any session that changed the backlog; treat an
+unpushed backlog the same way as uncommitted code. The contradiction also
+exists upstream in `../ai-workflow-template/project-files/CLAUDE.md`, where it
+would propagate to every future project installed from the template —
+`scoutlens-iex.7` owns correcting it there.
