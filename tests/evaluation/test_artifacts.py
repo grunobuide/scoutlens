@@ -36,6 +36,7 @@ def _load(name: str) -> dict:
         "transfer_analysis_results.json",
         "statsbomb_replication_results.json",
         "shrinkage_experiment_results.json",
+        "chance_control_results.json",
     ],
 )
 def test_published_artifact_has_full_run_manifest(name: str):
@@ -96,3 +97,22 @@ def test_shrinkage_experiment_results_match_documented_headline_numbers():
     assert raw["mrr"] == pytest.approx(0.2539, abs=1e-4)      # reproduces v0.1 exactly
     assert shrunk["mrr"] == pytest.approx(0.2512, abs=1e-3)   # negligibly different
     assert abs(raw["mrr"] - shrunk["mrr"]) < 0.01             # the null result
+
+
+def test_chance_control_results_match_documented_headline_numbers():
+    data = _load("chance_control_results.json")
+    assert data["n_eligible"] == 1257
+    assert data["n_transferred"] == 26
+    # observed MRRs are identical to the published artifacts
+    assert data["global"]["baseline_b"]["mrr"] == pytest.approx(0.2539, abs=1e-4)
+    assert data["within_role"]["baseline_b"]["mrr"] == pytest.approx(0.2787, abs=1e-4)
+    assert data["transferred"]["baseline_b"]["mrr"] == pytest.approx(0.2387, abs=1e-3)
+    assert data["transferred"]["baseline_c"]["mrr"] == pytest.approx(0.0101, abs=1e-3)
+    # docs/chance-level-control.md headline lifts
+    assert data["global"]["baseline_b"]["lift"] == pytest.approx(41.4, rel=0.02)
+    assert data["global"]["baseline_c"]["lift"] == pytest.approx(96.0, rel=0.02)
+    assert data["transferred"]["baseline_c"]["lift"] == pytest.approx(1.6, rel=0.3)
+    assert data["transferred"]["baseline_b"]["lift"] == pytest.approx(38.9, rel=0.02)
+    # transferred Baseline C is the null result: not distinguishable from chance
+    assert data["transferred"]["baseline_c"]["random_target_null"]["p_value"] > 0.05
+    assert data["transferred"]["baseline_b"]["random_target_null"]["p_value"] < 0.001

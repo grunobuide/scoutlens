@@ -1,0 +1,228 @@
+{
+  "_manifest": {
+    "generated_at": "2026-08-07T20:49:02.723493+00:00",
+    "git_commit": "741be7d2ec64a786ac2e24719339201585f627c8",
+    "git_dirty": true,
+    "source_sha256": "1a40d23fb9918f1389ea9a4e537c0dc018cf3b725761f975d9e64e1ae360c1c4",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "6b04c4ebb2d36eb1a93e7856008823207dca7b8e5ce384c3dafd8e8cbd4d7cd1",
+    "config": {
+      "config_version": 2,
+      "description": "Single versioned source of the parameters consumed by every published ScoutLens experiment. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      },
+      "statsbomb_replication": {
+        "season": "2015/16",
+        "domestic_leagues": [
+          2,
+          7,
+          11,
+          12
+        ],
+        "minutes_threshold": 450,
+        "bootstrap": {
+          "n_resamples": 1000,
+          "seed": 0
+        }
+      }
+    },
+    "inputs": {
+      "events.parquet": {
+        "sha256": "357aa043ca0f6fc94584fffb2a418180fd2b197f073bea6cc8242a2ad2b869ff",
+        "bytes": 53181640
+      },
+      "matches.parquet": {
+        "sha256": "f545ff00713fb27a271d3bd83583b663ec610919a9be9a7e33dc783f5c69762f",
+        "bytes": 564353
+      },
+      "minutes.parquet": {
+        "sha256": "856f631f96fc93bd51cfb8496f5a6d2b581f7df52a04ff6f71fb885081fff666",
+        "bytes": 182279
+      },
+      "players.parquet": {
+        "sha256": "cd58fa8fe1b61be0e685431b58a45fae62f6b451f644419c60b916a98dd88eab",
+        "bytes": 160264
+      }
+    }
+  },
+  "method": {
+    "chance_level_formula": "H_N / N per query, pooled as the mean over queries (H_n = harmonic number); lift = observed_mrr / chance_level_mrr",
+    "random_target_null": "10,000 seeded uniform-target draws per query; p-value = fraction of draws with MRR >= observed (+1 smoothing)",
+    "populations_match_published_artifacts": true
+  },
+  "n_eligible": 1257,
+  "n_transferred": 26,
+  "global": {
+    "baseline_a": {
+      "label": "role + minutes",
+      "n_queries": 1257,
+      "mrr": 0.02558886555344638,
+      "median_rank": 128,
+      "chance_level_mrr": 0.006136910575357954,
+      "lift": 4.169665703814469,
+      "random_target_null": {
+        "expected_mrr": 0.006136910575357954,
+        "observed_mrr": 0.02558886555344638,
+        "null_mean": 0.006138615712267302,
+        "ci_low": 0.004486148702049976,
+        "ci_high": 0.008385890943963454,
+        "p_value": 9.999000099990002e-05,
+        "n_resamples": 10000,
+        "n_queries": 1257
+      }
+    },
+    "baseline_b": {
+      "label": "32 features + cosine",
+      "n_queries": 1257,
+      "mrr": 0.2539333127027185,
+      "median_rank": 16,
+      "chance_level_mrr": 0.006136910575357954,
+      "lift": 41.37803697553587,
+      "random_target_null": {
+        "expected_mrr": 0.006136910575357954,
+        "observed_mrr": 0.2539333127027185,
+        "null_mean": 0.006138615712267302,
+        "ci_low": 0.004486148702049976,
+        "ci_high": 0.008385890943963454,
+        "p_value": 9.999000099990002e-05,
+        "n_resamples": 10000,
+        "n_queries": 1257
+      }
+    },
+    "baseline_c": {
+      "label": "role + team + minutes",
+      "n_queries": 1257,
+      "mrr": 0.5892814045998572,
+      "median_rank": 2,
+      "chance_level_mrr": 0.006136910575357954,
+      "lift": 96.02248515173869,
+      "random_target_null": {
+        "expected_mrr": 0.006136910575357954,
+        "observed_mrr": 0.5892814045998572,
+        "null_mean": 0.006138615712267302,
+        "ci_low": 0.004486148702049976,
+        "ci_high": 0.008385890943963454,
+        "p_value": 9.999000099990002e-05,
+        "n_resamples": 10000,
+        "n_queries": 1257
+      }
+    }
+  },
+  "within_role": {
+    "baseline_a": {
+      "label": "within-role role + minutes",
+      "n_queries": 1257,
+      "mrr": 0.02558886555344638,
+      "median_rank": 128,
+      "chance_level_mrr": 0.019593793288460563,
+      "lift": 1.3059679244710882,
+      "random_target_null": {
+        "expected_mrr": 0.019593793288460563,
+        "observed_mrr": 0.02558886555344638,
+        "null_mean": 0.019602456829594068,
+        "ci_low": 0.01606467207255471,
+        "ci_high": 0.02370617296352495,
+        "p_value": 0.0032996700329967,
+        "n_resamples": 10000,
+        "n_queries": 1257
+      }
+    },
+    "baseline_b": {
+      "label": "within-role 32 features + cosine",
+      "n_queries": 1257,
+      "mrr": 0.2787109170786653,
+      "median_rank": 12,
+      "chance_level_mrr": 0.019593793288460563,
+      "lift": 14.224449190387624,
+      "random_target_null": {
+        "expected_mrr": 0.019593793288460563,
+        "observed_mrr": 0.2787109170786653,
+        "null_mean": 0.019602456829594068,
+        "ci_low": 0.01606467207255471,
+        "ci_high": 0.02370617296352495,
+        "p_value": 9.999000099990002e-05,
+        "n_resamples": 10000,
+        "n_queries": 1257
+      }
+    }
+  },
+  "transferred": {
+    "baseline_a": {
+      "label": "role + minutes",
+      "n_queries": 26,
+      "mrr": 0.01046352973159066,
+      "median_rank": 149.0,
+      "chance_level_mrr": 0.006136910575357953,
+      "lift": 1.705015838686935,
+      "random_target_null": {
+        "expected_mrr": 0.006136910575357953,
+        "observed_mrr": 0.01046352973159066,
+        "null_mean": 0.00606964665304581,
+        "ci_low": 0.001868588606117997,
+        "ci_high": 0.024553816762726107,
+        "p_value": 0.10928907109289071,
+        "n_resamples": 10000,
+        "n_queries": 26
+      }
+    },
+    "baseline_b": {
+      "label": "32 features + cosine",
+      "n_queries": 26,
+      "mrr": 0.23874813903953604,
+      "median_rank": 38.5,
+      "chance_level_mrr": 0.006136910575357953,
+      "lift": 38.90363662755675,
+      "random_target_null": {
+        "expected_mrr": 0.006136910575357953,
+        "observed_mrr": 0.23874813903953604,
+        "null_mean": 0.00606964665304581,
+        "ci_low": 0.001868588606117997,
+        "ci_high": 0.024553816762726107,
+        "p_value": 9.999000099990002e-05,
+        "n_resamples": 10000,
+        "n_queries": 26
+      }
+    },
+    "baseline_c": {
+      "label": "role + team + minutes",
+      "n_queries": 26,
+      "mrr": 0.010078578551463767,
+      "median_rank": 150.5,
+      "chance_level_mrr": 0.006136910575357953,
+      "lift": 1.6422886447022906,
+      "random_target_null": {
+        "expected_mrr": 0.006136910575357953,
+        "observed_mrr": 0.010078578551463767,
+        "null_mean": 0.00606964665304581,
+        "ci_low": 0.001868588606117997,
+        "ci_high": 0.024553816762726107,
+        "p_value": 0.11558844115588442,
+        "n_resamples": 10000,
+        "n_queries": 26
+      }
+    }
+  }
+}

@@ -1058,3 +1058,31 @@ despite looking unreferenced to a grep. Acceptance is a byte-identical
 `getComputedStyle()` diff over every element on every route and audited state,
 before and after — the static result is conservative, not a proof, and a
 screenshot comparison cannot see a sub-pixel cascade change.
+---
+
+## D035 — 2026-08-07 — Chance-level control pins MRRs to the design floor
+
+**Decision:** add a chance-level control (SLS-024) as the sixth versioned
+result artifact (`chance_control_results.json`). Every published MRR is now
+reported against the design's uniform-random-target floor H_N/N (harmonic
+mean of reciprocal ranks), with a seeded empirical permutation null (10,000
+draws) and an empirical p-value. Implementation: `evaluation/chance_level.py`
++ `evaluation/run_chance_control.py`; writeup: `docs/chance-level-control.md`.
+
+**Why:** the existing artifacts answer method-vs-method (Baseline A/B/C)
+and delta-CI questions, but never "how far above *pure design luck* is this
+MRR?". A 41x and a 1.6x lift mean very different things, and the chance
+level makes them comparable on one absolute axis. Key result: Baseline C,
+which shows a 96x lift in the general population, collapses to 1.6x
+(p = 0.116, not distinguishable from chance) for transferred players, while
+Baseline B holds a 38.9x lift (p < 0.0001) against the same floor. The
+team-continuity reframing (D010) is now measured on the chance-level axis.
+
+**How to apply:** any future MRR number must be published next to its
+chance level and lift; regenerating the five prior artifacts plus this one,
+with the drift suite covering all six, is the completeness test. The null
+p-values at n=26 transfer queries are coarse — augment with a larger
+sample, per the existing next-experiment priority.
+
+---
+

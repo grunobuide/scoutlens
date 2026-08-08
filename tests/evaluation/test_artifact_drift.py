@@ -99,3 +99,10 @@ def test_shrinkage_experiment_results_have_not_drifted():
         "scoutlens.evaluation.run_shrinkage_experiment",
         "shrinkage_experiment_results.json",
     )
+
+
+def test_chance_control_results_have_not_drifted():
+    _drift_check(
+        "scoutlens.evaluation.run_chance_control",
+        "chance_control_results.json",
+    )
