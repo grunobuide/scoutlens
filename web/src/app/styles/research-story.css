@@ -476,6 +476,92 @@
   font-size: 0.75rem;
 }
 
+/* Data vintage badge (scoutlens-9a3.3): concise heritage chip for the first
+   interpretation point on landing and /science. Server-rendered; keyboard and
+   no-JavaScript safe. */
+.data-vintage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin: 0 0 1.1rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.data-vintage__label {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(245 242 233 / 70%);
+  color: var(--ink-800);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.data-vintage__season {
+  color: var(--ink-700);
+  font-weight: 600;
+}
+
+.data-vintage__licence {
+  color: var(--ink-600);
+}
+
+.data-vintage__pin {
+  max-width: 100%;
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--ink-950);
+  color: var(--signal);
+  font-size: 0.66rem;
+  overflow-wrap: anywhere;
+}
+
+/* Provider boundary (scoutlens-9a3.3): Wyscout per-profile evidence versus
+   aggregate-only StatsBomb replication, plus reproducibility-vs-recency. */
+.provider-boundary {
+  padding-block: clamp(3rem, 7vw, 5rem);
+}
+
+.provider-boundary__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.provider-boundary__card {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
+.provider-boundary__card h3 {
+  margin: 0 0 0.7rem;
+  font-size: 1.05rem;
+}
+
+.provider-boundary__card p {
+  color: var(--ink-600);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.provider-boundary__card--replication {
+  border-color: rgb(168 15 77 / 35%);
+  background: rgb(250 247 240 / 60%);
+}
+
+.provider-boundary__card a {
+  color: var(--teal);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .provenance-cta a {
   color: var(--teal);
   font-weight: 700;
@@ -510,6 +596,11 @@
 
   .experiment-metrics {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  }
+
+  .provider-boundary__grid {
+      grid-template-columns: 1fr;
 
   }
 }

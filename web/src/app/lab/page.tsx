@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
+import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
 import { LabExplorer, LabProblemPanel } from "@/components/lab-explorer";
 import { loadShowcaseLab } from "@/content/load-showcase-lab";
+import { loadShowcaseStory } from "@/content/load-showcase-story";
 
 export const metadata: Metadata = {
   title: "Fingerprint Lab",
@@ -11,10 +13,12 @@ export const metadata: Metadata = {
 
 export default async function LabPage() {
   const lab = await loadShowcaseLab();
+  const story = await loadShowcaseStory();
 
   return (
     <main id="main-content" className="shell page-shell lab-page">
       <header className="page-intro page-intro--wide lab-page-intro">
+        <DataVintageBadge manifest={story.manifest} />
         <p className="eyebrow">Interactive evidence surface</p>
         <h1>Compare one player with himself.</h1>
         <p className="lede">
@@ -48,6 +52,8 @@ export default async function LabPage() {
       ) : (
         <LabProblemPanel problem={lab.problem} datasetVersion={lab.datasetVersion} />
       )}
+
+      <ProviderBoundary manifest={story.manifest} research={story.research} />
     </main>
   );
 }

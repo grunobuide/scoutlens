@@ -9,6 +9,7 @@ const webRoot = resolve(scriptDirectory, "..");
 const routes = ["index.html", "lab/index.html", "science/index.html"];
 const landmarks = ["<header", "<nav", "<main", "<footer"];
 const fixtureMarkers = [...FIXTURE_MARKERS, ...SYNTHETIC_PROFILE_KEYS];
+const provenanceMarkers = ["Historical reproducible benchmark", "What these numbers describe"];
 const meaningfulStaticContent = {
   "index.html": [
     "A player leaves a reproducible fingerprint",
@@ -46,6 +47,11 @@ for (const route of routes) {
   for (const expected of meaningfulStaticContent[route] ?? []) {
     if (!html.includes(expected)) {
       throw new Error(`${route} is missing meaningful static content: ${expected}`);
+    }
+  }
+  for (const marker of provenanceMarkers) {
+    if (!html.includes(marker)) {
+      throw new Error(`${route} is missing provenance presentation: ${marker}`);
     }
   }
   for (const forbidden of [

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
 import { ClaimsMatrix, ExperimentCard, ProvenanceDrawer } from "@/components/research-story";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
 
@@ -16,6 +17,7 @@ export default async function SciencePage() {
   return (
     <main id="main-content" className="shell page-shell science-page">
       <header className="page-intro page-intro--wide">
+        <DataVintageBadge manifest={story.manifest} />
         <p className="eyebrow">Research trail</p>
         <h1>The science is the sequence, not one headline number.</h1>
         <p className="lede">
@@ -68,6 +70,7 @@ export default async function SciencePage() {
         <ClaimsMatrix research={research} />
       </div>
 
+      <ProviderBoundary manifest={story.manifest} research={research} />
       <ProvenanceDrawer story={story} />
     </main>
   );
