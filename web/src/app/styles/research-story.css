@@ -333,7 +333,7 @@
   color: var(--signal);
 }
 
-.experiment-metric__interval {
+.experiment-metrics .experiment-metric__interval {
   margin: 0.25rem 0 0;
   color: var(--ink-600);
   font-size: 0.66rem;
@@ -341,7 +341,7 @@
   letter-spacing: normal;
 }
 
-.experiment-card--signal .experiment-metric__interval {
+.experiment-card--signal .experiment-metrics .experiment-metric__interval {
   color: rgb(255 255 255 / 58%);
 }
 
