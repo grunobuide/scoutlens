@@ -3,7 +3,7 @@ import Link from "next/link";
 const navigation = [
   { href: "/", label: "Overview" },
   { href: "/lab/", label: "Fingerprint Lab" },
-  { href: "/science/", label: "Science" },
+  { href: "/science/", label: "How it works" },
 ] as const;
 
 export function SiteHeader() {
