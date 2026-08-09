@@ -1286,3 +1286,58 @@ line keeps that payload visible and versioned.
 **Evidence:** closure of `scoutlens-jtt.14` records the before/after chunk
 gzip table (197,105 → 157,585 module-browser total plus 39,520 legacy) and the
 full quality run.
+
+---
+
+## D039 — 2026-08-09 — Identity-challenge contract frozen for implementation
+
+**Decision:** adopt [`identity-challenge-contract.md`](identity-challenge-contract.md)
+(specification 1.0.0) as the single authority for the deterministic
+identity-challenge interaction on `/lab/`. The challenge is a guided reveal of
+the temporal retrieval experiment — not a player quiz, recommendation game, or
+client-side model — that transitions the user from a plain-language question
+through a hidden-identity fingerprint to a rank reveal and contribution
+evidence, then into the full Lab explorer.
+
+**Placement:** a dedicated challenge panel on `/lab/`, rendered above the full
+Lab explorer, sharing the same route and client bundle. URL states:
+`?player=<key>&challenge=query|reveal|evidence`. No separate route. A no-JS
+degraded state renders a static result sentence server-side.
+
+**Why:** the Lab exposes the right evidence but begins as a dense dashboard. A
+guided reveal makes the scientific question concrete before presenting all
+controls. The contract freezes the state machine, copy, artifact bindings,
+focus order, error states, and performance budget so the implementation bead
+(`scoutlens-9a3.6`) contains no product-design decisions. Every value comes
+from the versioned `PlayerProfileArtifact`; no retrieval is recomputed in the
+browser. The featured profile is `manifest.featured_profile` with its editorial
+selection reason visibly disclosed.
+
+**Alternatives rejected:**
+
+1. Separate `/challenge` route — rejected: fragments the Lab's single-route
+   model and duplicates the profile-loading path.
+2. Modal overlay on landing — rejected: traps focus and hides the evidence
+   surface behind a dialog.
+3. Landing-only inline section — rejected: overloads the first-interpretation
+   point and delays the CTA to the Lab.
+4. Football-name trivia quiz — rejected: recognition skill is unrelated to the
+   research question and encourages gamified quality interpretation.
+5. Compute candidates live in the browser — rejected: Python artifacts are the
+   sole scientific authority.
+6. AI chat as primary interaction — rejected: AI would overshadow deterministic
+   evidence and create a runtime dependency.
+
+**Review boundary:** this contract is normative until a later decision-log
+entry supersedes it. Any change to the state machine, copy, placement, URL
+semantics, or allowed artifact fields requires a new decision entry. The
+uncertainty behavior is conditional on `scoutlens-jtt.5.4`: until that closes,
+the challenge renders the `uncertainty_pending` caveat; after it closes, the
+challenge renders the interval from the artifact field.
+
+**How to apply:** implement `scoutlens-9a3.6` against this contract. The
+challenge must not increase the `/lab` initial JavaScript gzip total beyond
+the frozen 204,800-byte cap (D038). Tracks Beads `scoutlens-9a3.5`; depends
+on `scoutlens-9a3.1` (narrative spec, D034), `scoutlens-9a3.2` (explanation
+catalog), `scoutlens-9a3.3` (provenance component), `scoutlens-uze.4`
+(responsive baseline), and `scoutlens-jtt.5.4` (uncertainty in Lab).
