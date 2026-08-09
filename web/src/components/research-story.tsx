@@ -8,6 +8,7 @@ import {
   requireMetric,
   type ShowcaseStory,
 } from "@/content/showcase-story";
+import { explainMetric } from "@/content/evidence-explanations";
 
 const repositoryRoot = "https://github.com/grunobuide/scoutlens/blob/main/";
 
@@ -46,11 +47,24 @@ export function ExperimentCard({
       <dl className="experiment-metrics">
         {metrics.map((metric) => {
           const interval = formatMetricInterval(metric);
+          let explanation: ReturnType<typeof explainMetric> | null = null;
+          try {
+            explanation = explainMetric(metric);
+          } catch {
+            explanation = null;
+          }
           return (
             <div key={metric.metric_id}>
               <dt>{metric.label}</dt>
               <dd>{formatMetric(metric)}</dd>
               {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
+              {explanation === null ? null : (
+                <details className="experiment-metric__explanation">
+                  <summary>What this means</summary>
+                  <p>{explanation.plain_meaning}</p>
+                  <p className="experiment-metric__boundary">{explanation.interpretation_boundary}</p>
+                </details>
+              )}
             </div>
           );
         })}

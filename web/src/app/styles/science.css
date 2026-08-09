@@ -99,6 +99,113 @@
   padding-block: clamp(5rem, 9vw, 8rem);
 }
 
+.science-orientation {
+  margin-top: 1.5rem;
+}
+
+.science-orientation__boundary {
+  font-weight: 650;
+  color: var(--ink-700);
+}
+
+.science-mrr-intro {
+  padding-block: clamp(2rem, 5vw, 4rem);
+  max-width: 48rem;
+}
+
+.science-mrr-intro h2 {
+  max-width: 18ch;
+}
+
+.science-mrr-intro p {
+  color: var(--ink-600);
+}
+
+.research-stage__confound-note {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--warning, #c47d00);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: #fff5df;
+  color: var(--ink-700);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.science-worked-example {
+  padding-block: clamp(4rem, 8vw, 7rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.science-worked-example > p {
+  max-width: 48rem;
+  color: var(--ink-600);
+  margin-bottom: 2rem;
+}
+
+.science-uncertainty {
+  padding-block: clamp(4rem, 8vw, 7rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.science-uncertainty > p {
+  max-width: 48rem;
+  color: var(--ink-600);
+}
+
+.science-engineering {
+  padding-block: clamp(4rem, 8vw, 7rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.science-engineering__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.science-engineering__grid article {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
+.science-engineering__grid h3 {
+  margin: 0 0 0.7rem;
+  font-size: 1.05rem;
+}
+
+.science-engineering__grid p {
+  color: var(--ink-600);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.experiment-metric__explanation {
+  margin-top: 0.4rem;
+}
+
+.experiment-metric__explanation summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.experiment-metric__explanation p {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-600);
+}
+
+.experiment-metric__boundary {
+  color: var(--ink-700);
+  font-weight: 550;
+}
+
 @media (max-width: 48rem) {
   .split-definition {
       grid-template-columns: 1fr;
@@ -117,6 +224,11 @@
   .research-stage > header {
       grid-template-columns: 2.5rem minmax(0, 1fr);
       gap: 1rem;
+
+  }
+
+  .science-engineering__grid {
+      grid-template-columns: 1fr;
 
   }
 }

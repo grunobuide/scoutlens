@@ -19,6 +19,10 @@ const meaningfulStaticContent = {
   ],
   "science/index.html": [
     "The science is the sequence",
+    "How we measure retrieval: MRR",
+    "One player, two halves, one retrieval result",
+    "Match-level stability is not yet available",
+    "What the system is",
     "First chronological half",
     "Keep a useful correction out",
     "Audit the full provenance chain",
