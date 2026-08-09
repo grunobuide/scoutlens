@@ -112,6 +112,19 @@
 
   }
 
+  /* F-4 (scoutlens-uze.4): the 17 px-tall text-only nav links fall far
+     below the 44 px touch-target bar on narrow screens. Enlarge the hit
+     area with padding and centering only; the visual type scale is
+     unchanged (WCAG 2.5.8 AA already passes via the spacing exception). */
+  .site-nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+      padding-inline: 0.5rem;
+      margin-inline: -0.5rem;
+
+  }
+
   .site-footer__inner {
       align-items: flex-start;
       flex-direction: column;
