@@ -116,15 +116,18 @@ export default async function SciencePage() {
       <section className="science-uncertainty" aria-labelledby="uncertainty-heading">
         <div className="section-heading">
           <p className="eyebrow">Uncertainty</p>
-          <h2 id="uncertainty-heading">Match-level stability is not yet available</h2>
+          <h2 id="uncertainty-heading">Every rank travels with its resampled interval</h2>
         </div>
         <p>
-          Every rank and similarity value on this page is a point estimate from the frozen
-          population. Match-resampled sampling-stability intervals are preregistered
-          (D031) but not yet published in the showcase artifact. Until they are, each
-          profile carries an <strong>uncertainty pending</strong> caveat. Intervals will
-          replace the pending state without changing the point estimates or the claim
-          boundary.
+          Each profile&apos;s rank, median and recall rates are published with intervals
+          from 500 match-bootstrap resamples (preregistered, D031) of the frozen
+          population. The intervals describe sampling stability in the observed matches —
+          how much a rank moves when whole matches are reshuffled — not causal effects,
+          provider annotation error, or future performance. A small number of features
+          that were never observed for a player (for example a conversion rate for a
+          player who never shot) are marked <strong>insufficient</strong> with their valid
+          resample count, never filled with a substitute value. The method is documented
+          in the <a href="https://github.com/grunobuide/scoutlens/blob/main/docs/uncertainty-method.md">match-bootstrap method note</a>.
         </p>
       </section>
 

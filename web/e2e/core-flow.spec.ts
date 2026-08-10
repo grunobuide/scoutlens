@@ -25,7 +25,7 @@ test("complete selected-player flow works by keyboard at desktop and 360 px", as
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Fingerprint Lab" })).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "Science" })).toBeFocused();
+  await expect(page.getByRole("link", { name: "How it works" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(search).toBeFocused();
   await page.keyboard.press("Tab");
@@ -48,7 +48,8 @@ test("complete selected-player flow works by keyboard at desktop and 360 px", as
   await expect(page.locator(".selected-profile__header h2")).toHaveText("L. Messi");
   await expect(page.locator("[data-retrieval-scope]")).toHaveCount(3);
   await expect(page.locator("[data-neighbor-rank]")).toHaveCount(5);
-  await expect(page.getByText("Stability pending", { exact: false }).first()).toBeVisible();
+  await expect(page.getByText("Stability pending", { exact: false }).first()).not.toBeVisible();
+  await expect(page.getByText("Available from 500 valid resamples", { exact: false }).first()).toBeVisible();
 
   const globalToggle = page.getByRole("radio", { name: "Global" });
   const interactionDuration = await measureNextInteraction(page, async () => {

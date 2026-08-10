@@ -187,6 +187,10 @@
   margin-top: 0.4rem;
 }
 
+.experiment-card--signal .experiment-metric__explanation summary {
+  color: var(--signal);
+}
+
 .experiment-metric__explanation summary {
   cursor: pointer;
   font-size: 0.78rem;
@@ -199,6 +203,7 @@
   font-size: 0.82rem;
   line-height: 1.5;
   color: var(--ink-600);
+  overflow-wrap: anywhere;
 }
 
 .experiment-metric__boundary {
