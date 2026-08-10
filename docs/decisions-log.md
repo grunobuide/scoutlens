@@ -1341,3 +1341,62 @@ the frozen 204,800-byte cap (D038). Tracks Beads `scoutlens-9a3.5`; depends
 on `scoutlens-9a3.1` (narrative spec, D034), `scoutlens-9a3.2` (explanation
 catalog), `scoutlens-9a3.3` (provenance component), `scoutlens-uze.4`
 (responsive baseline), and `scoutlens-jtt.5.4` (uncertainty in Lab).
+
+---
+
+## D040 — 2026-08-10 — Modeling-track agent ownership contract frozen
+
+**Decision:** freeze
+[`modeling-agent-contract.md`](modeling-agent-contract.md) as the binding
+file-ownership contract for every bead labelled `modeling`
+(`scoutlens-iex.3`). It mirrors the frontend contract (`D033`): the same three
+ownership levels, the same Denied-by-default rule for any unlisted path, and
+the same precedence — subordinate to a current user instruction and to
+`AGENTS.md` / `CLAUDE.md`, and if the contract and a bead disagree, the bead
+loses and the executor stops. It is additionally subordinate to the
+`CONTAINMENT` block in `bd_orchestrator.py`. This replaces the placeholder in
+`CLAUDE.md` under "Fronteiras de propriedade", which said the modeling
+contract was unwritten and `src/scoutlens/**` was therefore non-delegable.
+
+**Why:** the modeling track was already dispatchable — `bd_orchestrator.py`
+routes the `modeling` label to `personas/data-scientist.md` behind a
+`pytest -q` gate — while having no written boundary. `scoutlens-jtt.12` proved
+the gap was not theoretical: it required normalizing identity strings in
+`src/scoutlens/**` and then regenerating `public/showcase/**`, a path the
+frontend contract classifies as Denied and owns under `scoutlens-jtt`. Without
+a rule, an agent either refuses correct work or performs an unreviewable
+rewrite of published data. Both are failures.
+
+**Impact:** three points where the classification proposed in the bead was
+changed after checking the repository rather than accepted as given.
+(1) `schemas/**` does not exist and `configs/**` holds only a `README.md`;
+both are listed as reserved-and-Denied so that creating them cannot land in an
+unlisted path by accident, and so the near-miss with the live `config/`
+directory is explicit. (2) `artifacts/` is split: the regenerable
+subdirectories are Conditional regeneration-only, while the recorded
+`*_results.json` files are Denied outright — a new run writes a new file and
+never overwrites a recorded result. (3) `web/**` stays Denied, but with one
+narrow exception (scenario D) permitting deletion of a downstream
+compensation that exists solely because of the producer defect the bead fixes,
+reviewer `scoutlens-uze`, and only when the rendered text is provably
+unchanged. Without that exception `scoutlens-jtt.12` could not have been
+executed end to end, which the bead required; with a broader one the contract
+would have granted the modeling track presentation reach, which the bead
+forbade. The exception is bounded by six conditions and excludes layout,
+styling, copy, ordering and any displayed value.
+
+The regeneration rule is the substance: an artifact is only ever the recorded
+output of one of eight named module commands, must reproduce byte-identically
+on a second run, must produce a diff explainable as the stated change and
+nothing else, and ships a six-part evidence packet — including a count of
+affected records derived independently of the code that produced the change,
+per the D037 standard. Publishing a release asset is outward-facing, so an
+agent that cannot perform it stops after rebuilding the pack and hands off
+rather than repinning against an asset that does not exist (D030).
+
+**How to apply:** every `modeling` bead fills the §6 handoff template before
+starting, and closes against the §7 Definition of Done. `scoutlens-iex.2`
+fills the empty "Convenções do projeto" section of
+`personas/data-scientist.md` by pointing at this contract rather than
+restating it. Changing this contract requires its own bead and a new decision
+record; it is Denied to every ordinary modeling bead.
