@@ -1,0 +1,324 @@
+{
+  "_manifest": {
+    "generated_at": "2026-08-10T15:07:21.794900+00:00",
+    "git_commit": "a4259a2944c95cd517ac8342c7639f2ac862dc13",
+    "git_dirty": true,
+    "source_sha256": "d0cdcd487dc71dee61bff7744b40ddb7fd9fae6b10aeffeb191f8d96bef469ec",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "6b04c4ebb2d36eb1a93e7856008823207dca7b8e5ce384c3dafd8e8cbd4d7cd1",
+    "config": {
+      "config_version": 2,
+      "description": "Single versioned source of the parameters consumed by every published ScoutLens experiment. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      },
+      "statsbomb_replication": {
+        "season": "2015/16",
+        "domestic_leagues": [
+          2,
+          7,
+          11,
+          12
+        ],
+        "minutes_threshold": 450,
+        "bootstrap": {
+          "n_resamples": 1000,
+          "seed": 0
+        }
+      }
+    },
+    "inputs": {
+      "competitions.parquet": {
+        "sha256": "45a2212a93fed2e41aa4d9e50b9b73efa74aca2b62e8d21daf4b2109a0874101",
+        "bytes": 3122
+      },
+      "events.parquet": {
+        "sha256": "357aa043ca0f6fc94584fffb2a418180fd2b197f073bea6cc8242a2ad2b869ff",
+        "bytes": 53181640
+      },
+      "matches.parquet": {
+        "sha256": "f545ff00713fb27a271d3bd83583b663ec610919a9be9a7e33dc783f5c69762f",
+        "bytes": 564353
+      },
+      "minutes.parquet": {
+        "sha256": "856f631f96fc93bd51cfb8496f5a6d2b581f7df52a04ff6f71fb885081fff666",
+        "bytes": 182279
+      },
+      "players.parquet": {
+        "sha256": "cd58fa8fe1b61be0e685431b58a45fae62f6b451f644419c60b916a98dd88eab",
+        "bytes": 160264
+      },
+      "teams.parquet": {
+        "sha256": "b2670f354e837e60948a6241b2f0ec344b13b199447caf587d187c78cc761fef",
+        "bytes": 8401
+      }
+    }
+  },
+  "protocol_version": 1,
+  "protocol_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+  "protocol_registered": true,
+  "protocol": {
+    "protocol_version": 1,
+    "bead": "scoutlens-qop.1",
+    "question": "Does a learned fingerprint representation retrieve the same player across a temporal split better than the frozen Baseline B cosine metric, on players never seen during fitting?",
+    "population": {
+      "provider": "wyscout",
+      "season": "2017/18",
+      "competitions": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "competitions_note": "England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "minutes_threshold_per_period": 450,
+      "eligibility": "minutes_played >= threshold in BOTH periods for the same (player_id, competitionId)",
+      "profile_key": [
+        "player_id",
+        "competitionId",
+        "period"
+      ],
+      "profile_key_note": "D007 - player_id alone would collide a league and a tournament"
+    },
+    "split": {
+      "unit": "player_id",
+      "unit_note": "the human, not (player_id, competitionId) - every row for one human stays in one split",
+      "stratify_by": "role",
+      "roles": [
+        "Defender",
+        "Forward",
+        "Goalkeeper",
+        "Midfielder"
+      ],
+      "fractions": {
+        "train": 0.6,
+        "validation": 0.2,
+        "test": "remainder"
+      },
+      "seed": 2718,
+      "assignment": "within each role, players are ordered by sha256(f'{seed}:{player_id}') then player_id, and cut at floor(n*0.60) and floor(n*0.80)",
+      "assignment_note": "order-independent and stable: the ordering key depends only on the seed and the player id, never on row order or population size"
+    },
+    "candidate_pool": {
+      "rule": "within-split",
+      "detail": "a query from split S is ranked only against period-B profiles of players in S",
+      "why": "cross-split pools would let a test query retrieve a training player, and would make pool size depend on the split sizes",
+      "consequence": "split-level absolute MRR is NOT comparable to the published full-population numbers - pools are smaller, so retrieval is easier. Only the within-split paired delta (B - A) is the object of study."
+    },
+    "preprocessing": {
+      "scaler": "mean-impute then z-score, per feature",
+      "fit_on": "train split only",
+      "applied_to": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "why": "the published experiments fit the scaler on the population being compared (D008). That is correct for a descriptive experiment and wrong for a confirmatory one: it lets held-out rows inform the transform. This benchmark fits on train only.",
+      "degenerate_columns": "a feature that is all-null or zero-variance in train contributes exactly 0",
+      "fitted_statistic_precision": "12 significant digits",
+      "fitted_statistic_precision_why": "Polars sums in parallel, so a mean or std can differ by 1-2 ULPs between runs on identical input. That never moves an integer rank, but it does make the published scaler bytes irreproducible. Quantizing the fitted statistics makes the whole pipeline exactly reproducible at a cost of ~1e-12 relative on each z-score."
+    },
+    "features": {
+      "primary": "CANONICAL_28",
+      "sensitivity": [
+        "CANONICAL_PLUS_CARRY",
+        "CANONICAL_28 minus touches_p90"
+      ],
+      "note": "sensitivity arms are reported alongside the primary set, never mixed into it (D021)"
+    },
+    "baselines": {
+      "reference": "baseline_b_cosine",
+      "reference_note": "the incumbent this benchmark must beat, over CANONICAL_28",
+      "floor": "baseline_a_role_minutes",
+      "floor_note": "the trivial method; reported to keep the delta interpretable"
+    },
+    "metrics": {
+      "primary": "within_role_mrr",
+      "secondary": [
+        "global_mrr",
+        "median_rank",
+        "recall_at_1",
+        "recall_at_5",
+        "recall_at_10"
+      ],
+      "paired_interval": {
+        "method": "paired bootstrap over the shared query set",
+        "n_resamples": 1000,
+        "seed": 0,
+        "level": 0.95,
+        "ordering": "queries sorted by (player_id, competitionId) before resampling (D013)"
+      }
+    },
+    "subgroups": {
+      "by": "role",
+      "reportable_minimum_queries": 100,
+      "rule": "a role subgroup below the minimum is reported but never gates the decision"
+    },
+    "decision": {
+      "keep_requires_all": [
+        "wyscout test delta MRR >= +0.020 over baseline_b_cosine",
+        "paired 95% CI lower bound > 0",
+        "no role subgroup with >= 100 queries drops more than 0.020",
+        "statsbomb external delta > 0 with 95% CI lower bound > -0.010",
+        "operational budgets pass"
+      ],
+      "otherwise": "DROP - the representation does not earn its place and Baseline B stands",
+      "practical_gain_note": "+0.020 is a practical-significance floor, not a statistical one. A statistically clean but smaller gain is a DROP: it does not justify the interpretability cost of replacing a transparent cosine over named features."
+    },
+    "neural_continuation_gate": {
+      "evaluated_on": "validation",
+      "model": "diagonal metric (qop.2)",
+      "requires_all": [
+        "validation delta MRR >= +0.010 over baseline_b_cosine",
+        "paired 95% CI lower bound > -0.005"
+      ],
+      "otherwise": "do not run the neural contrastive arm (qop.3) - record the null and stop"
+    },
+    "budgets": {
+      "max_wall_clock_seconds_per_arm": 1800,
+      "max_peak_rss_bytes": 4294967296,
+      "max_artifact_bytes": 5242880,
+      "note": "exceeding a budget is a stop condition, not a reason to weaken the protocol"
+    },
+    "external_test": {
+      "provider": "statsbomb",
+      "season": "2015/16",
+      "competitions": [
+        2,
+        7,
+        11,
+        12
+      ],
+      "minutes_threshold_per_period": 450,
+      "features": "CANONICAL_28, provider-native",
+      "weights": "frozen from the Wyscout training split; nothing is refit on StatsBomb"
+    },
+    "non_goals": [
+      "looking at test labels while designing",
+      "UMAP or any projection as evidence",
+      "recruitment endpoints or transfer-success claims",
+      "causal interpretation of similarity"
+    ],
+    "stop_go": {
+      "test_opens_only_after": "protocol_hash recorded in docs/decisions-log.md",
+      "one_shot": "the test split is evaluated once per candidate model; a second look is a new protocol version",
+      "null_result": "a null is a result and is published (project convention); it is never converted into a redesign without a new preregistration"
+    }
+  },
+  "split_seed": 2718,
+  "assignment_digest": "715bdb90af59860c2510d6a69f43970c9734bef4e4e061740658d2496c30d96a",
+  "counts": {
+    "total_players": 1257,
+    "by_split": {
+      "train": 753,
+      "validation": 251,
+      "test": 253
+    },
+    "by_role_split": {
+      "Defender/test": 95,
+      "Defender/train": 283,
+      "Defender/validation": 95,
+      "Forward/test": 48,
+      "Forward/train": 142,
+      "Forward/validation": 47,
+      "Goalkeeper/test": 20,
+      "Goalkeeper/train": 58,
+      "Goalkeeper/validation": 19,
+      "Midfielder/test": 90,
+      "Midfielder/train": 270,
+      "Midfielder/validation": 90
+    }
+  },
+  "population": {
+    "profile_rows": 2514,
+    "player_competition_pairs": 1257,
+    "distinct_players": 1257
+  },
+  "feature_sets": {
+    "canonical_28": [
+      "passes_p90",
+      "pass_completion_pct",
+      "crosses_p90",
+      "long_balls_p90",
+      "progressive_pass_distance_p90",
+      "progressive_passes_p90",
+      "assists_p90",
+      "key_passes_p90",
+      "through_balls_p90",
+      "box_entries_p90",
+      "shots_p90",
+      "goals_p90",
+      "shot_conversion_pct",
+      "shots_on_target_pct",
+      "blocked_shot_pct",
+      "interceptions_p90",
+      "sliding_tackles_p90",
+      "clearances_p90",
+      "defensive_duel_win_pct",
+      "mean_x",
+      "mean_y",
+      "defensive_third_share",
+      "middle_third_share",
+      "attacking_third_share",
+      "touches_p90",
+      "duels_p90",
+      "duel_win_pct",
+      "take_on_success_pct"
+    ],
+    "canonical_plus_carry": [
+      "passes_p90",
+      "pass_completion_pct",
+      "crosses_p90",
+      "long_balls_p90",
+      "progressive_pass_distance_p90",
+      "progressive_passes_p90",
+      "assists_p90",
+      "key_passes_p90",
+      "through_balls_p90",
+      "box_entries_p90",
+      "shots_p90",
+      "goals_p90",
+      "shot_conversion_pct",
+      "shots_on_target_pct",
+      "blocked_shot_pct",
+      "interceptions_p90",
+      "sliding_tackles_p90",
+      "clearances_p90",
+      "defensive_duel_win_pct",
+      "mean_x",
+      "mean_y",
+      "defensive_third_share",
+      "middle_third_share",
+      "attacking_third_share",
+      "touches_p90",
+      "duels_p90",
+      "duel_win_pct",
+      "take_on_success_pct",
+      "carry_proxy_p90",
+      "carry_distance_proxy_p90"
+    ]
+  }
+}
