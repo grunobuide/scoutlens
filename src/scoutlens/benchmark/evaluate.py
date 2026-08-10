@@ -62,8 +62,19 @@ SIGNIFICANT_DIGITS = 12
 """See `PROTOCOL["preprocessing"]["fitted_statistic_precision"]`."""
 
 
-def _quantize(value: float) -> float:
+def quantize_float(value: float) -> float:
+    """Round a reported statistic to the frozen precision.
+
+    Same reason as `quantize_scaler`: numpy and Polars both reduce sums in
+    parallel, so a mean over identical input can differ in its last ULPs
+    between runs. Any float that lands in a published artifact goes through
+    here so the artifact regenerates identically.
+    """
     return float(f"{value:.{SIGNIFICANT_DIGITS}g}")
+
+
+def _quantize(value: float) -> float:
+    return quantize_float(value)
 
 
 def quantize_scaler(scaler: Scaler) -> Scaler:
