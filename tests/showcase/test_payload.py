@@ -163,9 +163,9 @@ def _assert_existing_target_survives_failure(
 
 def test_repository_payload_pin_is_content_addressed_and_within_budget() -> None:
     metadata = load_payload_metadata(REPO_ROOT / "config" / "showcase-payload-pack.json")
-    assert metadata.dataset_version == "wyscout-2017-18-v1-31d2ccc6af37"
+    assert metadata.dataset_version == "wyscout-2017-18-v1-1ea86c4a4dbb"
     assert metadata.path_count == 1257
-    assert metadata.archive_bytes == 16_687_629
+    assert metadata.archive_bytes == 19_624_821
     assert metadata.sha256 in metadata.filename
     assert metadata.dataset_version in metadata.filename
     assert metadata.archive_bytes <= MAX_ARCHIVE_BYTES

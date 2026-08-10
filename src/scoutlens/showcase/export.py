@@ -35,14 +35,23 @@ from scoutlens.showcase.io import (
     write_canonical_json,
 )
 from scoutlens.showcase.research import SOURCE_FILES
+from scoutlens.showcase.uncertainty import (
+    DEFAULT_BOOTSTRAP_RUN_DIR,
+    FEATURE_FILE,
+    NEIGHBOR_FILE,
+    RETRIEVAL_FILE,
+    RUN_METADATA_FILE,
+    load_bootstrap_summaries,
+)
 from scoutlens.showcase.validation import validate_bundle, validate_published_directory
 
 DEFAULT_PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 DEFAULT_ARTIFACT_DIR = REPO_ROOT / "artifacts"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "public" / "showcase" / "v1"
+DEFAULT_UNCERTAINTY_RUN_DIR = DEFAULT_BOOTSTRAP_RUN_DIR
 
 
-def _input_inventory(processed_dir: Path, artifact_dir: Path) -> list[tuple[str, Path]]:
+def _input_inventory(processed_dir: Path, artifact_dir: Path, bootstrap_run_dir: Path) -> list[tuple[str, Path]]:
     processed = [
         "period_profiles.parquet",
         "events.parquet",
@@ -52,9 +61,20 @@ def _input_inventory(processed_dir: Path, artifact_dir: Path) -> list[tuple[str,
         "teams.parquet",
         "competitions.parquet",
     ]
+    bootstrap = [
+        (FEATURE_FILE, bootstrap_run_dir / FEATURE_FILE),
+        (RETRIEVAL_FILE, bootstrap_run_dir / RETRIEVAL_FILE),
+        (NEIGHBOR_FILE, bootstrap_run_dir / NEIGHBOR_FILE),
+        (RUN_METADATA_FILE, bootstrap_run_dir / RUN_METADATA_FILE),
+    ]
     return [
         *((f"processed/{name}", processed_dir / name) for name in processed),
         *((f"research/{name}", artifact_dir / name) for name in SOURCE_FILES.values()),
+        *((f"uncertainty/{name}", path) for name, path in bootstrap),
+        (
+            "config/uncertainty.json",
+            REPO_ROOT / "config" / "uncertainty.json",
+        ),
         (
             "schema/showcase-1.0.0.schema.json",
             REPO_ROOT / "src" / "scoutlens" / "showcase" / "schemas" / "showcase-1.0.0.schema.json",
@@ -150,20 +170,23 @@ def export_showcase(
     processed_dir: Path = DEFAULT_PROCESSED_DIR,
     artifact_dir: Path = DEFAULT_ARTIFACT_DIR,
     output_dir: Path = DEFAULT_OUTPUT_DIR,
+    bootstrap_run_dir: Path = DEFAULT_UNCERTAINTY_RUN_DIR,
     generated_at: str | None = None,
 ) -> dict[str, int | str]:
     config = load_experiment_config()
-    inventory = _input_inventory(processed_dir, artifact_dir)
+    inventory = _input_inventory(processed_dir, artifact_dir, bootstrap_run_dir)
     missing = [str(path) for _, path in inventory if not path.is_file()]
     if missing:
         raise FileNotFoundError("missing showcase inputs: " + ", ".join(missing))
 
     inputs = load_showcase_inputs(processed_dir, artifact_dir, config["domestic_leagues"])
+    uncertainty = load_bootstrap_summaries(bootstrap_run_dir)
     bundle = build_showcase_bundle(
         inputs,
         competition_ids=config["domestic_leagues"],
         minutes_threshold=config["primary_minutes_threshold"],
         expected_profile_count=EXPECTED_PROFILE_COUNT,
+        uncertainty=uncertainty,
     )
     validate_bundle(bundle, research_sources=inputs.research_sources)
 
@@ -204,6 +227,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
     parser.add_argument("--artifact-dir", type=Path, default=DEFAULT_ARTIFACT_DIR)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--bootstrap-run-dir", type=Path, default=DEFAULT_UNCERTAINTY_RUN_DIR)
     parser.add_argument(
         "--generated-at",
         help="Optional ISO-8601 timestamp for deterministic replay tests; defaults to current UTC time.",
@@ -217,6 +241,7 @@ def main() -> None:
         processed_dir=args.processed_dir,
         artifact_dir=args.artifact_dir,
         output_dir=args.output_dir,
+        bootstrap_run_dir=args.bootstrap_run_dir,
         generated_at=args.generated_at,
     )
     print(json.dumps(result, indent=2, sort_keys=True))

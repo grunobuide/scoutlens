@@ -29,6 +29,12 @@ from scoutlens.showcase.catalog import (
 from scoutlens.showcase.caveats import profile_caveats
 from scoutlens.showcase.io import canonical_content_digest
 from scoutlens.showcase.research import build_research_summary, load_research_sources
+from scoutlens.showcase.uncertainty import (
+    BootstrapSummaries,
+    require_feature,
+    require_neighbor,
+    require_rank,
+)
 
 VERSION_PLACEHOLDER = "__DATASET_VERSION__"
 
@@ -68,9 +74,7 @@ class ShowcaseBundle:
 
 def load_showcase_inputs(processed_dir: Path, artifact_dir: Path, competition_ids: list[int]) -> ShowcaseInputs:
     """Load local processed inputs and recompute ratio supports with frozen code."""
-    matches = pl.read_parquet(processed_dir / "matches.parquet").filter(
-        pl.col("competitionId").is_in(competition_ids)
-    )
+    matches = pl.read_parquet(processed_dir / "matches.parquet").filter(pl.col("competitionId").is_in(competition_ids))
     assignment = assign_periods(matches)
     match_ids = assignment["match_id"].to_list()
     minutes = pl.read_parquet(processed_dir / "minutes.parquet").filter(pl.col("match_id").is_in(match_ids))
@@ -129,8 +133,7 @@ def _identity_lookups(inputs: ShowcaseInputs) -> tuple[dict[int, dict], dict[int
     players = {
         int(row["wyId"]): {
             "display_name": normalize_identity_text(
-                row["shortName"]
-                or " ".join(part for part in (row["firstName"], row["lastName"]) if part)
+                row["shortName"] or " ".join(part for part in (row["firstName"], row["lastName"]) if part)
             ),
             "role": row["role"]["name"],
         }
@@ -257,6 +260,7 @@ def _period_fingerprint(
     role_percentiles: dict,
     date_range: tuple[str, str],
     context: dict,
+    uncertainty: BootstrapSummaries | None,
 ) -> dict:
     period = str(raw_row["period"])
     row_prefix = (int(raw_row["player_id"]), int(raw_row["competitionId"]), period)
@@ -264,6 +268,11 @@ def _period_fingerprint(
     for feature_id in FEATURE_COLUMNS:
         raw_value = raw_row[feature_id]
         z_score = float(standardized_row[feature_id])
+        feature_uncertainty = (
+            _pending_feature_uncertainty()
+            if uncertainty is None
+            else require_feature(uncertainty, row_prefix + (feature_id,))
+        )
         feature_values.append(
             {
                 "feature_id": feature_id,
@@ -273,7 +282,7 @@ def _period_fingerprint(
                 "within_role_percentile": role_percentiles[row_prefix + (feature_id,)],
                 "imputed_for_model": raw_value is None,
                 "support": _support(feature_id, support_row, int(raw_row["minutes_played"])),
-                "uncertainty": _pending_feature_uncertainty(),
+                "uncertainty": feature_uncertainty,
             }
         )
     return {
@@ -306,9 +315,7 @@ def _evidence_for_candidate(
     feature_rows: list[dict] = []
     by_family: dict[str, list[float]] = defaultdict(list)
     for feature_id in FEATURE_COLUMNS:
-        contribution = (
-            float(query[feature_id]) * float(candidate[feature_id]) / denominator if denominator > 0 else 0.0
-        )
+        contribution = float(query[feature_id]) * float(candidate[feature_id]) / denominator if denominator > 0 else 0.0
         family = FEATURE_CATALOG[FEATURE_ORDER[feature_id]]["family"]
         by_family[family].append(contribution)
         feature_rows.append(
@@ -346,14 +353,20 @@ def _evidence_for_candidate(
     return cosine, feature_rows + family_rows
 
 
-def _retrieval_outcome(candidate_count: int, self_rank: int, cosine: float | None, evidence_refs: list[str]) -> dict:
+def _retrieval_outcome(
+    candidate_count: int,
+    self_rank: int,
+    cosine: float | None,
+    evidence_refs: list[str],
+    uncertainty: dict | None,
+) -> dict:
     return {
         "candidate_count": candidate_count,
         "self_rank": self_rank,
         "reciprocal_rank": 1.0 / self_rank,
         "cosine_similarity": cosine,
         "evidence_refs": evidence_refs,
-        "uncertainty": _pending_rank_uncertainty(),
+        "uncertainty": uncertainty if uncertainty is not None else _pending_rank_uncertainty(),
     }
 
 
@@ -367,6 +380,7 @@ def build_showcase_bundle(
     competition_ids: list[int],
     minutes_threshold: int,
     expected_profile_count: int | None = EXPECTED_PROFILE_COUNT,
+    uncertainty: BootstrapSummaries | None = None,
 ) -> ShowcaseBundle:
     players, competitions, team_names = _identity_lookups(inputs)
     role_lookup = inputs.players.select(
@@ -389,16 +403,13 @@ def build_showcase_bundle(
     eligible_keys = eligible.select("player_id", "competitionId", "period")
     supports = inputs.support_profiles.join(eligible_keys, on=["player_id", "competitionId", "period"], how="inner")
     raw_rows = {
-        (int(row["player_id"]), int(row["competitionId"]), str(row["period"])): row
-        for row in eligible.to_dicts()
+        (int(row["player_id"]), int(row["competitionId"]), str(row["period"])): row for row in eligible.to_dicts()
     }
     std_rows = {
-        (int(row["player_id"]), int(row["competitionId"]), str(row["period"])): row
-        for row in standardized.to_dicts()
+        (int(row["player_id"]), int(row["competitionId"]), str(row["period"])): row for row in standardized.to_dicts()
     }
     support_rows = {
-        (int(row["player_id"]), int(row["competitionId"]), str(row["period"])): row
-        for row in supports.to_dicts()
+        (int(row["player_id"]), int(row["competitionId"]), str(row["period"])): row for row in supports.to_dicts()
     }
     if set(raw_rows) != set(support_rows):
         raise ValueError("recomputed feature supports do not cover the frozen eligible profile rows")
@@ -417,10 +428,7 @@ def build_showcase_bundle(
     candidate_rank_frame = candidate_rows.select(
         ["player_id", "competitionId", "role", "minutes_played"] + FEATURE_COLUMNS
     )
-    role_counts = {
-        str(row["role"]): int(row["len"])
-        for row in query_rows.group_by("role").len().to_dicts()
-    }
+    role_counts = {str(row["role"]): int(row["len"]) for row in query_rows.group_by("role").len().to_dicts()}
 
     profile_artifacts: dict[str, dict] = {}
     index_items: list[dict] = []
@@ -443,16 +451,12 @@ def build_showcase_bundle(
         role_self = ranked_role.filter(same).row(0, named=True)
         baseline_self = baseline.filter(same).row(0, named=True)
         self_candidate = std_rows[(player_id, competition_id, "B")]
-        self_cosine, self_evidence = _evidence_for_candidate(
-            "self_retrieval", "self", query, self_candidate
-        )
+        self_cosine, self_evidence = _evidence_for_candidate("self_retrieval", "self", query, self_candidate)
         self_refs = [row["evidence_id"] for row in self_evidence]
 
         neighbor_rows = (
             ranked_role.filter(pl.col("player_id") != player_id)
-            .with_columns(
-                pl.format("wy-{}-c-{}", pl.col("player_id"), pl.col("competitionId")).alias("_profile_key")
-            )
+            .with_columns(pl.format("wy-{}-c-{}", pl.col("player_id"), pl.col("competitionId")).alias("_profile_key"))
             .sort(["cosine_similarity", "_profile_key"], descending=[True, False])
             .head(5)
             .to_dicts()
@@ -479,19 +483,19 @@ def build_showcase_bundle(
                     "display_name": players[neighbor_player_id]["display_name"],
                     "role": players[neighbor_player_id]["role"],
                     "competition": competitions[neighbor_competition_id],
-                    "teams": [
-                        {"id": team["id"], "name": team["name"]} for team in neighbor_context["teams"]
-                    ],
+                    "teams": [{"id": team["id"], "name": team["name"]} for team in neighbor_context["teams"]],
                     "candidate_period": "b",
                     "cosine_similarity": cosine,
                     "evidence_refs": [row["evidence_id"] for row in evidence],
-                    "stability": _pending_neighbor_stability(),
+                    "stability": (
+                        _pending_neighbor_stability()
+                        if uncertainty is None
+                        else require_neighbor(uncertainty, (player_id, competition_id, rank))
+                    ),
                 }
             )
 
-        period_contexts = {
-            period.lower(): contexts[(player_id, competition_id, period)] for period in ("A", "B")
-        }
+        period_contexts = {period.lower(): contexts[(player_id, competition_id, period)] for period in ("A", "B")}
         periods = {
             period.lower(): _period_fingerprint(
                 raw_rows[(player_id, competition_id, period)],
@@ -501,6 +505,7 @@ def build_showcase_bundle(
                 role_percentiles,
                 date_ranges[(competition_id, period)],
                 period_contexts[period.lower()],
+                uncertainty,
             )
             for period in ("A", "B")
         }
@@ -512,6 +517,25 @@ def build_showcase_bundle(
             "season": "2017/18",
             "period_contexts": period_contexts,
         }
+        outcome_uncertainty: dict[str, dict | None] = (
+            {
+                "global": require_rank(uncertainty, (player_id, competition_id, "global")),
+                "within_role": require_rank(uncertainty, (player_id, competition_id, "within_role")),
+                "baseline_role_minutes": require_rank(
+                    uncertainty, (player_id, competition_id, "baseline_role_minutes")
+                ),
+            }
+            if uncertainty is not None
+            else {"global": None, "within_role": None, "baseline_role_minutes": None}
+        )
+        top_uncertainty = (
+            uncertainty.profile_block[(player_id, competition_id)]
+            if uncertainty is not None
+            else _pending_uncertainty()
+        )
+        uncertainty_status = (
+            uncertainty.profile_status[(player_id, competition_id)] if uncertainty is not None else "pending"
+        )
         profile = {
             "contract": CONTRACT,
             "schema_version": SCHEMA_VERSION,
@@ -531,18 +555,30 @@ def build_showcase_bundle(
                 "candidate_period": "b",
                 "method": "combined_scaler_cosine_v1",
                 "global": _retrieval_outcome(
-                    ranked_global.height, int(global_self["rank"]), self_cosine, self_refs
+                    ranked_global.height,
+                    int(global_self["rank"]),
+                    self_cosine,
+                    self_refs,
+                    outcome_uncertainty["global"],
                 ),
                 "within_role": _retrieval_outcome(
-                    ranked_role.height, int(role_self["rank"]), self_cosine, self_refs
+                    ranked_role.height,
+                    int(role_self["rank"]),
+                    self_cosine,
+                    self_refs,
+                    outcome_uncertainty["within_role"],
                 ),
                 "baseline_role_minutes": _retrieval_outcome(
-                    baseline.height, int(baseline_self["rank"]), None, []
+                    baseline.height,
+                    int(baseline_self["rank"]),
+                    None,
+                    [],
+                    outcome_uncertainty["baseline_role_minutes"],
                 ),
             },
             "neighbors": neighbors,
-            "uncertainty": _pending_uncertainty(),
-            "caveats": profile_caveats(role),
+            "uncertainty": top_uncertainty,
+            "caveats": profile_caveats(role, uncertainty_status=uncertainty_status),
             "evidence_index": evidence_index,
             "provenance_ref": "manifest.json",
         }
@@ -558,7 +594,7 @@ def build_showcase_bundle(
                 "period_contexts": period_contexts,
                 "total_minutes": period_contexts["a"]["minutes"] + period_contexts["b"]["minutes"],
                 "self_rank_within_role": int(role_self["rank"]),
-                "uncertainty_status": "pending",
+                "uncertainty_status": uncertainty_status,
                 "artifact_path": relative_path,
             }
         )

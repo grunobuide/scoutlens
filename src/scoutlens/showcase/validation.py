@@ -110,7 +110,94 @@ def _validate_evidence(profile: dict) -> None:
             raise ValueError(f"{profile['profile_key']}/{subject}: family contributions do not reconstruct cosine")
 
 
-def _validate_profile(profile: dict, index_by_key: dict[str, dict], feature_ids: list[str]) -> None:
+def _validate_feature_uncertainty(block: dict, label: str, uncertainty_mode: str) -> None:
+    status = block["status"]
+    if uncertainty_mode == "pending":
+        if status != "pending":
+            raise ValueError(f"{label}: nested feature uncertainty must be pending in the no-uncertainty fixture")
+        return
+    if status not in ("available", "insufficient"):
+        raise ValueError(f"{label}: unexpected feature uncertainty status {status!r}")
+    valid = block["valid_resamples"]
+    if not isinstance(valid, int) or valid < 0:
+        raise ValueError(f"{label}: invalid resample count {valid!r}")
+    raw = block["raw_ci_95"]
+    percentile = block["within_role_percentile_ci_95"]
+    if status == "available":
+        if raw is None or percentile is None:
+            raise ValueError(f"{label}: available feature uncertainty is missing an interval")
+    else:
+        if raw is not None or percentile is not None:
+            raise ValueError(f"{label}: insufficient feature uncertainty must null its intervals")
+        return
+    if len(raw) != 2 or raw[0] > raw[1]:
+        raise ValueError(f"{label}: raw interval is not ordered")
+    if len(percentile) != 2 or percentile[0] > percentile[1]:
+        raise ValueError(f"{label}: percentile interval is not ordered")
+    if not 0 <= percentile[0] <= percentile[1] <= 100:
+        raise ValueError(f"{label}: percentile interval out of range")
+
+
+def _validate_rank_uncertainty(block: dict, label: str, uncertainty_mode: str) -> None:
+    status = block["status"]
+    if uncertainty_mode == "pending":
+        if status != "pending":
+            raise ValueError(f"{label}: rank uncertainty must be pending in the no-uncertainty fixture")
+        return
+    if status not in ("available", "insufficient"):
+        raise ValueError(f"{label}: unexpected rank uncertainty status {status!r}")
+    valid = block["valid_resamples"]
+    if not isinstance(valid, int) or valid < 0:
+        raise ValueError(f"{label}: invalid resample count {valid!r}")
+    if status == "insufficient":
+        for field in ("median_rank", "rank_ci_95", "recall_at_1_rate", "recall_at_5_rate", "recall_at_10_rate"):
+            if block[field] is not None:
+                raise ValueError(f"{label}: insufficient rank uncertainty must null {field}")
+        return
+    if block["median_rank"] is None or block["rank_ci_95"] is None:
+        raise ValueError(f"{label}: available rank uncertainty is missing a point or interval")
+    if not block["median_rank"] >= 1:
+        raise ValueError(f"{label}: median rank below 1")
+    interval = block["rank_ci_95"]
+    if len(interval) != 2 or interval[0] > interval[1] or interval[0] < 1:
+        raise ValueError(f"{label}: rank interval is not ordered from rank 1")
+    for field in ("recall_at_1_rate", "recall_at_5_rate", "recall_at_10_rate"):
+        if block[field] is not None and not 0 <= block[field] <= 1:
+            raise ValueError(f"{label}: {field} out of range")
+
+
+def _validate_neighbor_stability(block: dict, label: str, uncertainty_mode: str) -> None:
+    status = block["status"]
+    if uncertainty_mode == "pending":
+        if status != "pending":
+            raise ValueError(f"{label}: neighbor stability must be pending in the no-uncertainty fixture")
+        return
+    if status not in ("available", "insufficient"):
+        raise ValueError(f"{label}: unexpected neighbor stability status {status!r}")
+    valid = block["valid_resamples"]
+    if not isinstance(valid, int) or valid < 0:
+        raise ValueError(f"{label}: invalid resample count {valid!r}")
+    if status == "insufficient":
+        for field in ("top_5_selection_rate", "median_rank", "rank_ci_95"):
+            if block[field] is not None:
+                raise ValueError(f"{label}: insufficient neighbor stability must null {field}")
+        return
+    if block["top_5_selection_rate"] is not None and not 0 <= block["top_5_selection_rate"] <= 1:
+        raise ValueError(f"{label}: top-5 selection rate out of range")
+    if block["median_rank"] is not None and block["median_rank"] < 1:
+        raise ValueError(f"{label}: neighbor median rank below 1")
+    interval = block["rank_ci_95"]
+    if interval is not None:
+        if len(interval) != 2 or interval[0] > interval[1] or interval[0] < 1:
+            raise ValueError(f"{label}: neighbor rank interval is not ordered from rank 1")
+
+
+def _validate_profile(
+    profile: dict,
+    index_by_key: dict[str, dict],
+    feature_ids: list[str],
+    uncertainty_mode: str,
+) -> None:
     key = profile["profile_key"]
     if profile["identity"]["player_key"] != index_by_key[key]["player_key"]:
         raise ValueError(f"{key}: index and payload player keys differ")
@@ -129,8 +216,11 @@ def _validate_profile(profile: dict, index_by_key: dict[str, dict], feature_ids:
                     raise ValueError(f"{key}/{period_name}/{value['feature_id']}: null imputation invariant failed")
             elif value["imputed_for_model"]:
                 raise ValueError(f"{key}/{period_name}/{value['feature_id']}: observed value marked imputed")
-            if value["uncertainty"]["status"] != "pending":
-                raise ValueError(f"{key}: nested feature uncertainty must be pending in v1")
+            _validate_feature_uncertainty(
+                value["uncertainty"],
+                f"{key}/{period_name}/{value['feature_id']}.uncertainty",
+                uncertainty_mode,
+            )
 
     query_player = profile["identity"]["player_key"]
     role = profile["identity"]["role"]
@@ -148,21 +238,51 @@ def _validate_profile(profile: dict, index_by_key: dict[str, dict], feature_ids:
         raise ValueError(f"{key}: neighbors are not deterministically ranked")
     if any(neighbor["profile_key"] not in index_by_key for neighbor in neighbors):
         raise ValueError(f"{key}: neighbor profile does not resolve through the index")
+    for rank, neighbor in enumerate(neighbors, start=1):
+        _validate_neighbor_stability(
+            neighbor["stability"],
+            f"{key}.neighbors[{rank}].stability",
+            uncertainty_mode,
+        )
+    for outcome_name in ("global", "within_role", "baseline_role_minutes"):
+        outcome = profile["retrieval"][outcome_name]
+        _validate_rank_uncertainty(
+            outcome["uncertainty"],
+            f"{key}.retrieval.{outcome_name}.uncertainty",
+            uncertainty_mode,
+        )
 
     mandatory = {
         "fingerprint_not_style_proof",
         "similarity_not_recruitment",
         "same_season_team_confound",
         "within_role_display_differs_from_global_model",
-        "uncertainty_pending",
     }
+    uncertainty_caveat = "uncertainty_sampling_only" if uncertainty_mode == "available" else "uncertainty_pending"
+    mandatory.add(uncertainty_caveat)
     caveat_codes = {item["code"] for item in profile["caveats"]}
     if not mandatory.issubset(caveat_codes):
         raise ValueError(f"{key}: mandatory caveats missing: {sorted(mandatory - caveat_codes)}")
     if role == "Goalkeeper" and "goalkeeper_feature_coverage_weak" not in caveat_codes:
         raise ValueError(f"{key}: goalkeeper coverage caveat missing")
-    if profile["uncertainty"]["status"] != "pending":
-        raise ValueError(f"{key}: top-level uncertainty must be pending in v1")
+    top = profile["uncertainty"]
+    top_status = top["status"]
+    if uncertainty_mode == "pending":
+        if top_status != "pending":
+            raise ValueError(f"{key}: top-level uncertainty must be pending in the no-uncertainty fixture")
+    elif top_status not in ("available", "insufficient"):
+        raise ValueError(f"{key}: unexpected top-level uncertainty status {top_status!r}")
+    elif top_status == "insufficient" and top["valid_resamples"] is not None and top["valid_resamples"] <= 0:
+        raise ValueError(f"{key}: top-level insufficient uncertainty has a non-positive resample count")
+    elif top_status == "available" and (
+        top["valid_resamples"] is None or not isinstance(top["valid_resamples"], int) or top["valid_resamples"] <= 0
+    ):
+        raise ValueError(f"{key}: top-level available uncertainty has no resample count")
+    for field in ("design_version", "seed", "requested_resamples", "interval", "resampling_unit", "cohort_policy"):
+        if top[field] is None:
+            raise ValueError(f"{key}: top-level uncertainty field {field} must not be null in production")
+    if not isinstance(top["warning"], str) or not top["warning"]:
+        raise ValueError(f"{key}: top-level uncertainty warning is missing")
     _validate_evidence(profile)
 
 
@@ -171,6 +291,7 @@ def validate_bundle(
     *,
     expected_profile_count: int | None = EXPECTED_PROFILE_COUNT,
     research_sources: dict[str, dict] | None = None,
+    uncertainty_mode: str = "available",
 ) -> None:
     artifacts = bundle.artifacts
     for path, artifact in artifacts.items():
@@ -217,7 +338,7 @@ def validate_bundle(
         profile = artifacts[path]
         if path != f"players/{profile['profile_key']}.json":
             raise ValueError(f"{path}: file name and profile key differ")
-        _validate_profile(profile, index_by_key, feature_ids)
+        _validate_profile(profile, index_by_key, feature_ids, uncertainty_mode)
         _validate_identity_text(profile["identity"], f"{path}.identity")
         for rank, neighbor in enumerate(profile["neighbors"], start=1):
             _validate_identity_text(neighbor, f"{path}.neighbors[{rank}]")
@@ -264,6 +385,7 @@ def validate_published_directory(
     *,
     expected_profile_count: int | None = EXPECTED_PROFILE_COUNT,
     research_sources: dict[str, dict] | None = None,
+    uncertainty_mode: str = "available",
 ) -> dict[str, int]:
     manifest_path = directory / "manifest.json"
     manifest_bytes = manifest_path.read_bytes()
@@ -275,9 +397,7 @@ def validate_published_directory(
 
     manifest_paths = {entry["path"] for entry in manifest["files"]}
     actual_paths = {
-        path.relative_to(directory).as_posix()
-        for path in directory.rglob("*.json")
-        if path.name != "manifest.json"
+        path.relative_to(directory).as_posix() for path in directory.rglob("*.json") if path.name != "manifest.json"
     }
     if manifest_paths != actual_paths:
         raise ValueError("manifest file set differs from published JSON file set")
@@ -305,6 +425,7 @@ def validate_published_directory(
         bundle,
         expected_profile_count=expected_profile_count,
         research_sources=research_sources,
+        uncertainty_mode=uncertainty_mode,
     )
     if manifest["population"]["profile_count"] != len(artifacts["players.index.json"]["profiles"]):
         raise ValueError("manifest profile count differs from index")
