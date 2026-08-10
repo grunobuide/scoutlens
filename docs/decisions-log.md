@@ -1478,3 +1478,75 @@ before the edit.
 The test split is evaluated once per candidate model; a second look is a new
 protocol version with a new hash and a new decision record. A null result is
 published, not redesigned around.
+
+---
+
+## D042 — 2026-08-10 — Diagonal metric clears the continuation gate: CONTINUE_NEURAL
+
+**Decision:** record the `scoutlens-qop.2` result and apply the D041
+continuation gate without exception: **`CONTINUE_NEURAL`**. Validation delta
++0.2174 against the required +0.010, 95% CI [+0.1686, +0.2642] against the
+required lower bound above -0.005. `scoutlens-qop.3` may run the neural
+contrastive arm. Spec hash
+`47488d603e9246f45fdd3e3d0aa95835bb569e5793444b87950c34e2531aa3bd`, frozen
+separately from the D041 protocol hash so a qop.2 hyperparameter can never
+disturb the lock holding the test split shut. Full write-up in
+[`diagonal-metric-benchmark.md`](diagonal-metric-benchmark.md).
+
+This decides nothing about adoption. The showcase still ships Baseline B;
+`scoutlens-qop.4` takes the KEEP or DROP decision and is blocked on
+`scoutlens-qop.5`.
+
+**Why the model is shaped this way:** the diagonal metric scores as cosine in
+the space scaled by `sqrt(w)`, so `w = 1` *is* the frozen Baseline B. The
+learned model strictly generalizes the incumbent rather than competing with
+it, regularization shrinks toward `w = 1` rather than toward an arbitrary
+zero, and ranking reuses the audited `run_baseline_b_retrieval` path untouched
+by pre-scaling features. Cosine is a point in the hypothesis space, which is
+what makes the comparison clean.
+
+**Impact:** selected lambda = 0 on validation (the top three arms are within
+0.0004, so selection is effectively flat for lambda <= 0.01). One-time test
+evaluation of the selected model gives cosine 0.4264 versus diagonal 0.6532,
+delta +0.2268, CI [+0.1835, +0.2737]. Validation and test agree closely, which
+is the evidence that selecting on validation did not overfit it. Every role
+improves and none degrades, but no role reaches the 100-query minimum, so no
+subgroup gates anything — the D041 inert-gate finding, now confirmed against
+real numbers rather than inferred from counts.
+
+A delta this large deserves disbelief first, so three controls were run.
+Lambda at 1e5 converges to validation MRR 0.428984, matching the cosine
+reference to six decimals. Five random reweightings give 0.4070-0.4597,
+straddling cosine's 0.4290 with no systematic gain. Training on shuffled
+positives gives 0.3452, materially worse than cosine. The last is decisive:
+destroying the same-player correspondence while holding everything else fixed
+destroys the gain, so the signal is within-player stability rather than an
+artefact of fitting.
+
+The six features whose weights collapse to approximately zero are all sparse
+outcome ratios - conversion, on-target share, block share, take-on success,
+assists, defensive-duel win rate. Over half a season these rest on few events
+and swing between periods. This is a statement about **measurement stability
+at this sample size**, not about what matters in football: a striker's
+conversion rate is not unimportant, it is unstable across half-seasons. Three
+of 28 features are flagged unstable across the regularization grid and must
+not be quoted as findings.
+
+A latent defect was found by the test suite and fixed before any result was
+recorded: applying the L2 penalty as an explicit gradient step diverges once
+`2*lr*lambda/n_features` exceeds 1, which turned a heavy penalty into an
+oscillation that collapsed weights instead of shrinking them toward the
+incumbent. Under the old form lambda = 1e5 gave validation MRR 0.1186 and
+`max|w-1|` of 3.0; the penalty is now applied proximally, which is stable for
+every lambda and has the correct limit. The preregistered grid tops out at
+lambda = 10 and was in the stable region, so no reported number changed - the
+selected lambda = 0 arm is mathematically untouched by the fix - but the grid
+was safe by luck rather than by design.
+
+**How to apply:** `scoutlens-qop.3` measures its delta against the same
+validation reference and reuses this gate shape. Whoever takes the qop.4
+decision should note that at this effect size the +0.020 practical floor is
+not doing any work; what remains is the interpretability and maintenance trade
+- a 28-number weight vector that must be versioned and refit whenever the
+feature set, population or split changes, against a transparent cosine with no
+fitted parameters. That is a product judgement, not a measurement one.

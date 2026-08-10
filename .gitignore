@@ -15,6 +15,7 @@ artifacts/*
 !artifacts/benchmark/
 !artifacts/benchmark/split-manifest.json
 !artifacts/benchmark/frozen-baselines.json
+!artifacts/benchmark/diagonal-results.json
 !artifacts/chance_control_results.json
 *.parquet
 # The complete showcase player set is reproducible but ~147 MB as JSON.
