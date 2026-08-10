@@ -1,0 +1,811 @@
+{
+  "_manifest": {
+    "generated_at": "2026-08-10T19:46:04.020348+00:00",
+    "git_commit": "5283f47d3f8e97269d894d11a30dd08d83e53764",
+    "git_dirty": true,
+    "source_sha256": "f07f3672a6d544813d247c82e388561d24a6c0844aa8ac80be88462cc8812519",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "6b04c4ebb2d36eb1a93e7856008823207dca7b8e5ce384c3dafd8e8cbd4d7cd1",
+    "config": {
+      "config_version": 2,
+      "description": "Single versioned source of the parameters consumed by every published ScoutLens experiment. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      },
+      "statsbomb_replication": {
+        "season": "2015/16",
+        "domestic_leagues": [
+          2,
+          7,
+          11,
+          12
+        ],
+        "minutes_threshold": 450,
+        "bootstrap": {
+          "n_resamples": 1000,
+          "seed": 0
+        }
+      }
+    },
+    "inputs": {
+      "competitions.parquet": {
+        "sha256": "45a2212a93fed2e41aa4d9e50b9b73efa74aca2b62e8d21daf4b2109a0874101",
+        "bytes": 3122
+      },
+      "events.parquet": {
+        "sha256": "357aa043ca0f6fc94584fffb2a418180fd2b197f073bea6cc8242a2ad2b869ff",
+        "bytes": 53181640
+      },
+      "matches.parquet": {
+        "sha256": "f545ff00713fb27a271d3bd83583b663ec610919a9be9a7e33dc783f5c69762f",
+        "bytes": 564353
+      },
+      "minutes.parquet": {
+        "sha256": "856f631f96fc93bd51cfb8496f5a6d2b581f7df52a04ff6f71fb885081fff666",
+        "bytes": 182279
+      },
+      "players.parquet": {
+        "sha256": "cd58fa8fe1b61be0e685431b58a45fae62f6b451f644419c60b916a98dd88eab",
+        "bytes": 160264
+      },
+      "teams.parquet": {
+        "sha256": "b2670f354e837e60948a6241b2f0ec344b13b199447caf587d187c78cc761fef",
+        "bytes": 8401
+      }
+    }
+  },
+  "protocol_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+  "spec_hash": "47488d603e9246f45fdd3e3d0aa95835bb569e5793444b87950c34e2531aa3bd",
+  "spec": {
+    "spec_version": 1,
+    "bead": "scoutlens-qop.2",
+    "model": "diagonal metric over frozen standardized features",
+    "score": "cosine in the space scaled by sqrt(w); w=1 is exactly baseline_b_cosine",
+    "constraint": "w >= 0, normalized to mean 1 after every step (the score is scale-invariant)",
+    "objective": "InfoNCE over (anchor A, positive B, K same-role negatives B)",
+    "temperature": 0.05,
+    "negatives_per_anchor": 32,
+    "negative_sampling": "distinct same-role players, drawn once without replacement, seeded per anchor",
+    "negative_seed": 2718,
+    "optimizer": "projected full-batch gradient descent, proximal in the penalty",
+    "optimizer_note": "the L2 penalty is applied as a proximal step rather than an explicit gradient step. An explicit step diverges once 2*lr*lambda/n exceeds 1, which turns a heavy penalty into an oscillation that collapses weights instead of shrinking them toward the incumbent. The proximal form is stable for every lambda and has the correct limit w -> 1.",
+    "learning_rate": 0.5,
+    "iterations": 300,
+    "init": "w = 1 (the incumbent)",
+    "regularization": "lambda * mean((w - 1)^2), shrinking toward baseline_b_cosine",
+    "regularization_grid": [
+      0.0,
+      0.001,
+      0.01,
+      0.1,
+      1.0,
+      10.0
+    ],
+    "selection": "highest within-role MRR on the validation split; ties broken by the larger lambda (simpler model)",
+    "selection_note": "test is never consulted for selection",
+    "collapse_threshold": 0.05,
+    "collapse_threshold_note": "a learned weight below this fraction of mean is reported as collapsed",
+    "instability_threshold": 1.0,
+    "instability_threshold_note": "a feature whose weight spans more than this across the regularization grid is reported as not pinned down by the data"
+  },
+  "feature_set": "CANONICAL_28",
+  "training_pairs": {
+    "anchors": 753,
+    "negatives_per_anchor": 32,
+    "features": 28
+  },
+  "reference": {
+    "split": "validation",
+    "metric": "within_role_mrr",
+    "baseline_b_cosine_mrr": 0.42898417942534534
+  },
+  "arms": [
+    {
+      "regularization": 0.0,
+      "validation": {
+        "mrr": 0.6463719573795054,
+        "median_rank": 1,
+        "recall_at_1": 0.5298804780876494,
+        "recall_at_5": 0.8127490039840638,
+        "recall_at_10": 0.900398406374502
+      },
+      "delta_vs_cosine": {
+        "point_estimate": 0.21738777795416003,
+        "ci_low": 0.16859664414090553,
+        "ci_high": 0.2642119969942372,
+        "n_resamples": 1000,
+        "n_queries": 251
+      },
+      "final_objective": 1.3472197242856545,
+      "first_objective": 2.6492962039165247,
+      "collapsed_features": 6,
+      "cost": {
+        "train_seconds": 6.3673031000071205,
+        "validation_inference_seconds": 1.916591300003347
+      }
+    },
+    {
+      "regularization": 0.001,
+      "validation": {
+        "mrr": 0.6460399520674205,
+        "median_rank": 1,
+        "recall_at_1": 0.5298804780876494,
+        "recall_at_5": 0.8127490039840638,
+        "recall_at_10": 0.900398406374502
+      },
+      "delta_vs_cosine": {
+        "point_estimate": 0.21705577264207515,
+        "ci_low": 0.16857027077262976,
+        "ci_high": 0.2642119969942372,
+        "n_resamples": 1000,
+        "n_queries": 251
+      },
+      "final_objective": 1.3481853239521524,
+      "first_objective": 2.6492962039165247,
+      "collapsed_features": 6,
+      "cost": {
+        "train_seconds": 6.385802200005855,
+        "validation_inference_seconds": 1.6931846999941627
+      }
+    },
+    {
+      "regularization": 0.01,
+      "validation": {
+        "mrr": 0.6459750454873978,
+        "median_rank": 1,
+        "recall_at_1": 0.5298804780876494,
+        "recall_at_5": 0.8127490039840638,
+        "recall_at_10": 0.9043824701195219
+      },
+      "delta_vs_cosine": {
+        "point_estimate": 0.21699086606205248,
+        "ci_low": 0.16862211331334032,
+        "ci_high": 0.26405352723183023,
+        "n_resamples": 1000,
+        "n_queries": 251
+      },
+      "final_objective": 1.3566701902734704,
+      "first_objective": 2.6492962039165247,
+      "collapsed_features": 6,
+      "cost": {
+        "train_seconds": 6.182639400009066,
+        "validation_inference_seconds": 1.7278379000053974
+      }
+    },
+    {
+      "regularization": 0.1,
+      "validation": {
+        "mrr": 0.6332679725589511,
+        "median_rank": 1,
+        "recall_at_1": 0.5059760956175299,
+        "recall_at_5": 0.8087649402390438,
+        "recall_at_10": 0.896414342629482
+      },
+      "delta_vs_cosine": {
+        "point_estimate": 0.20428379313360573,
+        "ci_low": 0.15716810545758608,
+        "ci_high": 0.2494897854318402,
+        "n_resamples": 1000,
+        "n_queries": 251
+      },
+      "final_objective": 1.4255060092330536,
+      "first_objective": 2.6492962039165247,
+      "collapsed_features": 5,
+      "cost": {
+        "train_seconds": 6.161928999994416,
+        "validation_inference_seconds": 1.6275564999959897
+      }
+    },
+    {
+      "regularization": 1.0,
+      "validation": {
+        "mrr": 0.5934986962172368,
+        "median_rank": 2,
+        "recall_at_1": 0.4541832669322709,
+        "recall_at_5": 0.7689243027888446,
+        "recall_at_10": 0.8844621513944223
+      },
+      "delta_vs_cosine": {
+        "point_estimate": 0.1645145167918915,
+        "ci_low": 0.12201503831501925,
+        "ci_high": 0.20371983618774947,
+        "n_resamples": 1000,
+        "n_queries": 251
+      },
+      "final_objective": 1.7373785450400385,
+      "first_objective": 2.6492962039165247,
+      "collapsed_features": 3,
+      "cost": {
+        "train_seconds": 5.978630099998554,
+        "validation_inference_seconds": 1.6041247000102885
+      }
+    },
+    {
+      "regularization": 10.0,
+      "validation": {
+        "mrr": 0.46903236077867727,
+        "median_rank": 3,
+        "recall_at_1": 0.3346613545816733,
+        "recall_at_5": 0.6334661354581673,
+        "recall_at_10": 0.7689243027888446
+      },
+      "delta_vs_cosine": {
+        "point_estimate": 0.040048181353331935,
+        "ci_low": 0.02051218178263703,
+        "ci_high": 0.058483312339088434,
+        "n_resamples": 1000,
+        "n_queries": 251
+      },
+      "final_objective": 2.41477510471803,
+      "first_objective": 2.6492962039165247,
+      "collapsed_features": 0,
+      "cost": {
+        "train_seconds": 6.082801099997596,
+        "validation_inference_seconds": 1.6835513000114588
+      }
+    }
+  ],
+  "selected": {
+    "regularization": 0.0,
+    "validation_mrr": 0.6463719573795054,
+    "delta_vs_cosine": {
+      "point_estimate": 0.21738777795416003,
+      "ci_low": 0.16859664414090553,
+      "ci_high": 0.2642119969942372,
+      "n_resamples": 1000,
+      "n_queries": 251
+    }
+  },
+  "continuation_gate": {
+    "decision": "CONTINUE_NEURAL",
+    "validation_delta": 0.21738777795416003,
+    "validation_ci_low": 0.16859664414090553,
+    "required_delta": 0.01,
+    "required_ci_low_above": -0.005,
+    "delta_met": true,
+    "ci_met": true,
+    "rule": {
+      "evaluated_on": "validation",
+      "model": "diagonal metric (qop.2)",
+      "requires_all": [
+        "validation delta MRR >= +0.010 over baseline_b_cosine",
+        "paired 95% CI lower bound > -0.005"
+      ],
+      "otherwise": "do not run the neural contrastive arm (qop.3) - record the null and stop"
+    }
+  },
+  "weights": [
+    {
+      "feature": "duels_p90",
+      "weight": 4.347294084167456,
+      "relative_to_cosine": 4.347294084167456,
+      "collapsed": false
+    },
+    {
+      "feature": "long_balls_p90",
+      "weight": 2.669475851016236,
+      "relative_to_cosine": 2.669475851016236,
+      "collapsed": false
+    },
+    {
+      "feature": "middle_third_share",
+      "weight": 2.561077241907522,
+      "relative_to_cosine": 2.561077241907522,
+      "collapsed": false
+    },
+    {
+      "feature": "passes_p90",
+      "weight": 1.5901801989101,
+      "relative_to_cosine": 1.5901801989101,
+      "collapsed": false
+    },
+    {
+      "feature": "duel_win_pct",
+      "weight": 1.5750577492769795,
+      "relative_to_cosine": 1.5750577492769795,
+      "collapsed": false
+    },
+    {
+      "feature": "pass_completion_pct",
+      "weight": 1.419396498174693,
+      "relative_to_cosine": 1.419396498174693,
+      "collapsed": false
+    },
+    {
+      "feature": "defensive_third_share",
+      "weight": 1.2545861395161972,
+      "relative_to_cosine": 1.2545861395161972,
+      "collapsed": false
+    },
+    {
+      "feature": "shots_p90",
+      "weight": 1.2203988986637764,
+      "relative_to_cosine": 1.2203988986637764,
+      "collapsed": false
+    },
+    {
+      "feature": "crosses_p90",
+      "weight": 1.1921133649509723,
+      "relative_to_cosine": 1.1921133649509723,
+      "collapsed": false
+    },
+    {
+      "feature": "sliding_tackles_p90",
+      "weight": 1.1819587905091475,
+      "relative_to_cosine": 1.1819587905091475,
+      "collapsed": false
+    },
+    {
+      "feature": "interceptions_p90",
+      "weight": 1.106423775233296,
+      "relative_to_cosine": 1.106423775233296,
+      "collapsed": false
+    },
+    {
+      "feature": "progressive_passes_p90",
+      "weight": 1.0519418132740432,
+      "relative_to_cosine": 1.0519418132740432,
+      "collapsed": false
+    },
+    {
+      "feature": "mean_y",
+      "weight": 1.0479611532265414,
+      "relative_to_cosine": 1.0479611532265414,
+      "collapsed": false
+    },
+    {
+      "feature": "progressive_pass_distance_p90",
+      "weight": 0.9556450291401037,
+      "relative_to_cosine": 0.9556450291401037,
+      "collapsed": false
+    },
+    {
+      "feature": "box_entries_p90",
+      "weight": 0.8702513149314666,
+      "relative_to_cosine": 0.8702513149314666,
+      "collapsed": false
+    },
+    {
+      "feature": "through_balls_p90",
+      "weight": 0.8341280762017677,
+      "relative_to_cosine": 0.8341280762017677,
+      "collapsed": false
+    },
+    {
+      "feature": "mean_x",
+      "weight": 0.7446304415544116,
+      "relative_to_cosine": 0.7446304415544116,
+      "collapsed": false
+    },
+    {
+      "feature": "clearances_p90",
+      "weight": 0.7187925864370907,
+      "relative_to_cosine": 0.7187925864370907,
+      "collapsed": false
+    },
+    {
+      "feature": "touches_p90",
+      "weight": 0.6252309486638163,
+      "relative_to_cosine": 0.6252309486638163,
+      "collapsed": false
+    },
+    {
+      "feature": "attacking_third_share",
+      "weight": 0.4601571165349625,
+      "relative_to_cosine": 0.4601571165349625,
+      "collapsed": false
+    },
+    {
+      "feature": "key_passes_p90",
+      "weight": 0.35136466822624324,
+      "relative_to_cosine": 0.35136466822624324,
+      "collapsed": false
+    },
+    {
+      "feature": "goals_p90",
+      "weight": 0.1615217770317846,
+      "relative_to_cosine": 0.1615217770317846,
+      "collapsed": false
+    },
+    {
+      "feature": "assists_p90",
+      "weight": 0.04066104316569659,
+      "relative_to_cosine": 0.04066104316569659,
+      "collapsed": true
+    },
+    {
+      "feature": "defensive_duel_win_pct",
+      "weight": 0.017805374365907574,
+      "relative_to_cosine": 0.017805374365907574,
+      "collapsed": true
+    },
+    {
+      "feature": "shot_conversion_pct",
+      "weight": 0.0019460649197877227,
+      "relative_to_cosine": 0.0019460649197877227,
+      "collapsed": true
+    },
+    {
+      "feature": "blocked_shot_pct",
+      "weight": 0.0,
+      "relative_to_cosine": 0.0,
+      "collapsed": true
+    },
+    {
+      "feature": "shots_on_target_pct",
+      "weight": 0.0,
+      "relative_to_cosine": 0.0,
+      "collapsed": true
+    },
+    {
+      "feature": "take_on_success_pct",
+      "weight": 0.0,
+      "relative_to_cosine": 0.0,
+      "collapsed": true
+    }
+  ],
+  "weight_stability": [
+    {
+      "feature": "duels_p90",
+      "min_weight": 1.1463290858437938,
+      "max_weight": 4.347294084167456,
+      "spread_across_grid": 3.200964998323662,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": true
+    },
+    {
+      "feature": "long_balls_p90",
+      "min_weight": 1.0550103396189494,
+      "max_weight": 2.669475851016236,
+      "spread_across_grid": 1.6144655113972866,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": true
+    },
+    {
+      "feature": "middle_third_share",
+      "min_weight": 1.090003191082138,
+      "max_weight": 2.561077241907522,
+      "spread_across_grid": 1.4710740508253841,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": true
+    },
+    {
+      "feature": "defensive_duel_win_pct",
+      "min_weight": 0.017805374365907574,
+      "max_weight": 0.9183165366950613,
+      "spread_across_grid": 0.9005111623291537,
+      "collapsed_in_any_arm": true,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "assists_p90",
+      "min_weight": 0.04066104316569659,
+      "max_weight": 0.8764536015176244,
+      "spread_across_grid": 0.8357925583519278,
+      "collapsed_in_any_arm": true,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "goals_p90",
+      "min_weight": 0.1615217770317846,
+      "max_weight": 0.9330829209053595,
+      "spread_across_grid": 0.7715611438735749,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "take_on_success_pct",
+      "min_weight": 0.0,
+      "max_weight": 0.7544773934326868,
+      "spread_across_grid": 0.7544773934326868,
+      "collapsed_in_any_arm": true,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "shots_on_target_pct",
+      "min_weight": 0.0,
+      "max_weight": 0.6907000534711968,
+      "spread_across_grid": 0.6907000534711968,
+      "collapsed_in_any_arm": true,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "attacking_third_share",
+      "min_weight": 0.4601571165349625,
+      "max_weight": 1.1250482010405,
+      "spread_across_grid": 0.6648910845055376,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "key_passes_p90",
+      "min_weight": 0.35136466822624324,
+      "max_weight": 0.9967507359668276,
+      "spread_across_grid": 0.6453860677405844,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "shot_conversion_pct",
+      "min_weight": 0.0019460649197877227,
+      "max_weight": 0.6409438143364594,
+      "spread_across_grid": 0.6389977494166716,
+      "collapsed_in_any_arm": true,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "blocked_shot_pct",
+      "min_weight": 0.0,
+      "max_weight": 0.618642292651986,
+      "spread_across_grid": 0.618642292651986,
+      "collapsed_in_any_arm": true,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "passes_p90",
+      "min_weight": 1.0809816744909382,
+      "max_weight": 1.5901801989101,
+      "spread_across_grid": 0.5091985244191619,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "duel_win_pct",
+      "min_weight": 1.0824208176744854,
+      "max_weight": 1.5794232690452963,
+      "spread_across_grid": 0.4970024513708109,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "mean_x",
+      "min_weight": 0.7446304415544116,
+      "max_weight": 1.1770825994062957,
+      "spread_across_grid": 0.43245215785188407,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "clearances_p90",
+      "min_weight": 0.7187925864370907,
+      "max_weight": 1.1422654270071713,
+      "spread_across_grid": 0.4234728405700806,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "touches_p90",
+      "min_weight": 0.6252309486638163,
+      "max_weight": 1.0342224466280563,
+      "spread_across_grid": 0.40899149796423995,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "pass_completion_pct",
+      "min_weight": 1.127586157400719,
+      "max_weight": 1.4737637148475633,
+      "spread_across_grid": 0.3461775574468442,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "box_entries_p90",
+      "min_weight": 0.8702513149314666,
+      "max_weight": 1.1829602411276914,
+      "spread_across_grid": 0.3127089261962248,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "progressive_pass_distance_p90",
+      "min_weight": 0.9556450291401037,
+      "max_weight": 1.2344203204458877,
+      "spread_across_grid": 0.27877529130578393,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "through_balls_p90",
+      "min_weight": 0.8341280762017677,
+      "max_weight": 1.1094546266590515,
+      "spread_across_grid": 0.2753265504572838,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "mean_y",
+      "min_weight": 1.0479611532265414,
+      "max_weight": 1.2859911929031436,
+      "spread_across_grid": 0.2380300396766022,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "defensive_third_share",
+      "min_weight": 1.0625950240498632,
+      "max_weight": 1.294582051275885,
+      "spread_across_grid": 0.23198702722602182,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "shots_p90",
+      "min_weight": 1.0719465714047494,
+      "max_weight": 1.3013657051031702,
+      "spread_across_grid": 0.22941913369842082,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "sliding_tackles_p90",
+      "min_weight": 1.098422732346817,
+      "max_weight": 1.294975078210241,
+      "spread_across_grid": 0.19655234586342396,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "crosses_p90",
+      "min_weight": 1.072991940442079,
+      "max_weight": 1.2516238094398549,
+      "spread_across_grid": 0.17863186899777594,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "progressive_passes_p90",
+      "min_weight": 1.0519418132740432,
+      "max_weight": 1.227566248291896,
+      "spread_across_grid": 0.17562443501785285,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    },
+    {
+      "feature": "interceptions_p90",
+      "min_weight": 1.0674130752090187,
+      "max_weight": 1.2184166238199694,
+      "spread_across_grid": 0.15100354861095067,
+      "collapsed_in_any_arm": false,
+      "collapsed_in_every_arm": false,
+      "unstable": false
+    }
+  ],
+  "by_role_validation": {
+    "Defender": {
+      "n_queries": 95,
+      "baseline_b_cosine_mrr": 0.349741324919112,
+      "diagonal_mrr": 0.650357709990346,
+      "delta": 0.30061638507123406,
+      "gates_decision": false
+    },
+    "Forward": {
+      "n_queries": 47,
+      "baseline_b_cosine_mrr": 0.49025987369056007,
+      "diagonal_mrr": 0.6623181678563406,
+      "delta": 0.1720582941657805,
+      "gates_decision": false
+    },
+    "Goalkeeper": {
+      "n_queries": 19,
+      "baseline_b_cosine_mrr": 0.2465080187134937,
+      "diagonal_mrr": 0.2639202172096909,
+      "delta": 0.017412198496197184,
+      "gates_decision": false
+    },
+    "Midfielder": {
+      "n_queries": 90,
+      "baseline_b_cosine_mrr": 0.5191526305492593,
+      "diagonal_mrr": 0.7145771204104537,
+      "delta": 0.19542448986119443,
+      "gates_decision": false
+    }
+  },
+  "cost": {
+    "train_seconds_total": 37.15910490001261,
+    "train_seconds_selected": 6.3673031000071205,
+    "validation_inference_seconds": 1.916591300003347,
+    "maintenance_delta": {
+      "new_versioned_artifact": "artifacts/benchmark/diagonal-results.json, carrying 28 learned weights",
+      "refit_required_when": [
+        "the canonical feature set changes",
+        "the eligible population or minutes threshold changes",
+        "the split seed or fractions change"
+      ],
+      "note": "Baseline B has no fitted parameters and needs no refit. Adopting the diagonal metric adds a weight vector that must be versioned, regenerated and kept in step with the feature set - that recurring cost is the thing the +0.020 practical floor exists to justify."
+    }
+  },
+  "test_evaluated": true,
+  "test": {
+    "note": "one-time evaluation of the model selected on validation; test was not consulted for selection",
+    "baseline_b_cosine_mrr": 0.4263674142887386,
+    "diagonal_mrr": 0.6531753175631895,
+    "delta_vs_cosine": {
+      "point_estimate": 0.22680790327445088,
+      "ci_low": 0.18349922341635982,
+      "ci_high": 0.27374650016444935,
+      "n_resamples": 1000,
+      "n_queries": 253
+    },
+    "by_role": {
+      "Defender": {
+        "n_queries": 95,
+        "baseline_b_cosine_mrr": 0.3417298453638961,
+        "diagonal_mrr": 0.6106461666987982,
+        "delta": 0.2689163213349021,
+        "gates_decision": false
+      },
+      "Forward": {
+        "n_queries": 48,
+        "baseline_b_cosine_mrr": 0.45279185513560516,
+        "diagonal_mrr": 0.700348310011139,
+        "delta": 0.2475564548755338,
+        "gates_decision": false
+      },
+      "Goalkeeper": {
+        "n_queries": 20,
+        "baseline_b_cosine_mrr": 0.20399412571432696,
+        "diagonal_mrr": 0.2938418964076859,
+        "delta": 0.08984777069335892,
+        "gates_decision": false
+      },
+      "Midfielder": {
+        "n_queries": 90,
+        "baseline_b_cosine_mrr": 0.5510303216076128,
+        "diagonal_mrr": 0.7527601410934743,
+        "delta": 0.20172981948586155,
+        "gates_decision": false
+      }
+    }
+  },
+  "artifact_bytes": 25863
+}
