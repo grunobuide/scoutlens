@@ -10,6 +10,11 @@ artifacts/*
 !artifacts/transfer_analysis_results.json
 !artifacts/statsbomb_replication_results.json
 !artifacts/shrinkage_experiment_results.json
+# Preregistration artifacts (D041) -- same rule: small, regenerable, and the
+# reference values scoutlens-qop.2/.3/.4 measure their delta against.
+!artifacts/benchmark/
+!artifacts/benchmark/split-manifest.json
+!artifacts/benchmark/frozen-baselines.json
 !artifacts/chance_control_results.json
 *.parquet
 # The complete showcase player set is reproducible but ~147 MB as JSON.

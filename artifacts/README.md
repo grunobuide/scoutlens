@@ -1,7 +1,7 @@
 # artifacts/
 
 Mostly gitignored — generated experiment outputs (plots, exported tables) land
-here locally and aren't committed. **Six small exceptions, versioned
+here locally and aren't committed. **A short list of small exceptions, versioned
 because they're the machine-readable numbers backing the docs in
 [`../docs/`](../docs)**, not because raw data belongs here:
 
@@ -11,6 +11,7 @@ because they're the machine-readable numbers backing the docs in
 - `statsbomb_replication_results.json` — [`statsbomb/replication.py`](../src/scoutlens/statsbomb/replication.py); backs `statsbomb-replication.md`.
 - `shrinkage_experiment_results.json` — [`run_shrinkage_experiment.py`](../src/scoutlens/evaluation/run_shrinkage_experiment.py); backs `shrinkage-experiment.md`.
 - `chance_control_results.json` — [`run_chance_control.py`](../src/scoutlens/evaluation/run_chance_control.py); backs `chance-level-control.md`.
+- `benchmark/split-manifest.json` and `benchmark/frozen-baselines.json` — [`run_preregistration.py`](../src/scoutlens/benchmark/run_preregistration.py); back `representation-benchmark-protocol.md` (D041). The split manifest carries the protocol hash, split seed and assignment digest; the baselines file carries the frozen Baseline A/B reference values that `scoutlens-qop.2`/`.3`/`.4` measure their delta against, so a clone can check a claimed improvement without local Wyscout data.
 
 Each is small, always regenerated fresh by its script (never
 hand-edited), and small enough that committing them lets a clone inspect

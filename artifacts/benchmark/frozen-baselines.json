@@ -1,0 +1,524 @@
+{
+  "_manifest": {
+    "generated_at": "2026-08-10T15:07:21.794900+00:00",
+    "git_commit": "a4259a2944c95cd517ac8342c7639f2ac862dc13",
+    "git_dirty": true,
+    "source_sha256": "d0cdcd487dc71dee61bff7744b40ddb7fd9fae6b10aeffeb191f8d96bef469ec",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "6b04c4ebb2d36eb1a93e7856008823207dca7b8e5ce384c3dafd8e8cbd4d7cd1",
+    "config": {
+      "config_version": 2,
+      "description": "Single versioned source of the parameters consumed by every published ScoutLens experiment. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      },
+      "statsbomb_replication": {
+        "season": "2015/16",
+        "domestic_leagues": [
+          2,
+          7,
+          11,
+          12
+        ],
+        "minutes_threshold": 450,
+        "bootstrap": {
+          "n_resamples": 1000,
+          "seed": 0
+        }
+      }
+    },
+    "inputs": {
+      "competitions.parquet": {
+        "sha256": "45a2212a93fed2e41aa4d9e50b9b73efa74aca2b62e8d21daf4b2109a0874101",
+        "bytes": 3122
+      },
+      "events.parquet": {
+        "sha256": "357aa043ca0f6fc94584fffb2a418180fd2b197f073bea6cc8242a2ad2b869ff",
+        "bytes": 53181640
+      },
+      "matches.parquet": {
+        "sha256": "f545ff00713fb27a271d3bd83583b663ec610919a9be9a7e33dc783f5c69762f",
+        "bytes": 564353
+      },
+      "minutes.parquet": {
+        "sha256": "856f631f96fc93bd51cfb8496f5a6d2b581f7df52a04ff6f71fb885081fff666",
+        "bytes": 182279
+      },
+      "players.parquet": {
+        "sha256": "cd58fa8fe1b61be0e685431b58a45fae62f6b451f644419c60b916a98dd88eab",
+        "bytes": 160264
+      },
+      "teams.parquet": {
+        "sha256": "b2670f354e837e60948a6241b2f0ec344b13b199447caf587d187c78cc761fef",
+        "bytes": 8401
+      }
+    }
+  },
+  "protocol_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+  "assignment_digest": "715bdb90af59860c2510d6a69f43970c9734bef4e4e061740658d2496c30d96a",
+  "feature_set": "CANONICAL_28",
+  "scaler_fit_on": "train",
+  "scaler": {
+    "passes_p90": {
+      "mean": 39.6693868822,
+      "std": 15.1717664408
+    },
+    "pass_completion_pct": {
+      "mean": 0.81158025818,
+      "std": 0.0657786469557
+    },
+    "crosses_p90": {
+      "mean": 1.57222368442,
+      "std": 1.60057189839
+    },
+    "long_balls_p90": {
+      "mean": 1.0060193576,
+      "std": 1.82026262342
+    },
+    "progressive_pass_distance_p90": {
+      "mean": 354.632602448,
+      "std": 171.2410961
+    },
+    "progressive_passes_p90": {
+      "mean": 9.20366659232,
+      "std": 4.55866367479
+    },
+    "assists_p90": {
+      "mean": 0.0803073809312,
+      "std": 0.112218727295
+    },
+    "key_passes_p90": {
+      "mean": 0.305298776336,
+      "std": 0.335296400809
+    },
+    "through_balls_p90": {
+      "mean": 0.748662866168,
+      "std": 0.687959896064
+    },
+    "box_entries_p90": {
+      "mean": 2.64558386599,
+      "std": 1.96436709137
+    },
+    "shots_p90": {
+      "mean": 1.04044901626,
+      "std": 0.917917278244
+    },
+    "goals_p90": {
+      "mean": 0.124686691851,
+      "std": 0.187943741055
+    },
+    "shot_conversion_pct": {
+      "mean": 0.0876512609279,
+      "std": 0.104264742578
+    },
+    "shots_on_target_pct": {
+      "mean": 0.324135270227,
+      "std": 0.185898512471
+    },
+    "blocked_shot_pct": {
+      "mean": 0.229294652688,
+      "std": 0.170057153418
+    },
+    "interceptions_p90": {
+      "mean": 4.12683987291,
+      "std": 1.92706112474
+    },
+    "sliding_tackles_p90": {
+      "mean": 0.491526699621,
+      "std": 0.456057718689
+    },
+    "clearances_p90": {
+      "mean": 1.30509040634,
+      "std": 1.10647268826
+    },
+    "defensive_duel_win_pct": {
+      "mean": 0.298957940744,
+      "std": 0.1240650014
+    },
+    "mean_x": {
+      "mean": 48.7465009092,
+      "std": 12.1579720219
+    },
+    "mean_y": {
+      "mean": 49.8433690854,
+      "std": 18.3022037602
+    },
+    "defensive_third_share": {
+      "mean": 0.320560807067,
+      "std": 0.215660860768
+    },
+    "middle_third_share": {
+      "mean": 0.399030833998,
+      "std": 0.140203066894
+    },
+    "attacking_third_share": {
+      "mean": 0.280408358934,
+      "std": 0.172957942133
+    },
+    "touches_p90": {
+      "mean": 4.16239196106,
+      "std": 1.4199415912
+    },
+    "duels_p90": {
+      "mean": 18.88526658,
+      "std": 7.69915733089
+    },
+    "duel_win_pct": {
+      "mean": 0.532725094327,
+      "std": 0.113888695743
+    },
+    "take_on_success_pct": {
+      "mean": 0.630709611461,
+      "std": 0.196655413514
+    }
+  },
+  "splits": {
+    "train": {
+      "split": "train",
+      "n_players": 753,
+      "n_queries": 753,
+      "candidate_pool_size": 753,
+      "conditions": {
+        "global": {
+          "baseline_a": {
+            "n": 753,
+            "mrr": 0.03864633395373325,
+            "median_rank": 77,
+            "recall_at_1": 0.006640106241699867,
+            "recall_at_5": 0.03851261620185923,
+            "recall_at_10": 0.08100929614873838
+          },
+          "baseline_b": {
+            "n": 753,
+            "mrr": 0.2901430316058072,
+            "median_rank": 10,
+            "recall_at_1": 0.18725099601593626,
+            "recall_at_5": 0.39707835325365204,
+            "recall_at_10": 0.5099601593625498
+          },
+          "mrr_delta": {
+            "point_estimate": 0.25149669765207394,
+            "ci_low": 0.22405214441270183,
+            "ci_high": 0.2785923904707524,
+            "n_resamples": 1000,
+            "n_queries": 753
+          }
+        },
+        "within_role": {
+          "baseline_a": {
+            "n": 753,
+            "mrr": 0.03864633395373325,
+            "median_rank": 77,
+            "recall_at_1": 0.006640106241699867,
+            "recall_at_5": 0.03851261620185923,
+            "recall_at_10": 0.08100929614873838
+          },
+          "baseline_b": {
+            "n": 753,
+            "mrr": 0.3201730410302936,
+            "median_rank": 8,
+            "recall_at_1": 0.21115537848605578,
+            "recall_at_5": 0.4409030544488712,
+            "recall_at_10": 0.5537848605577689
+          },
+          "mrr_delta": {
+            "point_estimate": 0.28152670707656036,
+            "ci_low": 0.2533530172184469,
+            "ci_high": 0.30935487190935573,
+            "n_resamples": 1000,
+            "n_queries": 753
+          }
+        }
+      },
+      "by_role": {
+        "Defender": {
+          "n_queries": 283,
+          "baseline_b": {
+            "n": 283,
+            "mrr": 0.2523491097123535,
+            "median_rank": 14,
+            "recall_at_1": 0.1625441696113074,
+            "recall_at_5": 0.3392226148409894,
+            "recall_at_10": 0.4452296819787986
+          },
+          "gates_decision": true
+        },
+        "Forward": {
+          "n_queries": 142,
+          "baseline_b": {
+            "n": 142,
+            "mrr": 0.40786422016618745,
+            "median_rank": 5.0,
+            "recall_at_1": 0.3028169014084507,
+            "recall_at_5": 0.5352112676056338,
+            "recall_at_10": 0.647887323943662
+          },
+          "gates_decision": true
+        },
+        "Goalkeeper": {
+          "n_queries": 58,
+          "baseline_b": {
+            "n": 58,
+            "mrr": 0.21120575033312247,
+            "median_rank": 12.0,
+            "recall_at_1": 0.10344827586206896,
+            "recall_at_5": 0.3448275862068966,
+            "recall_at_10": 0.4482758620689655
+          },
+          "gates_decision": false
+        },
+        "Midfielder": {
+          "n_queries": 270,
+          "baseline_b": {
+            "n": 270,
+            "mrr": 0.3685512928307233,
+            "median_rank": 5.0,
+            "recall_at_1": 0.23703703703703705,
+            "recall_at_5": 0.5185185185185185,
+            "recall_at_10": 0.6407407407407407
+          },
+          "gates_decision": true
+        }
+      }
+    },
+    "validation": {
+      "split": "validation",
+      "n_players": 251,
+      "n_queries": 251,
+      "candidate_pool_size": 251,
+      "conditions": {
+        "global": {
+          "baseline_a": {
+            "n": 251,
+            "mrr": 0.0834414868172025,
+            "median_rank": 27,
+            "recall_at_1": 0.01195219123505976,
+            "recall_at_5": 0.10756972111553785,
+            "recall_at_10": 0.21115537848605578
+          },
+          "baseline_b": {
+            "n": 251,
+            "mrr": 0.3977085732955687,
+            "median_rank": 5,
+            "recall_at_1": 0.26693227091633465,
+            "recall_at_5": 0.549800796812749,
+            "recall_at_10": 0.6892430278884463
+          },
+          "mrr_delta": {
+            "point_estimate": 0.3142670864783662,
+            "ci_low": 0.2664393759424112,
+            "ci_high": 0.3635476540143074,
+            "n_resamples": 1000,
+            "n_queries": 251
+          }
+        },
+        "within_role": {
+          "baseline_a": {
+            "n": 251,
+            "mrr": 0.0834414868172025,
+            "median_rank": 27,
+            "recall_at_1": 0.01195219123505976,
+            "recall_at_5": 0.10756972111553785,
+            "recall_at_10": 0.21115537848605578
+          },
+          "baseline_b": {
+            "n": 251,
+            "mrr": 0.42898417942534534,
+            "median_rank": 4,
+            "recall_at_1": 0.29880478087649404,
+            "recall_at_5": 0.5936254980079682,
+            "recall_at_10": 0.7131474103585658
+          },
+          "mrr_delta": {
+            "point_estimate": 0.34554269260814285,
+            "ci_low": 0.29711761214150945,
+            "ci_high": 0.3947226125674138,
+            "n_resamples": 1000,
+            "n_queries": 251
+          }
+        }
+      },
+      "by_role": {
+        "Defender": {
+          "n_queries": 95,
+          "baseline_b": {
+            "n": 95,
+            "mrr": 0.349741324919112,
+            "median_rank": 5,
+            "recall_at_1": 0.2,
+            "recall_at_5": 0.5578947368421052,
+            "recall_at_10": 0.6947368421052632
+          },
+          "gates_decision": false
+        },
+        "Forward": {
+          "n_queries": 47,
+          "baseline_b": {
+            "n": 47,
+            "mrr": 0.49025987369056007,
+            "median_rank": 3,
+            "recall_at_1": 0.3829787234042553,
+            "recall_at_5": 0.574468085106383,
+            "recall_at_10": 0.7021276595744681
+          },
+          "gates_decision": false
+        },
+        "Goalkeeper": {
+          "n_queries": 19,
+          "baseline_b": {
+            "n": 19,
+            "mrr": 0.2465080187134937,
+            "median_rank": 7,
+            "recall_at_1": 0.05263157894736842,
+            "recall_at_5": 0.47368421052631576,
+            "recall_at_10": 0.631578947368421
+          },
+          "gates_decision": false
+        },
+        "Midfielder": {
+          "n_queries": 90,
+          "baseline_b": {
+            "n": 90,
+            "mrr": 0.5191526305492593,
+            "median_rank": 3.0,
+            "recall_at_1": 0.4111111111111111,
+            "recall_at_5": 0.6666666666666666,
+            "recall_at_10": 0.7555555555555555
+          },
+          "gates_decision": false
+        }
+      }
+    },
+    "test": {
+      "split": "test",
+      "n_players": 253,
+      "n_queries": 253,
+      "candidate_pool_size": 253,
+      "conditions": {
+        "global": {
+          "baseline_a": {
+            "n": 253,
+            "mrr": 0.1173783300240114,
+            "median_rank": 26,
+            "recall_at_1": 0.043478260869565216,
+            "recall_at_5": 0.15019762845849802,
+            "recall_at_10": 0.233201581027668
+          },
+          "baseline_b": {
+            "n": 253,
+            "mrr": 0.38445298665276245,
+            "median_rank": 5,
+            "recall_at_1": 0.2450592885375494,
+            "recall_at_5": 0.5059288537549407,
+            "recall_at_10": 0.6679841897233202
+          },
+          "mrr_delta": {
+            "point_estimate": 0.2670746566287511,
+            "ci_low": 0.21665767184142276,
+            "ci_high": 0.3218967774908501,
+            "n_resamples": 1000,
+            "n_queries": 253
+          }
+        },
+        "within_role": {
+          "baseline_a": {
+            "n": 253,
+            "mrr": 0.1173783300240114,
+            "median_rank": 26,
+            "recall_at_1": 0.043478260869565216,
+            "recall_at_5": 0.15019762845849802,
+            "recall_at_10": 0.233201581027668
+          },
+          "baseline_b": {
+            "n": 253,
+            "mrr": 0.4263674142887386,
+            "median_rank": 4,
+            "recall_at_1": 0.28063241106719367,
+            "recall_at_5": 0.5573122529644269,
+            "recall_at_10": 0.7233201581027668
+          },
+          "mrr_delta": {
+            "point_estimate": 0.30898908426472715,
+            "ci_low": 0.2566361505618381,
+            "ci_high": 0.3633518171559519,
+            "n_resamples": 1000,
+            "n_queries": 253
+          }
+        }
+      },
+      "by_role": {
+        "Defender": {
+          "n_queries": 95,
+          "baseline_b": {
+            "n": 95,
+            "mrr": 0.3417298453638961,
+            "median_rank": 6,
+            "recall_at_1": 0.18947368421052632,
+            "recall_at_5": 0.49473684210526314,
+            "recall_at_10": 0.631578947368421
+          },
+          "gates_decision": false
+        },
+        "Forward": {
+          "n_queries": 48,
+          "baseline_b": {
+            "n": 48,
+            "mrr": 0.45279185513560516,
+            "median_rank": 4.0,
+            "recall_at_1": 0.3125,
+            "recall_at_5": 0.5625,
+            "recall_at_10": 0.7708333333333334
+          },
+          "gates_decision": false
+        },
+        "Goalkeeper": {
+          "n_queries": 20,
+          "baseline_b": {
+            "n": 20,
+            "mrr": 0.20399412571432696,
+            "median_rank": 10.5,
+            "recall_at_1": 0.05,
+            "recall_at_5": 0.25,
+            "recall_at_10": 0.5
+          },
+          "gates_decision": false
+        },
+        "Midfielder": {
+          "n_queries": 90,
+          "baseline_b": {
+            "n": 90,
+            "mrr": 0.5510303216076128,
+            "median_rank": 2.0,
+            "recall_at_1": 0.4111111111111111,
+            "recall_at_5": 0.6888888888888889,
+            "recall_at_10": 0.8444444444444444
+          },
+          "gates_decision": false
+        }
+      }
+    }
+  },
+  "test_evaluated": true
+}
