@@ -21,7 +21,7 @@ const meaningfulStaticContent = {
     "The science is the sequence",
     "How we measure retrieval: MRR",
     "One player, two halves, one retrieval result",
-    "Match-level stability is not yet available",
+    "Every rank travels with its resampled interval",
     "What the system is",
     "First chronological half",
     "Keep a useful correction out",
@@ -34,7 +34,7 @@ const meaningfulStaticContent = {
     "Identity retrieval, one query at a time",
     "Five other period-B profiles",
     "All 32 measurements",
-    "uncertainty pending",
+    "sampling stability available",
   ],
 };
 

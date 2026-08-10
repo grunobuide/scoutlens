@@ -58,6 +58,7 @@ const requiredCaveats = new Set([
   "same_season_team_confound",
   "within_role_display_differs_from_global_model",
   "uncertainty_pending",
+  "uncertainty_sampling_only",
 ]);
 
 type ProfileLoadState =
@@ -458,6 +459,35 @@ function caveatFor(profile: PlayerProfileArtifact, code: string): Caveat | undef
   return profile.caveats.find((caveat) => caveat.code === code);
 }
 
+const UNCERTAINTY_METHOD_URL =
+  "https://github.com/grunobuide/scoutlens/blob/main/docs/uncertainty-method.md";
+
+function uncertaintyHeading(status: string): string {
+  if (status === "available") {
+    return "Point estimates · sampling stability available";
+  }
+  if (status === "insufficient") {
+    return "Point estimates · insufficient resamples";
+  }
+  return "Point estimates · uncertainty pending";
+}
+
+function featureUncertaintyCell(value: FeatureValue): string {
+  const block = value.uncertainty;
+  if (block.status === "pending") {
+    return "Stability pending";
+  }
+  if (block.status === "insufficient") {
+    return `Insufficient · ${block.valid_resamples} valid`;
+  }
+  const interval = block.raw_ci_95;
+  const intervalText =
+    interval === null
+      ? ""
+      : ` · raw CI ${interval[0].toFixed(2)}–${interval[1].toFixed(2)}`;
+  return `${block.valid_resamples} valid${intervalText}`;
+}
+
 type RetrievalOutcome = PlayerProfileArtifact["retrieval"]["global"];
 
 function rankStabilityText(outcome: RetrievalOutcome): string {
@@ -468,7 +498,15 @@ function rankStabilityText(outcome: RetrievalOutcome): string {
     return "Insufficient resamples · no stable rank interval is reported.";
   }
   const interval = outcome.uncertainty.rank_ci_95;
-  return `Available from ${outcome.uncertainty.valid_resamples?.toLocaleString("en-US") ?? 0} valid resamples · median rank ${outcome.uncertainty.median_rank ?? "not reported"}${interval === null ? "" : ` · rank interval ${interval[0]}–${interval[1]}`}.`;
+  const recall = [
+    outcome.uncertainty.recall_at_1_rate,
+    outcome.uncertainty.recall_at_5_rate,
+    outcome.uncertainty.recall_at_10_rate,
+  ];
+  const recallText = recall.every((rate) => rate !== null)
+    ? ` · recall@1 ${(recall[0]! * 100).toFixed(1)}% · recall@5 ${(recall[1]! * 100).toFixed(1)}% · recall@10 ${(recall[2]! * 100).toFixed(1)}%`
+    : "";
+  return `Available from ${outcome.uncertainty.valid_resamples?.toLocaleString("en-US") ?? 0} valid resamples · median rank ${outcome.uncertainty.median_rank ?? "not reported"}${interval === null ? "" : ` · rank interval ${interval[0]}–${interval[1]}`}${recallText}.`;
 }
 
 function RetrievalOutcomeCard({
@@ -637,7 +675,7 @@ function StatisticalNeighbors({
                   </p>
                 </div>
                 <p className="neighbor-card__stability">
-                  Selection stability · {neighbor.stability.status === "pending" ? "pending, no interval" : neighbor.stability.status}
+                  Selection stability · {neighbor.stability.status === "pending" ? "pending, no interval" : neighbor.stability.status === "insufficient" ? "insufficient resamples" : `available · rank interval ${neighbor.stability.rank_ci_95?.[0] ?? "—"}–${neighbor.stability.rank_ci_95?.[1] ?? "—"}`}
                 </p>
                 <button
                   type="button"
@@ -803,8 +841,9 @@ export function FingerprintProfile({ catalog, profiles, profile }: {
           <p className="eyebrow">Read before interpreting</p>
           <h2 id="evidence-rail-heading">Evidence boundaries</h2>
           <div className="uncertainty-pending">
-            <strong>Point estimates · uncertainty pending</strong>
+            <strong>{uncertaintyHeading(profile.uncertainty.status)}</strong>
             <p>{uncertainty}</p>
+            <a href={UNCERTAINTY_METHOD_URL}>Match-bootstrap method</a>
           </div>
           <ul>
             {visibleCaveats.map((caveat) => (
@@ -872,7 +911,7 @@ export function FingerprintProfile({ catalog, profiles, profile }: {
                     <td>{modelEvidence(row.periodB)}</td>
                     <td>{formatSupport(row.periodA)}</td>
                     <td>{formatSupport(row.periodB)}</td>
-                    <td>A {row.periodA.uncertainty.status} · B {row.periodB.uncertainty.status}</td>
+                    <td>A {featureUncertaintyCell(row.periodA)} · B {featureUncertaintyCell(row.periodB)}</td>
                   </tr>
                 ))}
               </tbody>

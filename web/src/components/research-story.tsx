@@ -59,11 +59,13 @@ export function ExperimentCard({
               <dd>{formatMetric(metric)}</dd>
               {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
               {explanation === null ? null : (
-                <details className="experiment-metric__explanation">
-                  <summary>What this means</summary>
-                  <p>{explanation.plain_meaning}</p>
-                  <p className="experiment-metric__boundary">{explanation.interpretation_boundary}</p>
-                </details>
+                <dd className="experiment-metric__explanation">
+                  <details>
+                    <summary>What this means</summary>
+                    <p>{explanation.plain_meaning}</p>
+                    <p className="experiment-metric__boundary">{explanation.interpretation_boundary}</p>
+                  </details>
+                </dd>
               )}
             </div>
           );

@@ -52,7 +52,8 @@ function stabilityText(neighbor: StatisticalNeighbor): string {
   if (stability.status === "insufficient") {
     return "Insufficient resamples · no stable interval is reported.";
   }
-  return `Available from ${stability.valid_resamples?.toLocaleString("en-US") ?? 0} valid resamples · median rank ${stability.median_rank ?? "not reported"} · top-five selection rate ${stability.top_5_selection_rate === null ? "not reported" : `${(stability.top_5_selection_rate * 100).toFixed(1)}%`}.`;
+  const interval = stability.rank_ci_95;
+  return `Available from ${stability.valid_resamples?.toLocaleString("en-US") ?? 0} valid resamples · median rank ${stability.median_rank ?? "not reported"}${interval === null ? "" : ` · rank interval ${interval[0]}–${interval[1]}`} · top-five selection rate ${stability.top_5_selection_rate === null ? "not reported" : `${(stability.top_5_selection_rate * 100).toFixed(1)}%`}.`;
 }
 
 export function NeighborComparisonDrawer({

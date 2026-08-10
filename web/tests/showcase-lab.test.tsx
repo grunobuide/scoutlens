@@ -83,7 +83,7 @@ describe("searchable period fingerprint Lab", () => {
     expect(html.match(/data-fingerprint-row=/g)).toHaveLength(32);
     expect(html).toContain("All 32 measurements");
     expect(html).toContain("Scrollable 32-feature value table");
-    expect(html).toContain("Point estimates · uncertainty pending");
+    expect(html).toContain("Point estimates · sampling stability available");
     expect(html).toContain("Within role");
     expect(html).toContain("Global");
   });
@@ -228,7 +228,8 @@ describe("searchable period fingerprint Lab", () => {
     expect(html.match(/data-feature-contribution=/g)).toHaveLength(32);
     expect(html.match(/data-family-contribution=/g)).toHaveLength(8);
     expect(html).toContain("both below the global mean");
-    expect(html).toContain("Pending · no resampled rank interval");
+    expect(html).toContain("Available from 500 valid resamples");
+    expect(html).toContain("rank interval");
   });
 
   it("keeps mandatory caveats adjacent and excludes shortlist or player-rating claims", async () => {
@@ -244,8 +245,8 @@ describe("searchable period fingerprint Lab", () => {
       expect(caveat).toBeDefined();
       expect(html).toContain(caveat!.message);
     }
-    expect(html).toContain("no resampled rank interval is available yet");
-    expect(html).toContain("pending, no interval");
+    expect(html).toContain("Available from 500 valid resamples");
+    expect(html).toContain("rank interval");
 
     const sources = await Promise.all(
       ["src/components/lab-explorer.tsx", "src/components/neighbor-comparison-drawer.tsx"].map(

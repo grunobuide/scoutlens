@@ -52,15 +52,14 @@ def caveat(code: str, evidence_refs: list[str] | None = None) -> dict:
     }
 
 
-def profile_caveats(role: str) -> list[dict]:
+def profile_caveats(role: str, uncertainty_status: str = "pending") -> list[dict]:
     codes = [
         "fingerprint_not_style_proof",
         "similarity_not_recruitment",
         "same_season_team_confound",
         "within_role_display_differs_from_global_model",
-        "uncertainty_pending",
     ]
+    codes.append("uncertainty_sampling_only" if uncertainty_status != "pending" else "uncertainty_pending")
     if role == "Goalkeeper":
         codes.append("goalkeeper_feature_coverage_weak")
     return [caveat(code) for code in codes]
-
