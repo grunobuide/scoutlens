@@ -3,7 +3,10 @@
 Frozen by `scoutlens-qop.1` on 2026-08-10. Decision record: `D041` in
 [`decisions-log.md`](decisions-log.md).
 
-**Protocol hash** `886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d`
+**Protocol hash** `041cd1f7f514133a7e3c45724fef5c7fc1369d0115b8718f6b67f3177e60b4ce`
+(amended by `D044`; the original `D041` hash was
+`886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d`, under
+which the `qop.2` and `qop.3` artifacts were recorded and remain valid)
 **Split assignment digest** `715bdb90af59860c2510d6a69f43970c9734bef4e4e061740658d2496c30d96a`
 
 This document is the preregistration for `scoutlens-qop`: does a learned
@@ -167,37 +170,59 @@ while candidate models are being developed.
 
 ---
 
-## 8. Subgroup rule — and a measured power problem
+## 8. Subgroup rule — amended to ≥ 50 (D044)
 
-**The rule as preregistered:** report Baseline B per role; a role subgroup
-gates the KEEP decision only when it has **at least 100 queries**.
+**The operative rule:** report per-role results for every role; a role
+subgroup gates the KEEP decision only when it has **at least 50 queries**.
 
-**The problem, measured from §3.1 and stated here rather than discovered
-later:** on the test split the largest role subgroup is Defender at **95**
-queries, then Midfielder 90, Forward 48, Goalkeeper 20. **No role reaches
-100.** As frozen, the subgroup criterion therefore gates on *zero* roles and
-is inert.
+| Role | Test queries | Gates? |
+|---|---|---|
+| Defender | 95 | **yes** |
+| Midfielder | 90 | **yes** |
+| Forward | 48 | no — 48 is below 50 |
+| Goalkeeper | 20 | no |
 
-This is exactly what a preregistration is for — the threshold and the split
-were specified independently, and only writing both down at once makes the
-interaction visible. Counting split sizes by role is design information, not
-outcome information, so establishing this did not open the test set.
+Forward at 48 does **not** meet the threshold. An earlier revision of this
+section claimed a minimum of 50 would include Forward; that was wrong and is
+corrected here and in `D044`.
 
-The number is **not** silently retuned here. `scoutlens-qop.1` implements the
-threshold the bead froze. Changing a preregistered decision threshold is a
-charter decision, not an executor's call, so it is routed to the bead author
-as `scoutlens-qop.5` with the three options on the table:
+### 8.1 Why the original 100 was replaced
 
-1. lower the minimum to 50 — gates Defender, Midfielder and Forward, leaves
-   Goalkeeper (20) reported but non-gating;
-2. evaluate subgroups on pooled validation + test — restores Defender to 190
-   and Midfielder to 180, at the cost of spending validation;
-3. accept the criterion as inert and rely on the aggregate gates alone —
-   honest, but drops the protection against a model that improves overall
-   while degrading one role.
+`D041` froze the minimum at 100. Measured against §3.1, the largest test
+subgroup is Defender at 95, so the clause gated **no role at all** — it was
+inert, and the protection it existed to provide (catching a model that
+improves overall while degrading one role) was absent.
 
-Until that decision is recorded, the aggregate KEEP gates in §9 are the
-operative ones.
+That interaction was found from split counts alone, which are design
+information rather than outcome information, so establishing it did not open
+the test set. It was **not** silently retuned by the executor: three options
+were written into `scoutlens-qop.5` on 2026-08-10, *before `qop.2` had been
+run and before `qop.3` existed*, and routed to the bead author. The human
+decision of 2026-08-11 selected the ≥ 50 option and explicitly rejected the
+alternatives. This is protocol governance, not result-driven tuning.
+
+### 8.2 Why validation and test stay separate
+
+One rejected option was to pool validation and test for the subgroup check,
+which would restore Defender to 190 and Midfielder to 180. It was rejected
+because it spends the very thing the subgroup gate is meant to protect: the
+test split's independence. A subgroup check computed partly on the split used
+for selection is no longer strictly held out, and a KEEP decision resting on
+it would be weaker than one resting on two smaller but genuinely held-out
+subgroups. Lowering to 45 to capture Forward was rejected for the related
+reason that choosing a threshold to include a particular subgroup is fitting
+the rule to the data.
+
+Forward and Goalkeeper are still **reported**, with their small-sample
+uncertainty visible. They simply cannot fail the gate.
+
+### 8.3 Effect on already-recorded results
+
+`D044` changed only this clause. The results recorded by `qop.2` and `qop.3`
+are immutable and were not regenerated: no metric, interval, learned weight,
+model spec, checkpoint digest or split assignment changed, and neither arm was
+retrained. `scoutlens-qop.4` applies the ≥ 50 rule to the per-role tables
+those artifacts already contain.
 
 ---
 
@@ -207,7 +232,9 @@ operative ones.
 
 1. Wyscout **test** delta MRR ≥ **+0.020** over `baseline_b_cosine`;
 2. paired 95% CI lower bound **> 0**;
-3. no role subgroup with ≥ 100 queries drops more than 0.020 (see §8);
+3. no role subgroup with **≥ 50** queries drops more than 0.020 — on the
+   frozen split that means **Defender and Midfielder** (see §8, amended by
+   `D044`);
 4. StatsBomb external delta **> 0** with 95% CI lower bound **> −0.010**;
 5. operational budgets pass (§11).
 

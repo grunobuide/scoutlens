@@ -128,8 +128,17 @@ PROTOCOL: dict[str, Any] = {
     },
     "subgroups": {
         "by": "role",
-        "reportable_minimum_queries": 100,
+        "reportable_minimum_queries": 50,
         "rule": "a role subgroup below the minimum is reported but never gates the decision",
+        "amended_by": "D044",
+        "amendment_note": (
+            "D041 froze this at 100, which gated no role at all: the largest "
+            "test subgroup is Defender at 95. Amended to 50 by human decision "
+            "on 2026-08-11, choosing an option recorded in scoutlens-qop.5 "
+            "before any qop.2 or qop.3 outcome existed. At 50, Defender (95) "
+            "and Midfielder (90) gate; Forward (48) and Goalkeeper (20) are "
+            "reported but do not gate. Nothing else in this protocol changed."
+        ),
     },
     "decision": {
         "keep_requires_all": [

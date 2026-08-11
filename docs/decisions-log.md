@@ -1619,3 +1619,69 @@ decide between the diagonal metric and cosine on the interpretability and
 maintenance trade, not on the metric. A future attempt at more capacity needs
 its own preregistration, its own hash and its own decision record; this null
 stands on the record either way and is not a reason to retry differently.
+
+---
+
+## D044 — 2026-08-11 — Role-subgroup minimum amended to 50; supersedes only D041's subgroup clause
+
+**Decision:** amend the role-subgroup gate of the player-disjoint benchmark
+from "at least 100 queries" to **"at least 50 queries"** (`scoutlens-qop.5`).
+This supersedes **only** the `subgroups.reportable_minimum_queries` clause of
+`D041`. Every other element of that protocol — population, split membership,
+seed 2718, preprocessing, canonical feature sets, baselines, metrics, paired
+intervals, KEEP thresholds, the neural continuation gate, budgets and the
+external-test design — stands unchanged.
+
+- Protocol hash before amendment:
+  `886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d`
+- Protocol hash after amendment:
+  `041cd1f7f514133a7e3c45724fef5c7fc1369d0115b8718f6b67f3177e60b4ce`
+
+**Which roles gate, exactly.** At a minimum of 50, on the frozen test split:
+**Defender (95 queries) and Midfielder (90 queries) gate** the KEEP decision.
+**Forward (48) and Goalkeeper (20) are reported but do not gate.** Forward at
+48 does *not* meet a threshold of 50; an earlier sentence in
+`representation-benchmark-protocol.md` claimed a minimum of 50 would include
+Forward, and that statement was wrong and is corrected by this record.
+
+**Why:** as frozen, D041's minimum of 100 gated **no role at all** — the
+largest test subgroup is Defender at 95. The clause was inert, which removed
+the protection it existed to provide: catching a model that improves overall
+while degrading one role. Three options were written into `scoutlens-qop.5`
+(lower to 50; pool validation and test; accept the inert gate) at the time the
+inertness was discovered from split counts alone.
+
+**Pre-result provenance.** The option set and the recommendation were recorded
+in `scoutlens-qop.5` on 2026-08-10, **before `scoutlens-qop.2` had been run
+and before `scoutlens-qop.3` existed as a result**. The counts that motivated
+the amendment are split sizes by role, which are design information rather
+than outcome information. The human decision of 2026-08-11 selected option 1
+and explicitly rejected pooling validation with test, lowering to 45 to
+capture Forward, and accepting an inert aggregate-only gate. This is protocol
+governance, not result-driven tuning.
+
+**Recorded results are immutable.** `artifacts/benchmark/diagonal-results.json`
+and `artifacts/benchmark/neural-results.json` were produced under the D041
+hash and are **not** regenerated, overwritten or normalized by this
+amendment. No metric, interval, learned weight, model spec, checkpoint digest
+or split assignment changes. The diagonal and neural arms are **not** retrained.
+
+**How `scoutlens-qop.4` must apply this.** Take the per-role tables already
+recorded in those two artifacts and apply the >= 50 rule to them as recorded.
+Defender and Midfielder are the gating subgroups; Forward and Goalkeeper are
+reported with their small-sample uncertainty and cannot fail the gate. Do not
+re-run either arm to obtain per-role numbers that already exist.
+
+**One intended consequence, stated so it is not mistaken for a fault.** The
+gate-evidence guard in `run_neural.py` refuses to proceed when the qop.2
+artifact's recorded protocol hash differs from the running protocol's. After
+this amendment those hashes differ by construction, so re-running the neural
+arm now fails closed until qop.2 is regenerated under the amended protocol.
+That is correct: an arm may not be run against a preregistration it was not
+measured under. Since re-running the arms is explicitly out of scope here, and
+qop.4 consumes the recorded evidence rather than re-running it, nothing in the
+remaining pipeline is blocked by this.
+
+**How to apply:** the amended hash above is what `assert_test_set_unlocked()`
+now looks for; recording it here is what re-opens test access. Any further
+change to `PROTOCOL` re-locks the split again and needs its own record.
