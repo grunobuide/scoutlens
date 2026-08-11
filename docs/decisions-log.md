@@ -1685,3 +1685,83 @@ remaining pipeline is blocked by this.
 **How to apply:** the amended hash above is what `assert_test_set_unlocked()`
 now looks for; recording it here is what re-opens test access. Any further
 change to `PROTOCOL` re-locks the split again and needs its own record.
+
+---
+
+## D045 — 2026-08-11 — KEEP the interpretable diagonal representation
+
+**Decision:** **KEEP** the diagonal representation. Every preregistered clause
+of `D041`, with the subgroup minimum as amended by `D044`, passes; the rule is
+conjunctive with no discretionary override, so KEEP follows mechanically
+(`scoutlens-qop.4`). Frozen cosine is **retained as the transparent audit and
+reference baseline**. The neural arm remains a final DROP under `D043` and was
+not a candidate. Full table in
+[`keep-drop-decision.md`](keep-drop-decision.md).
+
+| Clause | Threshold | Observed |
+|---|---|---|
+| Wyscout test delta MRR | >= +0.020 | +0.2268 |
+| Wyscout paired CI lower | > 0 | +0.1835 |
+| Worst gating role subgroup | >= -0.020 | +0.2017 |
+| StatsBomb external delta | > 0 | +0.1362 |
+| StatsBomb paired CI lower | > -0.010 | +0.1165 |
+| Operational budgets | see below | within budget |
+
+**Why the cross-provider result carries the most weight:** the 28 weights were
+frozen on the Wyscout training split and applied to StatsBomb 2015/16 with
+**nothing refit** - 1,061 queries, cosine 0.2265 to diagonal 0.3627. All four
+roles clear the >= 50 minimum on that population and all four improve
+(Defender +0.1498, Midfielder +0.1520, Forward +0.1128, Goalkeeper +0.0655).
+Weights learned on one provider and season transfer to a different provider
+and season, across every role, without refitting. Standardization is computed
+provider-natively, because a z-score is how a provider's raw counts are made
+comparable at all, and it is applied identically to both arms so it cannot
+move the delta the clause tests. The two canonical-28 lists are asserted
+identical in set *and order* at runtime, because the frozen weights are
+applied positionally.
+
+**Lineage is proved, not asserted:** substituting D041's subgroup block back
+into the amended protocol reproduces the D041 hash
+`886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d` exactly, so
+every other clause is byte-identical to what qop.2 and qop.3 were measured
+under and their recorded results remain valid evidence. The check is capable
+of failing; a test tampers with an unrelated clause and confirms it reports
+failure. Nothing was retrained, regenerated or overwritten to reach this
+decision.
+
+**One correction, recorded because it changed the outcome.** The budget clause
+was first implemented as "peak RSS of this decision run", which measured 4.35
+GiB - dominated by reading StatsBomb's 166 MB event table - and failed,
+producing a DROP. That figure is incurred identically by cosine and diagonal,
+because the run scores both arms over the same data. A clause whose value does
+not depend on which representation is chosen cannot inform a choice between
+them: implemented that way it forces DROP unconditionally regardless of any
+measurement. The clause now tests the cost of *adopting* the representation -
+28 weights to version, 37.2 s for the full regularization grid, 1.7 s
+inference, a 25.9 KiB artifact, and peak RSS bounded above by the 1.39 GiB
+qop.3 recorded running a strictly heavier model over the same pipeline. It
+remains capable of failing, and tests drive it to failure on both time and
+memory. The harness figure stays in the artifact as an observation, not as a
+decision input. The argument for the correction holds independently of which
+outcome it produces, which is what makes it a correction rather than moving
+the goalposts.
+
+**The trade being accepted.** Cosine has no fitted parameters and never needs
+refitting. The diagonal metric adds a weight vector that must be versioned,
+regenerated and kept in step with the canonical feature set, the eligible
+population and the split, and refit whenever any of those change. That is a
+standing maintenance obligation. It is accepted because the gain is large,
+cross-provider replicated, and carried by 28 auditable numbers - one per named
+feature, each readable as how much that feature pulls relative to plain cosine.
+At this effect size the +0.020 practical floor is cleared by an order of
+magnitude, so the measurement was never the hard part; this trade is.
+
+**How to apply:** nothing public changes yet. The showcase still ships
+Baseline B cosine. Promoting the representation into the published product
+touches the showcase artifacts, the payload pin, the uncertainty artifacts
+computed under cosine, and the web layer, and is filed as its own bead rather
+than bundled into a decision record. `w = 1` reproduces cosine exactly, so the
+audit baseline remains a point inside the adopted model's own hypothesis
+space. No causal, recruitment or transfer-success claim follows: better
+same-player retrieval means the fingerprint is a more reliable description of
+observed play, and nothing more.

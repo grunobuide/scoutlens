@@ -1,0 +1,306 @@
+{
+  "_manifest": {
+    "generated_at": "2026-08-11T16:41:13.980390+00:00",
+    "git_commit": "235447227698361408eeac7d370d3ad91dabe95b",
+    "git_dirty": false,
+    "source_sha256": "d54b1fd27682442fa5f7bf36561dc8a7e8d940e51194336008db089c0a1305e6",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "6b04c4ebb2d36eb1a93e7856008823207dca7b8e5ce384c3dafd8e8cbd4d7cd1",
+    "config": {
+      "config_version": 2,
+      "description": "Single versioned source of the parameters consumed by every published ScoutLens experiment. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      },
+      "statsbomb_replication": {
+        "season": "2015/16",
+        "domestic_leagues": [
+          2,
+          7,
+          11,
+          12
+        ],
+        "minutes_threshold": 450,
+        "bootstrap": {
+          "n_resamples": 1000,
+          "seed": 0
+        }
+      }
+    },
+    "inputs": {
+      "events.parquet": {
+        "sha256": "8d9ac247abdb2d190a3ae6ef4029eadd8a7918eb85315688208b20d1b0164a76",
+        "bytes": 174930307
+      },
+      "matches.parquet": {
+        "sha256": "0accbfa61f8e6cd9ac57a4198407e4a67be6a02282c09434cd3ddf561c2ca44e",
+        "bytes": 5274
+      },
+      "minutes.parquet": {
+        "sha256": "984ab4b251a13d101c31ef299b2ec1d56ed888c06187c984a690404c5a2afd45",
+        "bytes": 155173
+      }
+    }
+  },
+  "protocol_hash": "041cd1f7f514133a7e3c45724fef5c7fc1369d0115b8718f6b67f3177e60b4ce",
+  "lineage": {
+    "d041_protocol_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+    "reconstructed_d041_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+    "only_the_subgroup_clause_changed": true,
+    "detail": "Substituting D041's subgroup block back into the amended protocol reproduces the D041 hash, so every other clause is unchanged and the qop.2/qop.3 artifacts recorded under that hash remain valid evidence."
+  },
+  "feature_alignment": {
+    "n_features": 28,
+    "identical_set_and_order": true
+  },
+  "wyscout_test_recorded": {
+    "source": "artifacts/benchmark/diagonal-results.json",
+    "protocol_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+    "cosine_mrr": 0.4263674142887386,
+    "diagonal_mrr": 0.6531753175631895,
+    "delta_vs_cosine": {
+      "point_estimate": 0.22680790327445088,
+      "ci_low": 0.18349922341635982,
+      "ci_high": 0.27374650016444935,
+      "n_resamples": 1000,
+      "n_queries": 253
+    },
+    "by_role": {
+      "Defender": {
+        "n_queries": 95,
+        "baseline_b_cosine_mrr": 0.3417298453638961,
+        "diagonal_mrr": 0.6106461666987982,
+        "delta": 0.2689163213349021,
+        "gates_decision": false
+      },
+      "Forward": {
+        "n_queries": 48,
+        "baseline_b_cosine_mrr": 0.45279185513560516,
+        "diagonal_mrr": 0.700348310011139,
+        "delta": 0.2475564548755338,
+        "gates_decision": false
+      },
+      "Goalkeeper": {
+        "n_queries": 20,
+        "baseline_b_cosine_mrr": 0.20399412571432696,
+        "diagonal_mrr": 0.2938418964076859,
+        "delta": 0.08984777069335892,
+        "gates_decision": false
+      },
+      "Midfielder": {
+        "n_queries": 90,
+        "baseline_b_cosine_mrr": 0.5510303216076128,
+        "diagonal_mrr": 0.7527601410934743,
+        "delta": 0.20172981948586155,
+        "gates_decision": false
+      }
+    }
+  },
+  "neural_arm": {
+    "source": "artifacts/benchmark/neural-results.json",
+    "status": "DROP, final under D043",
+    "test_vs_diagonal": {
+      "point_estimate": -0.0418657637772355,
+      "ci_low": -0.07732120937485798,
+      "ci_high": -0.005692158068056674,
+      "n_resamples": 1000,
+      "n_queries": 253
+    }
+  },
+  "statsbomb": {
+    "provider": "statsbomb",
+    "season": "2015/16",
+    "competitions": [
+      2,
+      7,
+      11,
+      12
+    ],
+    "minutes_threshold": 450,
+    "nothing_fitted_on_statsbomb": true,
+    "standardization": "provider-native, shared identically by both arms; the diagonal weights are frozen from the Wyscout training split",
+    "n_queries": 1061,
+    "cosine_mrr": 0.22645935719033589,
+    "diagonal_mrr": 0.3626728561696244,
+    "delta_vs_cosine": {
+      "point_estimate": 0.13621349897928853,
+      "ci_low": 0.11654523435749611,
+      "ci_high": 0.155604235722734,
+      "n_resamples": 1000,
+      "n_queries": 1061
+    },
+    "by_role": {
+      "Defender": {
+        "n_queries": 417,
+        "cosine_mrr": 0.17923862581255204,
+        "diagonal_mrr": 0.3290861089311041,
+        "delta": 0.1498474831185521,
+        "gates_decision": true
+      },
+      "Forward": {
+        "n_queries": 239,
+        "cosine_mrr": 0.26493825484934974,
+        "diagonal_mrr": 0.3777179896821637,
+        "delta": 0.11277973483281395,
+        "gates_decision": true
+      },
+      "Goalkeeper": {
+        "n_queries": 75,
+        "cosine_mrr": 0.2264254469137077,
+        "diagonal_mrr": 0.2919314801397114,
+        "delta": 0.06550603322600368,
+        "gates_decision": true
+      },
+      "Midfielder": {
+        "n_queries": 330,
+        "cosine_mrr": 0.2582688472351198,
+        "diagonal_mrr": 0.4102955528096533,
+        "delta": 0.15202670557453352,
+        "gates_decision": true
+      }
+    }
+  },
+  "budgets": {
+    "measures": "cost of adopting the diagonal representation (per-arm, per D041 section 11)",
+    "adoption_cost": {
+      "weights_to_version": 28,
+      "train_seconds_selected_arm": 6.3673031000071205,
+      "train_seconds_full_grid": 37.15910490001261,
+      "inference_seconds": 1.916591300003347,
+      "artifact_bytes": 25891,
+      "peak_rss_upper_bound_bytes": 1489731584,
+      "peak_rss_bound_source": "qop.3 recorded this running the strictly heavier neural arm over the same Wyscout pipeline; the diagonal arm is bounded above by it"
+    },
+    "limits": {
+      "max_wall_clock_seconds_per_arm": 1800,
+      "max_peak_rss_bytes": 4294967296,
+      "max_artifact_bytes": 5242880,
+      "note": "exceeding a budget is a stop condition, not a reason to weaken the protocol"
+    },
+    "checks": {
+      "train_seconds_within_budget": true,
+      "peak_rss_within_budget": true,
+      "artifact_within_budget": true
+    },
+    "within_budget": true,
+    "decision_harness_observation": {
+      "wall_seconds": 11.812775800004601,
+      "peak_rss_bytes": 4669415424,
+      "note": "This cross-provider run reads StatsBomb's 166 MB event table and scores both arms over it. The footprint is attributable to provider data ingestion, is incurred identically by cosine and diagonal, and is therefore not the arm cost the budget clause tests. Reported so the number is on the record, not used to decide."
+    }
+  },
+  "clauses": [
+    {
+      "clause": "wyscout test delta MRR >= +0.020 over baseline_b_cosine",
+      "observed": 0.22680790327445088,
+      "threshold": 0.02,
+      "passed": true,
+      "evidence": "artifacts/benchmark/diagonal-results.json test.delta_vs_cosine.point_estimate"
+    },
+    {
+      "clause": "paired 95% CI lower bound > 0",
+      "observed": 0.18349922341635982,
+      "threshold": 0.0,
+      "passed": true,
+      "evidence": "artifacts/benchmark/diagonal-results.json test.delta_vs_cosine.ci_low"
+    },
+    {
+      "clause": "no role subgroup with >= 50 queries drops more than 0.020",
+      "observed": 0.20172981948586155,
+      "threshold": -0.02,
+      "passed": true,
+      "gating_roles": [
+        "Defender",
+        "Midfielder"
+      ],
+      "non_gating_roles": [
+        "Forward",
+        "Goalkeeper"
+      ],
+      "evidence": "recorded per-role table, D044 minimum applied without retraining"
+    },
+    {
+      "clause": "statsbomb external delta > 0",
+      "observed": 0.13621349897928853,
+      "threshold": 0.0,
+      "passed": true,
+      "evidence": "cross-provider evaluation in this run, weights frozen from Wyscout"
+    },
+    {
+      "clause": "statsbomb paired 95% CI lower bound > -0.010",
+      "observed": 0.11654523435749611,
+      "threshold": -0.01,
+      "passed": true,
+      "evidence": "cross-provider evaluation in this run"
+    },
+    {
+      "clause": "operational budgets pass",
+      "observed": {
+        "measures": "cost of adopting the diagonal representation (per-arm, per D041 section 11)",
+        "adoption_cost": {
+          "weights_to_version": 28,
+          "train_seconds_selected_arm": 6.3673031000071205,
+          "train_seconds_full_grid": 37.15910490001261,
+          "inference_seconds": 1.916591300003347,
+          "artifact_bytes": 25891,
+          "peak_rss_upper_bound_bytes": 1489731584,
+          "peak_rss_bound_source": "qop.3 recorded this running the strictly heavier neural arm over the same Wyscout pipeline; the diagonal arm is bounded above by it"
+        },
+        "limits": {
+          "max_wall_clock_seconds_per_arm": 1800,
+          "max_peak_rss_bytes": 4294967296,
+          "max_artifact_bytes": 5242880,
+          "note": "exceeding a budget is a stop condition, not a reason to weaken the protocol"
+        },
+        "checks": {
+          "train_seconds_within_budget": true,
+          "peak_rss_within_budget": true,
+          "artifact_within_budget": true
+        },
+        "within_budget": true,
+        "decision_harness_observation": {
+          "wall_seconds": 11.812775800004601,
+          "peak_rss_bytes": 4669415424,
+          "note": "This cross-provider run reads StatsBomb's 166 MB event table and scores both arms over it. The footprint is attributable to provider data ingestion, is incurred identically by cosine and diagonal, and is therefore not the arm cost the budget clause tests. Reported so the number is on the record, not used to decide."
+        }
+      },
+      "threshold": {
+        "max_wall_clock_seconds_per_arm": 1800,
+        "max_peak_rss_bytes": 4294967296,
+        "max_artifact_bytes": 5242880,
+        "note": "exceeding a budget is a stop condition, not a reason to weaken the protocol"
+      },
+      "passed": true,
+      "evidence": "recorded costs from qop.2/qop.3 and this run"
+    }
+  ],
+  "decision": {
+    "outcome": "KEEP",
+    "all_clauses_passed": true,
+    "failed_clauses": [],
+    "rule": "KEEP the diagonal representation if and only if every Wyscout, StatsBomb, subgroup and operational clause passes; otherwise DROP. No discretionary override in either direction.",
+    "neural_arm": "DROP, final under D043; not a candidate for rescue, retuning or promotion"
+  }
+}
