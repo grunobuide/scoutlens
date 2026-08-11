@@ -240,6 +240,14 @@ those artifacts already contain.
 
 **Otherwise DROP** — Baseline B stands.
 
+> **Outcome, recorded 2026-08-11 (`D045`):** every clause passed and the
+> diagonal representation was **KEPT**; frozen cosine is retained as the audit
+> and reference baseline, and the neural arm remains a DROP under `D043`. The
+> decision table, the untouched StatsBomb cross-provider evidence and the
+> protocol-lineage proof are in
+> [`keep-drop-decision.md`](keep-drop-decision.md). Nothing public changed as
+> part of that decision.
+
 +0.020 is a **practical**-significance floor, not a statistical one. A
 statistically clean but smaller gain is a DROP: it does not justify replacing
 a transparent cosine over named features with something harder to explain.
