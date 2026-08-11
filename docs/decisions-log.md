@@ -1550,3 +1550,72 @@ not doing any work; what remains is the interpretability and maintenance trade
 - a 28-number weight vector that must be versioned and refit whenever the
 feature set, population or split changes, against a transparent cosine with no
 fitted parameters. That is a product judgement, not a measurement one.
+
+---
+
+## D043 — 2026-08-10 — Neural contrastive arm is out: a published null
+
+**Decision:** record the `scoutlens-qop.3` result. The compact neural
+contrastive projection **does not earn its place**: it beats plain cosine
+comfortably but loses to the interpretable diagonal metric from D042, on test
+by -0.0419 with a 95% interval of [-0.0773, -0.0057] that lies entirely below
+zero. The neural arm is out of contention for `scoutlens-qop.4`; the live
+question is diagonal versus cosine. Spec hash
+`39d4e4098e3c6b55f540702de5cee0b3146c94d22b89e1ff5ebc7cd669e62f84`. Full
+write-up in [`neural-contrastive-benchmark.md`](neural-contrastive-benchmark.md).
+
+Nothing public changes. The showcase still ships Baseline B.
+
+**Why it was run at all:** D042 recorded `CONTINUE_NEURAL`, and the
+preregistered rule said that opens this arm. The gate is read from qop.2's
+machine-readable artifact rather than restated, and the run refuses to
+proceed if that artifact was produced under a different protocol hash.
+
+**Impact:** validation MRR cosine 0.4290, diagonal 0.6464, neural 0.6112;
+test cosine 0.4264, diagonal 0.6532, neural 0.6113. Neural minus cosine is
++0.1822 on validation; neural minus diagonal is -0.0352 on validation
+(interval touching zero) and -0.0419 on test (interval clear of zero). Adding
+a hidden layer and 3,936 parameters made re-identification worse than 28
+interpretable weights. All three methods were scored on identical query sets
+and identical candidate pools, asserted at runtime rather than assumed, and
+the diagonal arm was read from qop.2's artifact rather than retrained.
+
+Two findings beyond the headline. First, **the neural similarity score is not
+calibrated**: binned into quintiles on test, top-1 accuracy is flat at
+0.451 / 0.420 / 0.451 / 0.580 / 0.451, so a score of 0.94 is no more likely
+to be correct than one of 0.74. It is a ranking signal, not a confidence
+signal, and nothing downstream may read it as one. Second, **the selected
+configuration is the largest in the declared grid** and validation MRR rises
+monotonically with capacity, so a larger network might close the gap. That
+does not license running one: extending the grid after seeing the result is
+architecture search, an explicit non-goal, and is what preregistration exists
+to prevent. The honest claim is therefore narrow - within the declared family
+and budget, the neural projection loses - not that no neural model could win.
+
+The model was written in numpy with analytic gradients rather than adding a
+deep learning framework. The bead names no dependency and D040 makes
+`pyproject.toml` Conditional on the bead justifying one; a multi-gigabyte
+dependency for a two-layer network over 753 training rows is not justifiable,
+and hand-written gradients keep the run deterministic. The gradient is
+verified against a numerical one in the test suite.
+
+Two defects were found by the test suite and fixed before the result was
+recorded, both in the gate-reading path rather than the model: binding the
+qop.2 artifact path as a **default argument** froze it at import and made the
+STOP branch unreachable and untestable, and `relative_to(REPO_ROOT)` raised
+for any artifact outside the repository. Neither affected the reported
+numbers, but the first meant the no-training path had never actually been
+exercised.
+
+Training is deterministic: learning curves and per-arm checkpoint digests are
+bit-identical across runs. One reported calibration statistic was not, drifting
+in its last ULPs because numpy reduces sums in parallel; reported calibration
+values now pass through the same 12-significant-digit precision pin introduced
+in D041, so the artifact regenerates identically apart from timings, peak RSS,
+artifact size and the generated-at stamp.
+
+**How to apply:** `scoutlens-qop.4` should treat the neural arm as closed and
+decide between the diagonal metric and cosine on the interpretability and
+maintenance trade, not on the metric. A future attempt at more capacity needs
+its own preregistration, its own hash and its own decision record; this null
+stands on the record either way and is not a reason to retry differently.

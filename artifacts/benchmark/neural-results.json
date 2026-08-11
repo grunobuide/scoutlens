@@ -1,0 +1,644 @@
+{
+  "protocol_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+  "spec_hash": "39d4e4098e3c6b55f540702de5cee0b3146c94d22b89e1ff5ebc7cd669e62f84",
+  "spec": {
+    "spec_version": 1,
+    "bead": "scoutlens-qop.3",
+    "conditional_on": "scoutlens-qop.2 recording CONTINUE_NEURAL (D042)",
+    "architecture_family": "single-hidden-layer MLP projection, cosine on the embedding",
+    "depth": 1,
+    "depth_note": "fixed, not searched",
+    "activation": "tanh",
+    "hidden_width_grid": [
+      32,
+      64
+    ],
+    "embedding_dim_grid": [
+      16,
+      32
+    ],
+    "search_limit": "4 configurations, declared before training. No architecture search beyond this grid, no foundation models, no provider-specific tuning.",
+    "objective": "InfoNCE over the same positives and same-role hard negatives as qop.2",
+    "temperature": 0.05,
+    "negatives_per_anchor": 32,
+    "negative_seed": 2718,
+    "optimizer": "full-batch gradient descent with momentum",
+    "learning_rate": 0.05,
+    "momentum": 0.9,
+    "max_epochs": 400,
+    "init": "scaled uniform, seeded per configuration",
+    "init_seed": 2718,
+    "early_stopping": {
+      "monitor": "validation within-role MRR",
+      "evaluate_every_epochs": 25,
+      "patience_evaluations": 3,
+      "restore": "the checkpoint with the best monitored value",
+      "note": "validation only; test is never consulted during training or selection"
+    },
+    "selection": "highest validation within-role MRR across the 4 configurations",
+    "test_policy": "one final evaluation of the selected checkpoint; no retraining afterwards"
+  },
+  "gate_evidence": {
+    "source": "artifacts/benchmark/diagonal-results.json",
+    "decision": "CONTINUE_NEURAL",
+    "validation_delta": 0.21738777795416003,
+    "validation_ci_low": 0.16859664414090553,
+    "required_delta": 0.01,
+    "required_ci_low_above": -0.005,
+    "diagonal_spec_hash": "47488d603e9246f45fdd3e3d0aa95835bb569e5793444b87950c34e2531aa3bd",
+    "protocol_hash": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d"
+  },
+  "_manifest": {
+    "generated_at": "2026-08-10T22:17:52.989741+00:00",
+    "git_commit": "2af16638d1a3abf979d50f903a499bddaedc5e3b",
+    "git_dirty": true,
+    "source_sha256": "b8ab950114b16182cb3469f367d56b38e6457c8748a00bdcb021d77df5639284",
+    "python_version": "3.14.4",
+    "polars_version": "1.42.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "config_path": "config/experiment.json",
+    "config_sha256": "6b04c4ebb2d36eb1a93e7856008823207dca7b8e5ce384c3dafd8e8cbd4d7cd1",
+    "config": {
+      "config_version": 2,
+      "description": "Single versioned source of the parameters consumed by every published ScoutLens experiment. Changing anything here changes published numbers: regenerate artifacts/*.json and re-run the drift test (see artifacts/README.md).",
+      "domestic_leagues": [
+        364,
+        412,
+        426,
+        524,
+        795
+      ],
+      "domestic_leagues_note": "competitionId: England 364, France 412, Germany 426, Italy 524, Spain 795",
+      "primary_minutes_threshold": 450,
+      "sensitivity_thresholds": [
+        225,
+        450,
+        675,
+        900,
+        1125,
+        1350
+      ],
+      "top_k_for_diagnostics": 10,
+      "bootstrap": {
+        "n_resamples": 1000,
+        "seed": 0
+      },
+      "statsbomb_replication": {
+        "season": "2015/16",
+        "domestic_leagues": [
+          2,
+          7,
+          11,
+          12
+        ],
+        "minutes_threshold": 450,
+        "bootstrap": {
+          "n_resamples": 1000,
+          "seed": 0
+        }
+      }
+    },
+    "inputs": {
+      "competitions.parquet": {
+        "sha256": "45a2212a93fed2e41aa4d9e50b9b73efa74aca2b62e8d21daf4b2109a0874101",
+        "bytes": 3122
+      },
+      "events.parquet": {
+        "sha256": "357aa043ca0f6fc94584fffb2a418180fd2b197f073bea6cc8242a2ad2b869ff",
+        "bytes": 53181640
+      },
+      "matches.parquet": {
+        "sha256": "f545ff00713fb27a271d3bd83583b663ec610919a9be9a7e33dc783f5c69762f",
+        "bytes": 564353
+      },
+      "minutes.parquet": {
+        "sha256": "856f631f96fc93bd51cfb8496f5a6d2b581f7df52a04ff6f71fb885081fff666",
+        "bytes": 182279
+      },
+      "players.parquet": {
+        "sha256": "cd58fa8fe1b61be0e685431b58a45fae62f6b451f644419c60b916a98dd88eab",
+        "bytes": 160264
+      },
+      "teams.parquet": {
+        "sha256": "b2670f354e837e60948a6241b2f0ec344b13b199447caf587d187c78cc761fef",
+        "bytes": 8401
+      }
+    }
+  },
+  "trained": true,
+  "outcome": "TRAINED",
+  "arms": [
+    {
+      "hidden": 32,
+      "embedding_dim": 16,
+      "best_validation_mrr": 0.5429364898252663,
+      "best_epoch": 50,
+      "epochs_run": 125,
+      "stopped_early": true,
+      "parameters": 1456,
+      "checkpoint_sha256": "dc44d9453a59c5de0ea9c7ef024928f50974822457d56b6fe8c6c38f0271c9fc",
+      "learning_curve": [
+        {
+          "epoch": 25,
+          "loss": 1.4077409399636,
+          "validation_mrr": 0.5225683066023205
+        },
+        {
+          "epoch": 50,
+          "loss": 1.0611363046368743,
+          "validation_mrr": 0.5429364898252663
+        },
+        {
+          "epoch": 75,
+          "loss": 0.8683344382153152,
+          "validation_mrr": 0.537042732641689
+        },
+        {
+          "epoch": 100,
+          "loss": 0.7220759547379815,
+          "validation_mrr": 0.5328158853418674
+        },
+        {
+          "epoch": 125,
+          "loss": 0.5939895012848022,
+          "validation_mrr": 0.5229851666489176
+        }
+      ],
+      "train_seconds": 5.99456089999876
+    },
+    {
+      "hidden": 32,
+      "embedding_dim": 32,
+      "best_validation_mrr": 0.5785026258565137,
+      "best_epoch": 75,
+      "epochs_run": 150,
+      "stopped_early": true,
+      "parameters": 1984,
+      "checkpoint_sha256": "9295976b0dbea04fc2b36cc6147b92fe9b037ef5c40f0632e8b013a46c0b6a53",
+      "learning_curve": [
+        {
+          "epoch": 25,
+          "loss": 1.2767672787335194,
+          "validation_mrr": 0.5276203151244355
+        },
+        {
+          "epoch": 50,
+          "loss": 0.9617803403218982,
+          "validation_mrr": 0.5644716250623567
+        },
+        {
+          "epoch": 75,
+          "loss": 0.8069537305819313,
+          "validation_mrr": 0.5785026258565137
+        },
+        {
+          "epoch": 100,
+          "loss": 0.6760700320551445,
+          "validation_mrr": 0.5782049398480769
+        },
+        {
+          "epoch": 125,
+          "loss": 0.5542317573391771,
+          "validation_mrr": 0.5750943782769113
+        },
+        {
+          "epoch": 150,
+          "loss": 0.44798172190857904,
+          "validation_mrr": 0.5595258674552872
+        }
+      ],
+      "train_seconds": 12.359061200011638
+    },
+    {
+      "hidden": 64,
+      "embedding_dim": 16,
+      "best_validation_mrr": 0.6016210706940667,
+      "best_epoch": 25,
+      "epochs_run": 100,
+      "stopped_early": true,
+      "parameters": 2896,
+      "checkpoint_sha256": "8ba52fc7f965f72d190407e281b5b3e456608d25ccf1fd948b2803695bbeb14b",
+      "learning_curve": [
+        {
+          "epoch": 25,
+          "loss": 1.2179668104129893,
+          "validation_mrr": 0.6016210706940667
+        },
+        {
+          "epoch": 50,
+          "loss": 0.9748301462685328,
+          "validation_mrr": 0.5941476156657831
+        },
+        {
+          "epoch": 75,
+          "loss": 0.7818964271022564,
+          "validation_mrr": 0.5980263746564474
+        },
+        {
+          "epoch": 100,
+          "loss": 0.5907338464725435,
+          "validation_mrr": 0.583167515942507
+        }
+      ],
+      "train_seconds": 6.3532833000062965
+    },
+    {
+      "hidden": 64,
+      "embedding_dim": 32,
+      "best_validation_mrr": 0.6111501540969335,
+      "best_epoch": 75,
+      "epochs_run": 150,
+      "stopped_early": true,
+      "parameters": 3936,
+      "checkpoint_sha256": "24800d70eccea65a75bd650a56bfbb4f4967a58669b7355d1d251b2cab4d4953",
+      "learning_curve": [
+        {
+          "epoch": 25,
+          "loss": 1.1419738958975434,
+          "validation_mrr": 0.5781232201678898
+        },
+        {
+          "epoch": 50,
+          "loss": 0.8866029911749217,
+          "validation_mrr": 0.6040666791892834
+        },
+        {
+          "epoch": 75,
+          "loss": 0.6869873758100045,
+          "validation_mrr": 0.6111501540969335
+        },
+        {
+          "epoch": 100,
+          "loss": 0.49583023544330007,
+          "validation_mrr": 0.5932223687121716
+        },
+        {
+          "epoch": 125,
+          "loss": 0.3374649798946883,
+          "validation_mrr": 0.5852412337323165
+        },
+        {
+          "epoch": 150,
+          "loss": 0.2334746373022119,
+          "validation_mrr": 0.5590825070961226
+        }
+      ],
+      "train_seconds": 14.81084489999921
+    }
+  ],
+  "selected": {
+    "hidden": 64,
+    "embedding_dim": 32,
+    "parameters": 3936,
+    "checkpoint_sha256": "24800d70eccea65a75bd650a56bfbb4f4967a58669b7355d1d251b2cab4d4953",
+    "best_epoch": 75,
+    "validation_mrr": 0.6111501540969335
+  },
+  "validation": {
+    "n_queries": 251,
+    "shared_query_set": true,
+    "shared_pool_sizes": [
+      19,
+      47,
+      90,
+      95
+    ],
+    "cosine_mrr": 0.42898417942534534,
+    "diagonal_mrr": 0.6463719573795054,
+    "neural_mrr": 0.6111501540969335,
+    "neural_vs_cosine": {
+      "point_estimate": 0.18216597467158818,
+      "ci_low": 0.1367180462923257,
+      "ci_high": 0.2288212108989372,
+      "n_resamples": 1000,
+      "n_queries": 251
+    },
+    "neural_vs_diagonal": {
+      "point_estimate": -0.03522180328257185,
+      "ci_low": -0.07561531315845393,
+      "ci_high": 0.0003881286792684069,
+      "n_resamples": 1000,
+      "n_queries": 251
+    },
+    "by_role_neural": {
+      "Defender": {
+        "n_queries": 95,
+        "mrr": 0.5759855346196147,
+        "gates_decision": false
+      },
+      "Forward": {
+        "n_queries": 47,
+        "mrr": 0.6177988087562556,
+        "gates_decision": false
+      },
+      "Goalkeeper": {
+        "n_queries": 19,
+        "mrr": 0.47497590129169076,
+        "gates_decision": false
+      },
+      "Midfielder": {
+        "n_queries": 90,
+        "mrr": 0.6735441861486753,
+        "gates_decision": false
+      }
+    },
+    "calibration_neural": [
+      {
+        "score_range": [
+          0.641796714673,
+          0.802703040153
+        ],
+        "n": 51,
+        "mean_top1_score": 0.759404465369,
+        "top1_accuracy": 0.294117647059
+      },
+      {
+        "score_range": [
+          0.802703040153,
+          0.841904440602
+        ],
+        "n": 50,
+        "mean_top1_score": 0.824006583188,
+        "top1_accuracy": 0.32
+      },
+      {
+        "score_range": [
+          0.841904440602,
+          0.876592701003
+        ],
+        "n": 50,
+        "mean_top1_score": 0.860795119592,
+        "top1_accuracy": 0.56
+      },
+      {
+        "score_range": [
+          0.876592701003,
+          0.910363603644
+        ],
+        "n": 50,
+        "mean_top1_score": 0.893438919553,
+        "top1_accuracy": 0.54
+      },
+      {
+        "score_range": [
+          0.910363603644,
+          0.991750000451
+        ],
+        "n": 50,
+        "mean_top1_score": 0.948381632802,
+        "top1_accuracy": 0.64
+      }
+    ],
+    "failure_cases_neural": [
+      {
+        "player_id": 4086,
+        "competitionId": 795,
+        "role": "Defender",
+        "rank": 35,
+        "pool_size": 95
+      },
+      {
+        "player_id": 3470,
+        "competitionId": 795,
+        "role": "Midfielder",
+        "rank": 33,
+        "pool_size": 90
+      },
+      {
+        "player_id": 14715,
+        "competitionId": 426,
+        "role": "Defender",
+        "rank": 31,
+        "pool_size": 95
+      },
+      {
+        "player_id": 397168,
+        "competitionId": 364,
+        "role": "Defender",
+        "rank": 30,
+        "pool_size": 95
+      },
+      {
+        "player_id": 21291,
+        "competitionId": 524,
+        "role": "Midfielder",
+        "rank": 28,
+        "pool_size": 90
+      },
+      {
+        "player_id": 20636,
+        "competitionId": 524,
+        "role": "Defender",
+        "rank": 23,
+        "pool_size": 95
+      },
+      {
+        "player_id": 28291,
+        "competitionId": 364,
+        "role": "Midfielder",
+        "rank": 21,
+        "pool_size": 90
+      },
+      {
+        "player_id": 247207,
+        "competitionId": 795,
+        "role": "Midfielder",
+        "rank": 19,
+        "pool_size": 90
+      },
+      {
+        "player_id": 8460,
+        "competitionId": 364,
+        "role": "Defender",
+        "rank": 17,
+        "pool_size": 95
+      },
+      {
+        "player_id": 16110,
+        "competitionId": 426,
+        "role": "Midfielder",
+        "rank": 17,
+        "pool_size": 90
+      }
+    ]
+  },
+  "test_evaluated": true,
+  "test": {
+    "note": "one final evaluation of the checkpoint selected on validation; no retraining follows",
+    "n_queries": 253,
+    "shared_query_set": true,
+    "shared_pool_sizes": [
+      20,
+      48,
+      90,
+      95
+    ],
+    "cosine_mrr": 0.4263674142887386,
+    "diagonal_mrr": 0.6531753175631895,
+    "neural_mrr": 0.611309553785954,
+    "neural_vs_cosine": {
+      "point_estimate": 0.18494213949721539,
+      "ci_low": 0.13734294561099886,
+      "ci_high": 0.23388072481687416,
+      "n_resamples": 1000,
+      "n_queries": 253
+    },
+    "neural_vs_diagonal": {
+      "point_estimate": -0.0418657637772355,
+      "ci_low": -0.07732120937485798,
+      "ci_high": -0.005692158068056674,
+      "n_resamples": 1000,
+      "n_queries": 253
+    },
+    "by_role_neural": {
+      "Defender": {
+        "n_queries": 95,
+        "mrr": 0.583600251590033,
+        "gates_decision": false
+      },
+      "Forward": {
+        "n_queries": 48,
+        "mrr": 0.5813995610870611,
+        "gates_decision": false
+      },
+      "Goalkeeper": {
+        "n_queries": 20,
+        "mrr": 0.3389868464868465,
+        "gates_decision": false
+      },
+      "Midfielder": {
+        "n_queries": 90,
+        "mrr": 0.7170264149430816,
+        "gates_decision": false
+      }
+    },
+    "calibration_neural": [
+      {
+        "score_range": [
+          0.622461778824,
+          0.795135661962
+        ],
+        "n": 51,
+        "mean_top1_score": 0.738352205303,
+        "top1_accuracy": 0.450980392157
+      },
+      {
+        "score_range": [
+          0.795135661962,
+          0.839910289075
+        ],
+        "n": 50,
+        "mean_top1_score": 0.81881500035,
+        "top1_accuracy": 0.42
+      },
+      {
+        "score_range": [
+          0.839910289075,
+          0.870582493903
+        ],
+        "n": 51,
+        "mean_top1_score": 0.857245577366,
+        "top1_accuracy": 0.450980392157
+      },
+      {
+        "score_range": [
+          0.870582493903,
+          0.909215315064
+        ],
+        "n": 50,
+        "mean_top1_score": 0.890146431202,
+        "top1_accuracy": 0.58
+      },
+      {
+        "score_range": [
+          0.909215315064,
+          0.980591768018
+        ],
+        "n": 51,
+        "mean_top1_score": 0.939171363004,
+        "top1_accuracy": 0.450980392157
+      }
+    ],
+    "failure_cases_neural": [
+      {
+        "player_id": 74,
+        "competitionId": 364,
+        "role": "Defender",
+        "rank": 50,
+        "pool_size": 95
+      },
+      {
+        "player_id": 25891,
+        "competitionId": 412,
+        "role": "Midfielder",
+        "rank": 30,
+        "pool_size": 90
+      },
+      {
+        "player_id": 286915,
+        "competitionId": 412,
+        "role": "Defender",
+        "rank": 29,
+        "pool_size": 95
+      },
+      {
+        "player_id": 228963,
+        "competitionId": 412,
+        "role": "Defender",
+        "rank": 23,
+        "pool_size": 95
+      },
+      {
+        "player_id": 77,
+        "competitionId": 426,
+        "role": "Defender",
+        "rank": 22,
+        "pool_size": 95
+      },
+      {
+        "player_id": 301017,
+        "competitionId": 412,
+        "role": "Forward",
+        "rank": 20,
+        "pool_size": 48
+      },
+      {
+        "player_id": 3554,
+        "competitionId": 795,
+        "role": "Goalkeeper",
+        "rank": 18,
+        "pool_size": 20
+      },
+      {
+        "player_id": 3680,
+        "competitionId": 795,
+        "role": "Midfielder",
+        "rank": 16,
+        "pool_size": 90
+      },
+      {
+        "player_id": 25791,
+        "competitionId": 412,
+        "role": "Defender",
+        "rank": 16,
+        "pool_size": 95
+      },
+      {
+        "player_id": 16826,
+        "competitionId": 426,
+        "role": "Midfielder",
+        "rank": 14,
+        "pool_size": 90
+      }
+    ]
+  },
+  "cost": {
+    "train_seconds_total": 39.517750300015905,
+    "train_seconds_selected": 14.81084489999921,
+    "validation_inference_seconds": 4.616105199995218,
+    "wall_seconds_total": 49.30038740001328,
+    "peak_rss_bytes": 1489731584,
+    "peak_rss_budget_bytes": 4294967296
+  },
+  "artifact_bytes": 17580
+}
