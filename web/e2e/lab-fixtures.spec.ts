@@ -130,6 +130,60 @@ test("uncertainty 'insufficient' renders retrieval and neighbor stability text",
   await expectNoPageOverflow(page);
 });
 
+test("uncertainty 'pending' renders retrieval, neighbor and drawer stability text", async ({
+  page,
+}) => {
+  // The third degraded state. Production currently has zero pending profiles
+  // (1,257/1,257 available), so this fixture is the only place the fallback
+  // copy is exercised in a browser.
+  await openProfile(page, FIXTURE_IDS.maxContent);
+
+  await expect(page.locator(".uncertainty-pending strong")).toHaveText(
+    "Point estimates · uncertainty pending",
+  );
+
+  const stability = page.locator(".retrieval-outcome__stability");
+  await expect(stability).toHaveCount(3);
+  for (const index of [0, 1, 2]) {
+    await expect(stability.nth(index)).toHaveText(
+      "Stability pending · no resampled rank interval is available yet.",
+    );
+  }
+
+  await expect(page.locator(".neighbor-card__stability").first()).toContainText(
+    "pending, no interval",
+  );
+
+  const dialog = await openFirstNeighborDrawer(page);
+  await expect(dialog).toContainText(
+    "Pending · no resampled rank interval or top-five selection rate is available yet.",
+  );
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+
+  await expectNoPageOverflow(page);
+});
+
+test("the three uncertainty states render mutually distinct copy", async ({ page }) => {
+  // scoutlens-jtt.5.4 acceptance criterion 1 asks for *distinct* copy per
+  // state, not merely for each state to render something. Asserting the three
+  // separately would still pass if two of them said the same thing.
+  const stabilityTextFor = async (profileKey: string): Promise<string> => {
+    await openProfile(page, profileKey);
+    const text = await page.locator(".retrieval-outcome__stability").first().textContent();
+    return (text ?? "").trim();
+  };
+
+  const pending = await stabilityTextFor(FIXTURE_IDS.maxContent);
+  const available = await stabilityTextFor(FIXTURE_IDS.uncertaintyAvailable);
+  const insufficient = await stabilityTextFor(FIXTURE_IDS.uncertaintyInsufficient);
+
+  expect(new Set([pending, available, insufficient]).size).toBe(3);
+  expect(pending).toContain("Stability pending");
+  expect(available).toContain("Available from");
+  expect(insufficient).toContain("Insufficient resamples");
+});
+
 test("same fixture id renders identical DOM across two independent loads", async ({ page }) => {
   const snapshot = async () => {
     await openProfile(page, FIXTURE_IDS.uncertaintyAvailable);
