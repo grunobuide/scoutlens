@@ -1818,3 +1818,65 @@ rendering changes it had missed (`scoutlens-uze.10`).
 `formatRank` / `formatRankBound` from `web/src/components/rank-format.ts`
 rather than interpolating the number. A fixture whose statistics are all whole
 numbers does not exercise this path and is not sufficient coverage.
+
+---
+
+## D047 — 2026-08-12 — Showcase 2.0.0 diagonal representation contract frozen
+
+**Decision:** freeze `scoutlens.showcase/2.0.0` as the producer/consumer
+contract for diagonal rankings, **before any v2 artifact is generated**
+(`scoutlens-qop.6.2`). Normative text in
+[`showcase-artifact-contract-v2.md`](showcase-artifact-contract-v2.md); the
+schema is authoritative. `1.0.0` remains supported, immutable and byte-identical,
+and stays the frozen cosine audit baseline.
+
+This record also **ratifies the adoption-budget interpretation of D045** using
+the direct measurements from `scoutlens-qop.6.1`. D045 quoted a 1.39 GiB upper
+bound borrowed from the neural run; three fresh-process measurements of the
+isolated diagonal adoption path give a maximum of 30.3 s wall, 1.46 GiB peak
+RSS and 7,462 serialized bytes, against limits of 1,800 s, 4 GiB and 5 MiB. The
+measured peak slightly exceeds the bound D045 quoted, so that bound is
+superseded by measurement while its conclusion stands with wide margin. The
+operational precondition for promotion is met.
+
+**Why a new major rather than added fields:** v1 publishes unweighted-cosine
+rankings; v2 publishes rankings from the diagonal representation kept in D045.
+The same field name carrying a differently-computed number is the most
+dangerous kind of silent break, so the score is renamed `cosine_similarity` to
+`similarity_score`, every ranking-bearing block must name the representation
+that produced it, and the dataset version marker moves from `-v1-` to `-v2-`.
+A weighted metric must not be published under a name that claims plain cosine.
+
+**Frozen v2 decisions:** `public/showcase/v2` with a required
+`representation.json` that the manifest must hash - an unhashed representation
+could be swapped without detection. Representation identity is id, weight
+digest, ordered canonical-28 ids and their digest, training provider,
+population and split digest, the D044 protocol hash, the D042 spec hash and the
+D045 reference. Ranking method is `weighted_cosine_diagonal_v1`. Weighted
+contribution reconstruction is normative: a subject's feature contributions
+must sum to its `similarity_score` within 1e-6, because evidence that does not
+reconstruct the number it explains is not evidence. Order is part of identity -
+the same weights in a different feature order describe a different metric, so
+both digests are recomputed rather than trusted. `match_bootstrap_diagonal_v1`
+is the only publishable v2 uncertainty design: v1 intervals describe the
+sampling stability of cosine-based ranks, and attaching them to diagonal
+rankings would show an interval that does not describe the number beside it.
+
+**Compatibility:** known majors 1 and 2 both validate; an unknown major fails
+closed rather than falling back to the newest schema, because silently
+validating a future payload against today's rules reports success for something
+the consumer does not understand. v1 schema, generated types and validation
+behaviour are unchanged; v2 consumer types are emitted alongside as
+`showcase-v2.ts` / `showcase-v2.schema.json` so neither type set shifts under a
+consumer. `pnpm contracts:generate` remains the only writer of
+`web/src/contracts/generated/**` and is deterministic.
+
+**Impact:** no `public/showcase/v2` file, payload pack, uncertainty artifact,
+ranking value or UI copy was created or changed. Cosine audit evidence stays
+exposed through frozen v1, this ledger and `audit_baseline` metadata, not a
+browser recomputation or a primary-flow toggle.
+
+**How to apply:** `scoutlens-qop.6.3` computes diagonal uncertainty under
+`match_bootstrap_diagonal_v1`; later leaves generate artifacts. Each is gated on
+this contract rather than the reverse. Any change to v2 semantics is a new
+decision record, and a change that alters meaning is a new major.

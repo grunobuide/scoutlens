@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import math
 import re
@@ -434,3 +435,182 @@ def validate_published_directory(
     }:
         raise ValueError("manifest featured profile does not resolve")
     return measure_gzip_budgets(directory)
+
+
+# ---------------------------------------------------------------------------
+# Showcase 2.0.0 - diagonal representation contract (D047)
+#
+# Every rule below is normative in docs/showcase-artifact-contract-v2.md and
+# fails closed. A v2 payload that cannot prove which representation produced it
+# is not a weaker v2 payload; it is not a v2 payload.
+# ---------------------------------------------------------------------------
+
+V2_SCHEMA_VERSION = "2.0.0"
+V2_RANKING_METHOD = "weighted_cosine_diagonal_v1"
+V2_UNCERTAINTY_DESIGN = "match_bootstrap_diagonal_v1"
+V2_REPRESENTATION_PATH = "representation.json"
+
+# Reconstruction tolerance for the weighted evidence sum: wider than float
+# noise, far tighter than any difference that could reorder a ranking.
+V2_CONTRIBUTION_TOLERANCE = 1e-6
+
+
+def _v2_digest(values: list) -> str:
+    """Canonical digest used for both the weight vector and the feature order."""
+    payload = json.dumps(values, separators=(",", ":"), sort_keys=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def weight_digest(weights: list[dict]) -> str:
+    """sha256 over [[feature_id, weight], ...] in declared order.
+
+    Order is part of the identity: the same weights attached to a different
+    feature order describe a different metric.
+    """
+    return _v2_digest(
+        [[entry["feature_id"], round(float(entry["weight"]), 12)] for entry in weights]
+    )
+
+
+def feature_order_digest(feature_order: list[str]) -> str:
+    return _v2_digest(list(feature_order))
+
+
+def _collect_representation_ids(artifact: Any, found: set[str]) -> None:
+    if isinstance(artifact, dict):
+        value = artifact.get("representation_id")
+        if isinstance(value, str):
+            found.add(value)
+        for child in artifact.values():
+            _collect_representation_ids(child, found)
+    elif isinstance(artifact, list):
+        for child in artifact:
+            _collect_representation_ids(child, found)
+
+
+def validate_representation_artifact(artifact: dict, *, label: str = V2_REPRESENTATION_PATH) -> str:
+    """Validate representation.json and return the representation id."""
+    validate_schema(artifact, label=label, major=2)
+    representation = artifact["representation"]
+
+    if representation["ranking_method"] != V2_RANKING_METHOD:
+        raise ValueError(
+            f"{label}: ranking_method must be {V2_RANKING_METHOD}, "
+            f"found {representation['ranking_method']}"
+        )
+    if representation["uncertainty_design"] != V2_UNCERTAINTY_DESIGN:
+        raise ValueError(
+            f"{label}: uncertainty_design must be {V2_UNCERTAINTY_DESIGN}, "
+            f"found {representation['uncertainty_design']}"
+        )
+
+    expected_weights = weight_digest(representation["weights"])
+    if representation["weight_digest"] != expected_weights:
+        raise ValueError(
+            f"{label}: weight_digest {representation['weight_digest']} does not match the "
+            f"declared weights (recomputed {expected_weights})"
+        )
+
+    expected_features = feature_order_digest(representation["feature_order"])
+    if representation["feature_order_digest"] != expected_features:
+        raise ValueError(
+            f"{label}: feature_order_digest {representation['feature_order_digest']} does not "
+            f"match the declared feature order (recomputed {expected_features})"
+        )
+
+    declared = [entry["feature_id"] for entry in representation["weights"]]
+    if declared != list(representation["feature_order"]):
+        raise ValueError(
+            f"{label}: weights are not in feature_order; a weight vector applied in a different "
+            "order describes a different metric"
+        )
+
+    return str(representation["id"])
+
+
+def validate_v2_representation_binding(artifacts: dict[str, dict], representation_id: str) -> None:
+    """Every block that carries a representation id must carry the same one."""
+    found: set[str] = set()
+    for artifact in artifacts.values():
+        _collect_representation_ids(artifact, found)
+    if not found:
+        raise ValueError(
+            "no artifact references a representation_id; a v2 ranking that cannot name the "
+            "representation that produced it is unpublishable"
+        )
+    mismatched = sorted(found - {representation_id})
+    if mismatched:
+        raise ValueError(
+            f"representation_id mismatch: representation.json declares {representation_id} but "
+            f"artifacts also reference {mismatched}"
+        )
+
+
+def validate_v2_weighted_evidence(profile: dict, label: str) -> None:
+    """Feature-level weighted contributions must reconstruct the score they explain."""
+    by_subject: dict[str, list[dict]] = {}
+    for item in profile.get("evidence_index", []):
+        if item.get("kind") == "feature_contribution":
+            by_subject.setdefault(item["subject"], []).append(item)
+
+    for subject, items in sorted(by_subject.items()):
+        total = sum(float(item["weighted_contribution"]) for item in items)
+        if subject == "self_retrieval":
+            expected = profile["retrieval"]["global"]["similarity_score"]
+        else:
+            profile_key = subject.split(":", 1)[1]
+            match = [n for n in profile["neighbors"] if n["profile_key"] == profile_key]
+            if not match:
+                raise ValueError(f"{label}: evidence references unknown neighbor {profile_key}")
+            expected = match[0]["similarity_score"]
+        if expected is None:
+            continue
+        if abs(total - float(expected)) > V2_CONTRIBUTION_TOLERANCE:
+            raise ValueError(
+                f"{label}: weighted contributions for {subject} sum to {total}, which does not "
+                f"reconstruct similarity_score {expected} within {V2_CONTRIBUTION_TOLERANCE}"
+            )
+
+
+def validate_v2_bundle(artifacts: dict[str, dict]) -> str:
+    """Full v2 consistency pass over an in-memory dataset.
+
+    Returns the representation id every artifact agreed on.
+    """
+    representation_artifact = artifacts.get(V2_REPRESENTATION_PATH)
+    if representation_artifact is None:
+        raise ValueError(
+            f"a v2 dataset must publish {V2_REPRESENTATION_PATH}; without it a consumer cannot "
+            "tell which representation produced the rankings"
+        )
+    representation_id = validate_representation_artifact(representation_artifact)
+
+    for path, artifact in artifacts.items():
+        validate_schema(artifact, label=path, major=2)
+        declared = artifact.get("schema_version")
+        if declared is not None and declared != V2_SCHEMA_VERSION:
+            raise ValueError(
+                f"{path}: schema_version must be {V2_SCHEMA_VERSION}, found {declared}"
+            )
+
+    manifest = artifacts.get("manifest.json")
+    if manifest is not None:
+        if manifest.get("representation_id") != representation_id:
+            raise ValueError(
+                f"manifest.json representation_id {manifest.get('representation_id')} does not "
+                f"match representation.json {representation_id}"
+            )
+        published = {entry["path"] for entry in manifest["files"]}
+        if V2_REPRESENTATION_PATH not in published:
+            raise ValueError(
+                f"manifest.json does not hash {V2_REPRESENTATION_PATH}; an unhashed representation "
+                "could be swapped without detection"
+            )
+
+    validate_v2_representation_binding(artifacts, representation_id)
+
+    for path, artifact in artifacts.items():
+        if path.startswith("players/") and "evidence_index" in artifact:
+            validate_v2_weighted_evidence(artifact, path)
+
+    return representation_id
