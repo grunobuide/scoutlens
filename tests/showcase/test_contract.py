@@ -89,9 +89,14 @@ def test_additive_evidence_reconstructs_cosine_and_has_deterministic_order() -> 
     candidate[FEATURE_COLUMNS[0]] = 3.0
     candidate[FEATURE_COLUMNS[1]] = 4.0
 
-    cosine, evidence = _evidence_for_candidate("self_retrieval", "self", query, candidate)
+    cosine, similarity, evidence = _evidence_for_candidate("self_retrieval", "self", query, candidate)
+    # With no representation the v1 path is unchanged, so the reported score is
+    # the cosine itself and no weighted fields are emitted.
+    assert similarity == cosine
     feature_rows = [item for item in evidence if item["kind"] == "feature_contribution"]
     family_rows = [item for item in evidence if item["kind"] == "family_contribution"]
+    assert all("weighted_contribution" not in item for item in evidence)
+    assert all("representation_id" not in item for item in evidence)
 
     assert len(feature_rows) == 32
     assert len(family_rows) == 8
