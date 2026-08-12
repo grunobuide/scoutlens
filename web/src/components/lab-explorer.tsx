@@ -20,6 +20,7 @@ import type {
   PlayerIndexItem,
   PlayerProfileArtifact,
 } from "@/contracts/generated/showcase";
+import { formatRank, formatRankBound } from "./rank-format";
 import {
   EMPTY_PROFILE_FILTERS,
   buildFingerprintRows,
@@ -506,7 +507,9 @@ function rankStabilityText(outcome: RetrievalOutcome): string {
   const recallText = recall.every((rate) => rate !== null)
     ? ` · recall@1 ${(recall[0]! * 100).toFixed(1)}% · recall@5 ${(recall[1]! * 100).toFixed(1)}% · recall@10 ${(recall[2]! * 100).toFixed(1)}%`
     : "";
-  return `Available from ${outcome.uncertainty.valid_resamples?.toLocaleString("en-US") ?? 0} valid resamples · median rank ${outcome.uncertainty.median_rank ?? "not reported"}${interval === null ? "" : ` · rank interval ${interval[0]}–${interval[1]}`}${recallText}.`;
+  const medianRank = outcome.uncertainty.median_rank;
+  const medianText = medianRank === null ? "not reported" : formatRank(medianRank);
+  return `Available from ${outcome.uncertainty.valid_resamples?.toLocaleString("en-US") ?? 0} valid resamples · median rank ${medianText}${interval === null ? "" : ` · rank interval ${formatRank(interval[0])}–${formatRank(interval[1])}`}${recallText}.`;
 }
 
 function RetrievalOutcomeCard({
@@ -675,7 +678,7 @@ function StatisticalNeighbors({
                   </p>
                 </div>
                 <p className="neighbor-card__stability">
-                  Selection stability · {neighbor.stability.status === "pending" ? "pending, no interval" : neighbor.stability.status === "insufficient" ? "insufficient resamples" : `available · rank interval ${neighbor.stability.rank_ci_95?.[0] ?? "—"}–${neighbor.stability.rank_ci_95?.[1] ?? "—"}`}
+                  Selection stability · {neighbor.stability.status === "pending" ? "pending, no interval" : neighbor.stability.status === "insufficient" ? "insufficient resamples" : `available · rank interval ${formatRankBound(neighbor.stability.rank_ci_95?.[0])}–${formatRankBound(neighbor.stability.rank_ci_95?.[1])}`}
                 </p>
                 <button
                   type="button"

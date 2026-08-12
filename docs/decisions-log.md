@@ -1765,3 +1765,56 @@ audit baseline remains a point inside the adopted model's own hypothesis
 space. No causal, recruitment or transfer-success claim follows: better
 same-player retrieval means the fingerprint is a more reliable description of
 observed play, and nothing more.
+
+---
+
+## D046 — 2026-08-12 — Resampled rank statistics are rounded at display, not at the producer
+
+**Decision:** format resampled rank statistics to **one decimal place in the
+web layer**, leaving the published artifact unchanged (`scoutlens-jtt.16`).
+`median_rank` and both `rank_ci_95` bounds now render through a single shared
+formatter; a trailing `.0` is trimmed so a whole rank still reads as a whole
+number. The artifact remains the authority and no stored value is rounded.
+
+**Why this defect existed:** rank bounds come from percentile interpolation
+between order statistics, so they are legitimately fractional - the published
+data carries `median_rank` 166.5 and intervals such as 1-130.2, and 484 of 600
+sampled published intervals have a non-integer bound. Three surfaces
+interpolated those numbers straight into a template, so a value like 111.1 that
+is not exactly representable as a double printed its full binary expansion. The
+live Lab read `rank interval 1-111.09999999999991`. The neighbouring code was
+already correct: `raw_ci_95` has always used `toFixed(2)`. Only the rank path
+was missed.
+
+**Why it survived every gate:** every fixture used whole-number ranks (median
+9, interval 6-16), so unit and E2E assertions rendered a clean string and
+passed. `scoutlens-jtt.5.4` regenerated the win32 visual baselines *with the
+defect already present*, which blessed it as the expected rendering, and the
+linux baselines were never regenerated at all, so no visual test flagged it
+either. It surfaced only when `scoutlens-uze.10` regenerated the stale linux
+baselines and the resulting image was read rather than assumed.
+
+**Why display rather than the producer:** rounding at the producer would change
+artifact bytes and therefore require a new content-addressed dataset version, a
+rebuilt payload pack and a new immutable release asset under `D030` - an
+outward-facing publication step - to fix what is a formatting defect. It would
+also discard genuine precision from every non-web consumer. Display-side
+rounding fixes what is wrong without touching a single published number.
+Producer-side rounding remains available as a separate decision if a future
+consumer wants integer ranks in the artifact itself; this record does not
+foreclose it.
+
+**Impact:** the three affected surfaces are `lab-explorer.tsx` (retrieval
+stability and neighbour card) and `neighbor-comparison-drawer.tsx`. Every
+already-integer rendering is byte-identical to before, so only genuinely
+fractional values change on screen. The E2E fixture now carries deliberately
+fractional statistics, including the exact double `111.09999999999991`, and the
+tests assert both the formatted output and the absence of the raw expansion -
+closing the coverage gap that let this ship. Visual baselines were regenerated
+on **both** platforms, which also brings the linux set forward across the three
+rendering changes it had missed (`scoutlens-uze.10`).
+
+**How to apply:** any new surface rendering a resampled rank must use
+`formatRank` / `formatRankBound` from `web/src/components/rank-format.ts`
+rather than interpolating the number. A fixture whose statistics are all whole
+numbers does not exercise this path and is not sufficient coverage.
