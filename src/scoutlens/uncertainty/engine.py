@@ -35,10 +35,15 @@ from scoutlens.uncertainty.checkpoint import (
     read_all_checkpoints,
     write_checkpoint_chunk,
 )
-from scoutlens.uncertainty.config import UNCERTAINTY_CONFIG_PATH, load_uncertainty_config
+from scoutlens.uncertainty.config import (
+    UNCERTAINTY_CONFIG_PATH,
+    feature_weight_vector,
+    load_uncertainty_config,
+)
 from scoutlens.uncertainty.draws import DrawPlan, build_draw_plan
 from scoutlens.uncertainty.ranking import (
     ReplicateRanks,
+    apply_diagonal_weights,
     compute_replicate_ranks,
     normalize_feature_rows,
     observed_neighbor_indices,
@@ -48,6 +53,16 @@ from scoutlens.uncertainty.statistics import average_rank_percentiles
 DEFAULT_PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "artifacts" / "uncertainty" / "match_bootstrap_v1"
 DEFAULT_CHECKPOINT_DIR = REPO_ROOT / "data" / "uncertainty" / "match_bootstrap_v1"
+
+
+def output_dir_for(design_version: str) -> Path:
+    """Artifacts are addressed by design, so a diagonal run cannot overwrite
+    the frozen cosine artifacts even if the caller forgets to redirect it."""
+    return REPO_ROOT / "artifacts" / "uncertainty" / design_version
+
+
+def checkpoint_dir_for(design_version: str) -> Path:
+    return REPO_ROOT / "data" / "uncertainty" / design_version
 RETRIEVAL_OUTCOMES = ("global", "within_role", "baseline_role_minutes")
 
 
@@ -67,10 +82,17 @@ class PreparedBootstrap:
     player_ids: np.ndarray
     competition_ids: np.ndarray
     input_paths: tuple[Path, ...]
+    feature_weights: np.ndarray | None = None
+    """Diagonal weights aligned to FEATURE_COLUMNS, or None for cosine."""
 
     @property
     def profile_count(self) -> int:
         return self.cohort.height
+
+    @property
+    def representation_id(self) -> str | None:
+        representation = self.config.get("representation")
+        return None if representation is None else str(representation["id"])
 
 
 @dataclasses.dataclass(frozen=True)
@@ -169,10 +191,21 @@ def _observed_neighbors(
     present: np.ndarray,
     roles: np.ndarray,
     player_ids: np.ndarray,
+    feature_weights: np.ndarray | None = None,
 ) -> np.ndarray:
+    """The five observed neighbours whose selection stability is tracked.
+
+    These must be chosen by the same scorer the run reports on. Picking them
+    with cosine and then measuring their stability under a diagonal ranking
+    would report the stability of the wrong five players.
+    """
     standardized = standardize_replicate(raw, present)
-    query = normalize_feature_rows(standardized[0], present[0])
-    candidate = normalize_feature_rows(standardized[1], present[1])
+    query = normalize_feature_rows(
+        apply_diagonal_weights(standardized[0], feature_weights), present[0]
+    )
+    candidate = normalize_feature_rows(
+        apply_diagonal_weights(standardized[1], feature_weights), present[1]
+    )
     similarities = query @ candidate.T
     return observed_neighbor_indices(similarities, roles=roles, player_ids=player_ids, count=5)
 
@@ -261,12 +294,16 @@ def prepare_bootstrap(
     role_values = cohort["role"].to_numpy()
     player_ids = cohort["player_id"].to_numpy().astype(np.int64, copy=False)
     competition_ids = cohort["competitionId"].to_numpy().astype(np.int64, copy=False)
-    neighbors = _observed_neighbors(observed_raw, observed_present, role_values, player_ids)
+    weight_values = feature_weight_vector(config, list(FEATURE_COLUMNS))
+    feature_weights = None if weight_values is None else np.asarray(weight_values, dtype=np.float64)
+    neighbors = _observed_neighbors(
+        observed_raw, observed_present, role_values, player_ids, feature_weights
+    )
     plan = build_draw_plan(
         assignment,
         requested_resamples=config["requested_resamples"],
         seed=config["seed"],
-        design_version=config["design_version"],
+        design_version=config.get("resampling_design", config["design_version"]),
     )
     return PreparedBootstrap(
         config=config,
@@ -283,6 +320,7 @@ def prepare_bootstrap(
         player_ids=player_ids,
         competition_ids=competition_ids,
         input_paths=input_paths,
+        feature_weights=feature_weights,
     )
 
 
@@ -299,6 +337,8 @@ def checkpoint_manifest(prepared: PreparedBootstrap) -> dict[str, Any]:
     return {
         "format": CHECKPOINT_FORMAT,
         "design_version": prepared.config["design_version"],
+        "ranking_method": prepared.config.get("ranking_method", "cosine_v1"),
+        "representation_id": prepared.representation_id,
         "requested_resamples": prepared.config["requested_resamples"],
         "supported_workers": [1, 2],
         "feature_columns": FEATURE_COLUMNS,
@@ -341,6 +381,7 @@ def execute_replicate(prepared: PreparedBootstrap, replicate: int) -> ReplicateR
         roles=prepared.roles,
         player_ids=prepared.player_ids,
         neighbor_indices=prepared.observed_neighbors,
+        feature_weights=prepared.feature_weights,
     )
     return ReplicateResult(
         replicate=replicate,

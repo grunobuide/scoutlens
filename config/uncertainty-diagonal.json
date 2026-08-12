@@ -1,0 +1,242 @@
+{
+  "config_version": 1,
+  "design_version": "match_bootstrap_diagonal_v1",
+  "resampling_design": "match_bootstrap_v1",
+  "resampling_design_note": "The draw plan is addressed by the RESAMPLING design, which is unchanged from match_bootstrap_v1. Only the scorer differs, and a scorer is not part of the resampling design. Keeping this label fixed preserves the draw-plan hash 05a0019e... and the draw_algorithm_test_vector, and is what allows feature-only summaries to equal the v1 run exactly under identical draws.",
+  "seed": 1729,
+  "requested_resamples": 500,
+  "interval": "percentile_95",
+  "interval_quantiles": [
+    0.025,
+    0.975
+  ],
+  "quantile_method": "linear_type_7",
+  "minimum_valid_resamples": 450,
+  "minimum_valid_fraction": 0.9,
+  "resampling_unit": "whole_match_stratified_by_competition_and_period",
+  "cohort_policy": "fixed_observed_eligible_cohort",
+  "strata": [
+    "competitionId",
+    "period"
+  ],
+  "stratum_order": [
+    "competitionId_ascending",
+    "period_a_before_b"
+  ],
+  "source_match_order": "match_id_ascending",
+  "sample_with_replacement": true,
+  "stratum_sample_size": "observed_distinct_match_count",
+  "duplicate_match_weighting": "integer_multiplicity_for_events_and_minutes",
+  "draw_algorithm": "sha256_counter_rejection_v1",
+  "draw_algorithm_test_vector": {
+    "payload": "match_bootstrap_v1|1729|0|10|A|0|0",
+    "sha256": "da4afa66317eacd2891e1bbdee1773cd744fdad7bd189291ea6fdf29a8618544",
+    "uint64_big_endian": 15729659965368872146,
+    "source_size": 2,
+    "selected_source_index": 0
+  },
+  "scaler_scope": "present_fixed_cohort_period_a_and_b_combined_per_replicate",
+  "absent_candidate_policy": "rank_after_present_candidates_by_identity_key",
+  "absent_query_policy": "invalidate_subject_replicate",
+  "zero_event_policy": "positive_minutes_zero_events_is_observed",
+  "raw_null_policy": "invalidate_only_that_feature_measure",
+  "identity_order": [
+    "player_id_ascending",
+    "competition_id_ascending"
+  ],
+  "percentile_tie_method": "average_rank",
+  "warning": "Match-bootstrap intervals describe sampling stability in observed matches, not causal effects, provider annotation error, or future performance.",
+  "assertion_tolerances": {
+    "raw_feature_abs": 1e-12,
+    "percentile_abs": 1e-09,
+    "similarity_abs": 1e-12,
+    "cosine_reconstruction_abs": 1e-09,
+    "interval_bound_abs": 1e-12,
+    "rate_abs": 1e-12,
+    "rank_exact": true,
+    "ordering_exact": true
+  },
+  "synthetic_fixture": "tests/uncertainty/fixtures/match_bootstrap_v1.json",
+  "ranking_method": "weighted_cosine_diagonal_v1",
+  "representation": {
+    "id": "rep-f018e6041ccbad10",
+    "ranking_method": "weighted_cosine_diagonal_v1",
+    "weight_digest": "f018e6041ccbad10fd5801e796bfd518b8c625804ebfd7b79c7fdec0ebcabcbe",
+    "feature_order": [
+      "passes_p90",
+      "pass_completion_pct",
+      "crosses_p90",
+      "long_balls_p90",
+      "progressive_pass_distance_p90",
+      "progressive_passes_p90",
+      "assists_p90",
+      "key_passes_p90",
+      "through_balls_p90",
+      "box_entries_p90",
+      "shots_p90",
+      "goals_p90",
+      "shot_conversion_pct",
+      "shots_on_target_pct",
+      "blocked_shot_pct",
+      "interceptions_p90",
+      "sliding_tackles_p90",
+      "clearances_p90",
+      "defensive_duel_win_pct",
+      "mean_x",
+      "mean_y",
+      "defensive_third_share",
+      "middle_third_share",
+      "attacking_third_share",
+      "touches_p90",
+      "duels_p90",
+      "duel_win_pct",
+      "take_on_success_pct"
+    ],
+    "feature_order_digest": "6215d477cc61f4ba7bd9412133b4efb1a464e64523e8cbf71f7da75f99a861df",
+    "feature_count": 28,
+    "excluded_features": [
+      "events_p90",
+      "smart_passes_p90",
+      "carry_proxy_p90",
+      "carry_distance_proxy_p90"
+    ],
+    "excluded_features_note": "Scored with weight 0. The diagonal representation is defined on the canonical-28 like-for-like set (D021); the engine ranks over all 32 Wyscout features, so the four excluded ones are pinned explicitly rather than defaulted, because an implicit zero would be an unpinned metric.",
+    "weights": [
+      {
+        "feature_id": "passes_p90",
+        "weight": 1.5901801989101
+      },
+      {
+        "feature_id": "pass_completion_pct",
+        "weight": 1.419396498174693
+      },
+      {
+        "feature_id": "crosses_p90",
+        "weight": 1.1921133649509723
+      },
+      {
+        "feature_id": "long_balls_p90",
+        "weight": 2.669475851016236
+      },
+      {
+        "feature_id": "progressive_pass_distance_p90",
+        "weight": 0.9556450291401037
+      },
+      {
+        "feature_id": "progressive_passes_p90",
+        "weight": 1.0519418132740432
+      },
+      {
+        "feature_id": "assists_p90",
+        "weight": 0.04066104316569659
+      },
+      {
+        "feature_id": "key_passes_p90",
+        "weight": 0.35136466822624324
+      },
+      {
+        "feature_id": "through_balls_p90",
+        "weight": 0.8341280762017677
+      },
+      {
+        "feature_id": "box_entries_p90",
+        "weight": 0.8702513149314666
+      },
+      {
+        "feature_id": "shots_p90",
+        "weight": 1.2203988986637764
+      },
+      {
+        "feature_id": "goals_p90",
+        "weight": 0.1615217770317846
+      },
+      {
+        "feature_id": "shot_conversion_pct",
+        "weight": 0.0019460649197877227
+      },
+      {
+        "feature_id": "shots_on_target_pct",
+        "weight": 0.0
+      },
+      {
+        "feature_id": "blocked_shot_pct",
+        "weight": 0.0
+      },
+      {
+        "feature_id": "interceptions_p90",
+        "weight": 1.106423775233296
+      },
+      {
+        "feature_id": "sliding_tackles_p90",
+        "weight": 1.1819587905091475
+      },
+      {
+        "feature_id": "clearances_p90",
+        "weight": 0.7187925864370907
+      },
+      {
+        "feature_id": "defensive_duel_win_pct",
+        "weight": 0.017805374365907574
+      },
+      {
+        "feature_id": "mean_x",
+        "weight": 0.7446304415544116
+      },
+      {
+        "feature_id": "mean_y",
+        "weight": 1.0479611532265414
+      },
+      {
+        "feature_id": "defensive_third_share",
+        "weight": 1.2545861395161972
+      },
+      {
+        "feature_id": "middle_third_share",
+        "weight": 2.561077241907522
+      },
+      {
+        "feature_id": "attacking_third_share",
+        "weight": 0.4601571165349625
+      },
+      {
+        "feature_id": "touches_p90",
+        "weight": 0.6252309486638163
+      },
+      {
+        "feature_id": "duels_p90",
+        "weight": 4.347294084167456
+      },
+      {
+        "feature_id": "duel_win_pct",
+        "weight": 1.5750577492769795
+      },
+      {
+        "feature_id": "take_on_success_pct",
+        "weight": 0.0
+      }
+    ],
+    "training": {
+      "provider": "wyscout_pappalardo",
+      "season": "2017/18",
+      "split": "train",
+      "split_digest": "715bdb90af59860c2510d6a69f43970c9734bef4e4e061740658d2496c30d96a",
+      "population": {
+        "players": 753,
+        "minutes_threshold_per_period": 450
+      },
+      "selected_regularization": 0.0
+    },
+    "lineage": {
+      "protocol_hash": "041cd1f7f514133a7e3c45724fef5c7fc1369d0115b8718f6b67f3177e60b4ce",
+      "protocol_hash_at_training": "886ba315b587a91d0fa9ab5c7387f172f8957cf2cfde8a39a65216cb4ff31f1d",
+      "protocol_hash_note": "Trained under the D041 protocol; D044 amended only the subgroup clause, proved by reconstructing the D041 hash (scoutlens-qop.4). The operative protocol is D044.",
+      "spec_hash": "47488d603e9246f45fdd3e3d0aa95835bb569e5793444b87950c34e2531aa3bd",
+      "decision_records": [
+        "D042",
+        "D044",
+        "D045",
+        "D047"
+      ]
+    }
+  }
+}
