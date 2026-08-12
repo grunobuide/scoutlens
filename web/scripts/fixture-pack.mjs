@@ -319,13 +319,21 @@ function buildEvidenceSet(catalog, profile, subject, cosine) {
   };
 }
 
+// Rank statistics are deliberately FRACTIONAL here, and the upper bound is
+// deliberately a double whose shortest round-trip representation carries binary
+// noise. Percentile interpolation produces exactly this shape in production
+// (median 166.5, interval 1-130.2), and every fixture previously used whole
+// numbers — so the raw-interpolation defect in scoutlens-jtt.16 rendered
+// "rank interval 1-111.09999999999991" in the published Lab while every test
+// passed against clean integers. The lower bound is a clean fractional so the
+// formatter is also shown not to mangle those.
 function rankUncertainty(status, median) {
   if (status === "available") {
     return {
       status,
       valid_resamples: 500,
-      median_rank: median,
-      rank_ci_95: [Math.max(1, median - 3), median + 7],
+      median_rank: median + 0.5,
+      rank_ci_95: [Math.max(1, median - 3) + 0.4, 111.09999999999991],
       recall_at_1_rate: 0.86,
       recall_at_5_rate: 0.93,
       recall_at_10_rate: 0.97,
@@ -359,8 +367,10 @@ function neighborStability(status) {
       status,
       valid_resamples: 500,
       top_5_selection_rate: 0.72,
-      median_rank: 6,
-      rank_ci_95: [3, 11],
+      // Fractional for the same reason as rankUncertainty: this is the path the
+      // neighbour drawer renders, and it had the identical raw-interpolation bug.
+      median_rank: 6.5,
+      rank_ci_95: [3.4, 91.57499999999993],
     };
   }
   if (status === "insufficient") {

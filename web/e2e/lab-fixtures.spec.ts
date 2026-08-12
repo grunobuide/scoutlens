@@ -93,14 +93,21 @@ test("uncertainty 'available' renders retrieval, baseline and neighbor stability
   const stability = page.locator(".retrieval-outcome__stability");
   await expect(stability).toHaveCount(3);
   await expect(stability.first()).toContainText("Available from 500 valid resamples");
-  await expect(stability.first()).toContainText("median rank 9");
-  await expect(stability.first()).toContainText("rank interval 6–16");
+  // Fractional rank statistics must render at one decimal place, never as the
+  // raw binary expansion — the fixture's upper bound is 111.09999999999991
+  // (scoutlens-jtt.16, D046).
+  await expect(stability.first()).toContainText("median rank 9.5");
+  await expect(stability.first()).toContainText("rank interval 6.4–111.1");
+  await expect(stability.first()).not.toContainText("111.09999999999991");
 
   await expect(page.locator(".neighbor-card__stability").first()).toContainText("available");
+  await expect(page.locator(".neighbor-card__stability").first()).not.toContainText("91.57499999999993");
 
   const dialog = await openFirstNeighborDrawer(page);
   await expect(dialog).toContainText("Available from 500 valid resamples");
-  await expect(dialog).toContainText("median rank 6");
+  await expect(dialog).toContainText("median rank 6.5");
+  await expect(dialog).toContainText("rank interval 3.4–91.6");
+  await expect(dialog).not.toContainText("91.57499999999993");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
 
