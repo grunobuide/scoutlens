@@ -18,6 +18,8 @@ from scoutlens.uncertainty.engine import (
     DEFAULT_CHECKPOINT_DIR,
     DEFAULT_OUTPUT_DIR,
     DEFAULT_PROCESSED_DIR,
+    checkpoint_dir_for,
+    output_dir_for,
     prepare_bootstrap,
     run_replicates,
     summarize_checkpoints,
@@ -153,9 +155,15 @@ def run_uncertainty(
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
-    parser.add_argument("--checkpoint-dir", type=Path, default=DEFAULT_CHECKPOINT_DIR)
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--uncertainty-config", type=Path, default=UNCERTAINTY_CONFIG_PATH)
+    parser.add_argument("--checkpoint-dir", type=Path, default=None)
+    parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument(
+        "--uncertainty-config",
+        "--config",
+        dest="uncertainty_config",
+        type=Path,
+        default=UNCERTAINTY_CONFIG_PATH,
+    )
     parser.add_argument("--workers", type=int, choices=(1, 2), default=1)
     parser.add_argument("--chunk-size", type=int, default=10)
     return parser.parse_args()
@@ -163,10 +171,11 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = _parse_args()
+    design = load_uncertainty_config(args.uncertainty_config)["design_version"]
     result = run_uncertainty(
         processed_dir=args.processed_dir,
-        checkpoint_dir=args.checkpoint_dir,
-        output_dir=args.output_dir,
+        checkpoint_dir=args.checkpoint_dir or checkpoint_dir_for(design),
+        output_dir=args.output_dir or output_dir_for(design),
         uncertainty_config_path=args.uncertainty_config,
         workers=args.workers,
         chunk_size=args.chunk_size,

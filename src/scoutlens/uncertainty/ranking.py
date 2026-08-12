@@ -15,6 +15,25 @@ class ReplicateRanks:
     neighbor_ranks: np.ndarray
 
 
+def apply_diagonal_weights(values: np.ndarray, weights: np.ndarray | None) -> np.ndarray:
+    """Scale features by `sqrt(w)` so plain cosine computes the diagonal score.
+
+        s(q, c) = sum_i w_i q_i c_i / (sqrt(sum_i w_i q_i^2) sqrt(sum_i w_i c_i^2))
+                = cos(sqrt(w) * q, sqrt(w) * c)
+
+    Returning the input untouched when `weights is None` is what keeps the
+    cosine design bit-identical: `match_bootstrap_v1` never enters this path.
+    """
+    if weights is None:
+        return values
+    if weights.shape[-1] != values.shape[-1]:
+        raise ValueError(
+            f"diagonal weight vector has {weights.shape[-1]} entries for "
+            f"{values.shape[-1]} feature columns"
+        )
+    return values * np.sqrt(np.maximum(weights, 0.0))
+
+
 def normalize_feature_rows(values: np.ndarray, present: np.ndarray) -> np.ndarray:
     output = np.zeros_like(values, dtype=np.float64)
     if not np.any(present):
@@ -59,16 +78,28 @@ def compute_replicate_ranks(
     roles: np.ndarray,
     player_ids: np.ndarray,
     neighbor_indices: np.ndarray,
+    feature_weights: np.ndarray | None = None,
 ) -> ReplicateRanks:
-    """Rank self and observed neighbors with missing candidates at the bottom."""
+    """Rank self and observed neighbors with missing candidates at the bottom.
+
+    `feature_weights` selects the scorer and nothing else. `None` is unweighted
+    cosine (`match_bootstrap_v1`); a weight vector is the D045 diagonal
+    representation (`match_bootstrap_diagonal_v1`). The draw plan, cohort,
+    minutes baseline, tie-breaking and validity rules are identical either way —
+    only the similarity changes.
+    """
     size = query_features.shape[0]
     if candidate_features.shape[0] != size:
         raise ValueError("query and candidate fixed cohorts must have equal size")
     identity_before = np.arange(size)[None, :] < np.arange(size)[:, None]
     same_role = roles[None, :] == roles[:, None]
 
-    normalized_queries = normalize_feature_rows(query_features, query_present)
-    normalized_candidates = normalize_feature_rows(candidate_features, candidate_present)
+    normalized_queries = normalize_feature_rows(
+        apply_diagonal_weights(query_features, feature_weights), query_present
+    )
+    normalized_candidates = normalize_feature_rows(
+        apply_diagonal_weights(candidate_features, feature_weights), candidate_present
+    )
     similarities = normalized_queries @ normalized_candidates.T
     effective = similarities.copy()
     effective[:, ~candidate_present] = -np.inf
