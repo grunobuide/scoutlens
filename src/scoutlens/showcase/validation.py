@@ -530,10 +530,16 @@ def validate_representation_artifact(artifact: dict, *, label: str = V2_REPRESEN
 
 def validate_v2_representation_binding(artifacts: dict[str, dict], representation_id: str) -> None:
     """Every block that carries a representation id must carry the same one."""
+    ranking_artifacts = {
+        path: artifact for path, artifact in artifacts.items() if path != V2_REPRESENTATION_PATH
+    }
     found: set[str] = set()
     for artifact in artifacts.values():
         _collect_representation_ids(artifact, found)
-    if not found:
+    if ranking_artifacts and not found:
+        # representation.json declares its identity as `representation.id`, not
+        # as a `representation_id` reference, so a bundle containing only that
+        # file has no rankings to bind. Anything else must name what produced it.
         raise ValueError(
             "no artifact references a representation_id; a v2 ranking that cannot name the "
             "representation that produced it is unpublishable"
