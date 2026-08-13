@@ -28,6 +28,7 @@ from scoutlens.showcase.catalog import (
 )
 from scoutlens.showcase.caveats import profile_caveats
 from scoutlens.showcase.io import canonical_content_digest
+from scoutlens.showcase.representation import DiagonalRepresentation
 from scoutlens.showcase.research import build_research_summary, load_research_sources
 from scoutlens.showcase.uncertainty import (
     BootstrapSummaries,
@@ -308,66 +309,138 @@ def _evidence_for_candidate(
     id_prefix: str,
     query: dict[str, Any],
     candidate: dict[str, Any],
-) -> tuple[float, list[dict]]:
+    representation: DiagonalRepresentation | None = None,
+) -> tuple[float, float, list[dict]]:
+    """Decompose a candidate's similarity into per-feature and per-family parts.
+
+    Returns ``(cosine, similarity_score, rows)``.
+
+    With no representation this is the v1 decomposition and ``similarity_score``
+    is the cosine, so the v1 path is unchanged. With a representation the rows
+    additionally carry ``feature_weight`` and ``weighted_contribution``:
+
+        contribution_i          = q_i c_i / (||q|| ||c||)
+        weighted_contribution_i = w_i q_i c_i / (||sqrt(w)q|| ||sqrt(w)c||)
+
+    Both decompositions are kept because they answer different questions. The
+    weighted one reconstructs the score actually shown (D047's rule); the
+    unweighted one is the cosine audit view D045 promised to retain, and it is
+    the only way a reader can see what the weighting *changed*.
+
+    ``query_global_z`` and ``candidate_global_z`` are always read from the
+    unscaled measurement frame. They describe the player, not the ranking.
+    """
     query_norm = math.sqrt(math.fsum(float(query[feature]) ** 2 for feature in FEATURE_COLUMNS))
     candidate_norm = math.sqrt(math.fsum(float(candidate[feature]) ** 2 for feature in FEATURE_COLUMNS))
     denominator = query_norm * candidate_norm
+
+    weights: dict[str, float] = {}
+    weighted_denominator = 0.0
+    if representation is not None:
+        weights = {
+            feature: value
+            for feature, value in zip(
+                FEATURE_COLUMNS,
+                representation.weight_vector(list(FEATURE_COLUMNS)),
+                strict=True,
+            )
+        }
+        weighted_query_norm = math.sqrt(
+            math.fsum(weights[feature] * float(query[feature]) ** 2 for feature in FEATURE_COLUMNS)
+        )
+        weighted_candidate_norm = math.sqrt(
+            math.fsum(weights[feature] * float(candidate[feature]) ** 2 for feature in FEATURE_COLUMNS)
+        )
+        weighted_denominator = weighted_query_norm * weighted_candidate_norm
+
     feature_rows: list[dict] = []
     by_family: dict[str, list[float]] = defaultdict(list)
+    weighted_by_family: dict[str, list[float]] = defaultdict(list)
     for feature_id in FEATURE_COLUMNS:
         contribution = float(query[feature_id]) * float(candidate[feature_id]) / denominator if denominator > 0 else 0.0
         family = FEATURE_CATALOG[FEATURE_ORDER[feature_id]]["family"]
         by_family[family].append(contribution)
-        feature_rows.append(
-            {
-                "evidence_id": f"{id_prefix}-feature-{feature_id}",
-                "subject": subject,
-                "kind": "feature_contribution",
-                "feature_id": feature_id,
-                "family": family,
-                "query_global_z": float(query[feature_id]),
-                "candidate_global_z": float(candidate[feature_id]),
-                "contribution": contribution,
-                "interpretation": _interpretation(contribution),
-            }
-        )
-    feature_rows.sort(key=lambda row: (-abs(row["contribution"]), FEATURE_ORDER[row["feature_id"]]))
+        row = {
+            "evidence_id": f"{id_prefix}-feature-{feature_id}",
+            "subject": subject,
+            "kind": "feature_contribution",
+            "feature_id": feature_id,
+            "family": family,
+            "query_global_z": float(query[feature_id]),
+            "candidate_global_z": float(candidate[feature_id]),
+            "contribution": contribution,
+            "interpretation": _interpretation(contribution),
+        }
+        if representation is not None:
+            weight = weights[feature_id]
+            weighted = (
+                weight * float(query[feature_id]) * float(candidate[feature_id]) / weighted_denominator
+                if weighted_denominator > 0
+                else 0.0
+            )
+            weighted_by_family[family].append(weighted)
+            row["representation_id"] = representation.id
+            row["feature_weight"] = weight
+            row["weighted_contribution"] = weighted
+        feature_rows.append(row)
+
+    sort_key = "weighted_contribution" if representation is not None else "contribution"
+    feature_rows.sort(key=lambda row: (-abs(row[sort_key]), FEATURE_ORDER[row["feature_id"]]))
+
     family_rows: list[dict[str, Any]] = []
     for family in FEATURE_FAMILIES:
         contribution = math.fsum(by_family[family])
-        family_rows.append(
-            {
-                "evidence_id": f"{id_prefix}-family-{family}",
-                "subject": subject,
-                "kind": "family_contribution",
-                "feature_id": None,
-                "family": family,
-                "query_global_z": None,
-                "candidate_global_z": None,
-                "contribution": contribution,
-                "interpretation": _interpretation(contribution),
-            }
-        )
-    family_rows.sort(key=lambda row: (-abs(row["contribution"]), FAMILY_ORDER[row["family"]]))
+        row = {
+            "evidence_id": f"{id_prefix}-family-{family}",
+            "subject": subject,
+            "kind": "family_contribution",
+            "feature_id": None,
+            "family": family,
+            "query_global_z": None,
+            "candidate_global_z": None,
+            "contribution": contribution,
+            "interpretation": _interpretation(contribution),
+        }
+        if representation is not None:
+            row["representation_id"] = representation.id
+            row["feature_weight"] = None
+            row["weighted_contribution"] = math.fsum(weighted_by_family[family])
+        family_rows.append(row)
+    family_rows.sort(key=lambda row: (-abs(row[sort_key]), FAMILY_ORDER[row["family"]]))
+
     cosine = math.fsum(row["contribution"] for row in feature_rows)
-    return cosine, feature_rows + family_rows
+    similarity = (
+        cosine
+        if representation is None
+        else math.fsum(row["weighted_contribution"] for row in feature_rows)
+    )
+    return cosine, similarity, feature_rows + family_rows
 
 
 def _retrieval_outcome(
     candidate_count: int,
     self_rank: int,
-    cosine: float | None,
+    score: float | None,
     evidence_refs: list[str],
     uncertainty: dict | None,
+    representation: DiagonalRepresentation | None = None,
 ) -> dict:
-    return {
+    """v1 reports `cosine_similarity`; v2 reports `similarity_score` and names
+    the representation that produced it. D047 forbids publishing a weighted
+    metric under a field name that claims plain cosine."""
+    outcome: dict[str, Any] = {
         "candidate_count": candidate_count,
         "self_rank": self_rank,
         "reciprocal_rank": 1.0 / self_rank,
-        "cosine_similarity": cosine,
-        "evidence_refs": evidence_refs,
-        "uncertainty": uncertainty if uncertainty is not None else _pending_rank_uncertainty(),
     }
+    if representation is None:
+        outcome["cosine_similarity"] = score
+    else:
+        outcome["similarity_score"] = score
+        outcome["representation_id"] = representation.id
+    outcome["evidence_refs"] = evidence_refs
+    outcome["uncertainty"] = uncertainty if uncertainty is not None else _pending_rank_uncertainty()
+    return outcome
 
 
 def _normalized_name(value: str) -> str:
@@ -381,6 +454,7 @@ def build_showcase_bundle(
     minutes_threshold: int,
     expected_profile_count: int | None = EXPECTED_PROFILE_COUNT,
     uncertainty: BootstrapSummaries | None = None,
+    representation: DiagonalRepresentation | None = None,
 ) -> ShowcaseBundle:
     players, competitions, team_names = _identity_lookups(inputs)
     role_lookup = inputs.players.select(
@@ -425,9 +499,27 @@ def build_showcase_bundle(
 
     query_rows = standardized.filter(pl.col("period") == "A").sort(["player_id", "competitionId"])
     candidate_rows = standardized.filter(pl.col("period") == "B").sort(["player_id", "competitionId"])
-    candidate_rank_frame = candidate_rows.select(
+    # The ranking frame is the ONLY thing scaled. cosine over sqrt(w)-scaled
+    # vectors is the diagonal score, so the audited ranking path is reused
+    # unchanged. `standardized` stays the measurement frame that every stored
+    # fingerprint and z-score is read from.
+    if representation is None:
+        ranking_query_rows, ranking_candidate_rows = query_rows, candidate_rows
+    else:
+        root_weights = representation.sqrt_weight_vector(list(FEATURE_COLUMNS))
+        scale = [
+            (pl.col(feature) * factor).alias(feature)
+            for feature, factor in zip(FEATURE_COLUMNS, root_weights, strict=True)
+        ]
+        ranking_query_rows = query_rows.with_columns(scale)
+        ranking_candidate_rows = candidate_rows.with_columns(scale)
+    candidate_rank_frame = ranking_candidate_rows.select(
         ["player_id", "competitionId", "role", "minutes_played"] + FEATURE_COLUMNS
     )
+    ranking_query_by_key = {
+        (int(row["player_id"]), int(row["competitionId"])): row
+        for row in ranking_query_rows.to_dicts()
+    }
     role_counts = {str(row["role"]): int(row["len"]) for row in query_rows.group_by("role").len().to_dicts()}
 
     profile_artifacts: dict[str, dict] = {}
@@ -437,7 +529,10 @@ def build_showcase_bundle(
         competition_id = int(query["competitionId"])
         key = profile_key(player_id, competition_id)
         role = str(query["role"])
-        query_features = {feature_id: float(query[feature_id]) for feature_id in FEATURE_COLUMNS}
+        ranking_query = ranking_query_by_key[(player_id, competition_id)]
+        query_features = {
+            feature_id: float(ranking_query[feature_id]) for feature_id in FEATURE_COLUMNS
+        }
 
         ranked_global = baseline_b_rank(query_features, candidate_rank_frame, FEATURE_COLUMNS)
         ranked_role = baseline_b_rank(
@@ -451,7 +546,10 @@ def build_showcase_bundle(
         role_self = ranked_role.filter(same).row(0, named=True)
         baseline_self = baseline.filter(same).row(0, named=True)
         self_candidate = std_rows[(player_id, competition_id, "B")]
-        self_cosine, self_evidence = _evidence_for_candidate("self_retrieval", "self", query, self_candidate)
+        self_cosine, self_similarity, self_evidence = _evidence_for_candidate(
+            "self_retrieval", "self", query, self_candidate, representation
+        )
+        self_score = self_cosine if representation is None else self_similarity
         self_refs = [row["evidence_id"] for row in self_evidence]
 
         neighbor_rows = (
@@ -470,8 +568,12 @@ def build_showcase_bundle(
             neighbor_competition_id = int(neighbor["competitionId"])
             neighbor_key = profile_key(neighbor_player_id, neighbor_competition_id)
             neighbor_candidate = std_rows[(neighbor_player_id, neighbor_competition_id, "B")]
-            cosine, evidence = _evidence_for_candidate(
-                f"neighbor:{neighbor_key}", f"neighbor-{neighbor_key}", query, neighbor_candidate
+            cosine, similarity, evidence = _evidence_for_candidate(
+                f"neighbor:{neighbor_key}",
+                f"neighbor-{neighbor_key}",
+                query,
+                neighbor_candidate,
+                representation,
             )
             evidence_index.extend(evidence)
             neighbor_context = contexts[(neighbor_player_id, neighbor_competition_id, "B")]
@@ -485,7 +587,14 @@ def build_showcase_bundle(
                     "competition": competitions[neighbor_competition_id],
                     "teams": [{"id": team["id"], "name": team["name"]} for team in neighbor_context["teams"]],
                     "candidate_period": "b",
-                    "cosine_similarity": cosine,
+                    **(
+                        {"cosine_similarity": cosine}
+                        if representation is None
+                        else {
+                            "similarity_score": similarity,
+                            "representation_id": representation.id,
+                        }
+                    ),
                     "evidence_refs": [row["evidence_id"] for row in evidence],
                     "stability": (
                         _pending_neighbor_stability()
@@ -557,16 +666,18 @@ def build_showcase_bundle(
                 "global": _retrieval_outcome(
                     ranked_global.height,
                     int(global_self["rank"]),
-                    self_cosine,
+                    self_score,
                     self_refs,
                     outcome_uncertainty["global"],
+                    representation,
                 ),
                 "within_role": _retrieval_outcome(
                     ranked_role.height,
                     int(role_self["rank"]),
-                    self_cosine,
+                    self_score,
                     self_refs,
                     outcome_uncertainty["within_role"],
+                    representation,
                 ),
                 "baseline_role_minutes": _retrieval_outcome(
                     baseline.height,
@@ -574,6 +685,7 @@ def build_showcase_bundle(
                     None,
                     [],
                     outcome_uncertainty["baseline_role_minutes"],
+                    representation,
                 ),
             },
             "neighbors": neighbors,
