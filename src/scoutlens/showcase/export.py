@@ -50,6 +50,11 @@ DEFAULT_ARTIFACT_DIR = REPO_ROOT / "artifacts"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "public" / "showcase" / "v1"
 DEFAULT_UNCERTAINTY_RUN_DIR = DEFAULT_BOOTSTRAP_RUN_DIR
 
+V1_SCHEMA_VERSION = "1.0.0"
+V2_SCHEMA_VERSION = "2.0.0"
+SUPPORTED_SCHEMA_VERSIONS = (V1_SCHEMA_VERSION, V2_SCHEMA_VERSION)
+V2_REPRESENTATION_PATH = "representation.json"
+
 
 def _input_inventory(processed_dir: Path, artifact_dir: Path, bootstrap_run_dir: Path) -> list[tuple[str, Path]]:
     processed = [
@@ -80,6 +85,63 @@ def _input_inventory(processed_dir: Path, artifact_dir: Path, bootstrap_run_dir:
             REPO_ROOT / "src" / "scoutlens" / "showcase" / "schemas" / "showcase-1.0.0.schema.json",
         ),
     ]
+
+
+def build_representation_artifact(representation, dataset_version: str, training: dict) -> dict:
+    """Assemble representation.json from an already-verified representation.
+
+    Nothing here is hand-authored: every field is read from the object that
+    `load_representation` returned only after recomputing its digests and
+    cross-checking the weights against the recorded D042 benchmark.
+    """
+    return {
+        "contract": CONTRACT,
+        "schema_version": V2_SCHEMA_VERSION,
+        "dataset_version": dataset_version,
+        "representation": {
+            "id": representation.id,
+            "ranking_method": "weighted_cosine_diagonal_v1",
+            "weight_digest": representation.weight_digest,
+            "feature_order": list(representation.feature_order),
+            "feature_order_digest": representation.feature_order_digest,
+            "feature_count": len(representation.feature_order),
+            "weights": [
+                {"feature_id": feature, "weight": representation.weights_by_feature[feature]}
+                for feature in representation.feature_order
+            ],
+            "training": {
+                "provider": "wyscout_pappalardo",
+                "season": "2017/18",
+                "split_digest": training["split_digest"],
+                "split": training["split"],
+                "population": {
+                    "players": int(training["population"]["players"]),
+                    "minutes_threshold_per_period": int(
+                        training["population"]["minutes_threshold_per_period"]
+                    ),
+                },
+            },
+            "lineage": {
+                "protocol_hash": representation.lineage["protocol_hash"],
+                "spec_hash": representation.lineage["spec_hash"],
+                "decision_records": list(representation.lineage["decision_records"]),
+            },
+            "uncertainty_design": "match_bootstrap_diagonal_v1",
+            "audit_baseline": {
+                "method": "cosine_v1",
+                "contract": "scoutlens.showcase/1.0.0",
+                "note": (
+                    "Frozen cosine remains the transparent audit baseline (D045); "
+                    "w = 1 reproduces it exactly."
+                ),
+            },
+            "prohibited_claims": [
+                "no causal claim",
+                "no recruitment or transfer-success claim",
+                "no prediction of future performance",
+            ],
+        },
+    }
 
 
 def _records_for(path: str, artifact: dict) -> int:

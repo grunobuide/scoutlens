@@ -21,6 +21,10 @@ from scoutlens.showcase.catalog import EXPECTED_PROFILE_COUNT
 from scoutlens.uncertainty.config import UNCERTAINTY_CONFIG_PATH, load_uncertainty_config
 
 DEFAULT_BOOTSTRAP_RUN_DIR = REPO_ROOT / "artifacts" / "uncertainty" / "match_bootstrap_v1"
+DIAGONAL_BOOTSTRAP_RUN_DIR = REPO_ROOT / "artifacts" / "uncertainty" / "match_bootstrap_diagonal_v1"
+
+DIAGONAL_DESIGN = "match_bootstrap_diagonal_v1"
+DIAGONAL_RANKING_METHOD = "weighted_cosine_diagonal_v1"
 
 RUN_METADATA_FILE = "run.json"
 FEATURE_FILE = "feature-uncertainty.parquet"
@@ -124,6 +128,7 @@ class BootstrapSummaries:
 def load_bootstrap_summaries(
     run_dir: Path = DEFAULT_BOOTSTRAP_RUN_DIR,
     uncertainty_config_path: Path = UNCERTAINTY_CONFIG_PATH,
+    representation: Any = None,
 ) -> BootstrapSummaries:
     """Load and cross-check the complete canonical bootstrap run.
 
@@ -151,6 +156,28 @@ def load_bootstrap_summaries(
             f"{run_manifest.get('profile_count')!r} != {EXPECTED_PROFILE_COUNT}"
         )
 
+    # A v2 bundle may only carry intervals computed under its own
+    # representation. v1 intervals describe the sampling stability of
+    # COSINE-based ranks; attaching them to diagonal rankings would show an
+    # interval that does not describe the number beside it.
+    if representation is not None:
+        if config["design_version"] != DIAGONAL_DESIGN:
+            raise ValueError(
+                f"a diagonal bundle requires design {DIAGONAL_DESIGN}, but the uncertainty "
+                f"config declares {config['design_version']!r}"
+            )
+        if run_manifest.get("ranking_method") != DIAGONAL_RANKING_METHOD:
+            raise ValueError(
+                f"bootstrap run was scored with {run_manifest.get('ranking_method')!r}, not "
+                f"{DIAGONAL_RANKING_METHOD!r}; cosine uncertainty cannot describe a diagonal ranking"
+            )
+        recorded_id = run_manifest.get("representation_id")
+        if recorded_id != representation.id:
+            raise ValueError(
+                f"bootstrap run was computed under representation {recorded_id!r}, not "
+                f"{representation.id!r}"
+            )
+
     feature = _indexed_rows(pl.read_parquet(run_dir / FEATURE_FILE), FEATURE_KEY_COLUMNS, FEATURE_FILE)
     rank = _indexed_rows(pl.read_parquet(run_dir / RETRIEVAL_FILE), RANK_KEY_COLUMNS, RETRIEVAL_FILE)
     neighbor = _indexed_rows(pl.read_parquet(run_dir / NEIGHBOR_FILE), NEIGHBOR_KEY_COLUMNS, NEIGHBOR_FILE)
@@ -169,9 +196,15 @@ def load_bootstrap_summaries(
         if row["status"] not in VALID_STATUSES:
             raise ValueError(f"{NEIGHBOR_FILE}: unexpected status {row['status']!r} at {key}")
 
-    feature_blocks = {key: _feature_block(row) for key, row in feature.items()}
-    rank_blocks = {key: _rank_block(row) for key, row in rank.items()}
-    neighbor_blocks = {key: _neighbor_block(row) for key, row in neighbor.items()}
+    # The v2 schema requires representation_id on every uncertainty-bearing
+    # block, so an interval can always be traced to the metric it was
+    # computed under. v1 blocks are emitted unchanged.
+    binding = {} if representation is None else {"representation_id": representation.id}
+    feature_blocks = {key: {**_feature_block(row), **binding} for key, row in feature.items()}
+    rank_blocks = {key: {**_rank_block(row), **binding} for key, row in rank.items()}
+    neighbor_blocks = {
+        key: {**_neighbor_block(row), **binding} for key, row in neighbor.items()
+    }
 
     warning = str(config["warning"])
     profile_status: dict[tuple[int, int], str] = {}
@@ -193,6 +226,11 @@ def load_bootstrap_summaries(
             "resampling_unit": config["resampling_unit"],
             "cohort_policy": config["cohort_policy"],
             "warning": warning,
+            **(
+                {}
+                if representation is None
+                else {"representation_id": representation.id}
+            ),
         }
 
     return BootstrapSummaries(
