@@ -139,7 +139,7 @@ export interface Manifest {
 }
 export interface FeatureCatalogArtifact {
   contract: "scoutlens.showcase";
-  schema_version: "1.0.0";
+  schema_version: "2.0.0";
   dataset_version: DatasetVersion;
   /**
    * @minItems 32
@@ -197,7 +197,7 @@ export interface FeatureDefinition {
 }
 export interface PlayerIndexArtifact {
   contract: "scoutlens.showcase";
-  schema_version: "1.0.0";
+  schema_version: "2.0.0";
   dataset_version: DatasetVersion;
   profiles: PlayerIndexItem[];
 }
@@ -236,7 +236,7 @@ export interface TeamMinutes {
 }
 export interface PlayerProfileArtifact {
   contract: "scoutlens.showcase";
-  schema_version: "1.0.0";
+  schema_version: "2.0.0";
   dataset_version: DatasetVersion;
   profile_key: ProfileKey;
   identity: {
@@ -726,7 +726,7 @@ export interface EvidenceItem {
 }
 export interface ResearchSummaryArtifact {
   contract: "scoutlens.showcase";
-  schema_version: "1.0.0";
+  schema_version: "2.0.0";
   dataset_version: DatasetVersion;
   supported_claim: string;
   /**

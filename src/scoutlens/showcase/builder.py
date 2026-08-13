@@ -25,6 +25,7 @@ from scoutlens.showcase.catalog import (
     FEATURE_ORDER,
     RATIO_SUPPORT_COLUMNS,
     SCHEMA_VERSION,
+    SCHEMA_VERSION_V2,
 )
 from scoutlens.showcase.caveats import profile_caveats
 from scoutlens.showcase.io import canonical_content_digest
@@ -456,6 +457,11 @@ def build_showcase_bundle(
     uncertainty: BootstrapSummaries | None = None,
     representation: DiagonalRepresentation | None = None,
 ) -> ShowcaseBundle:
+    # Every artifact in a bundle is stamped with the contract major it is
+    # published under. A v2 artifact stamped 1.0.0 is rejected outright, and a
+    # consumer reading that field would route a diagonal payload to the cosine
+    # schema.
+    schema_version = SCHEMA_VERSION if representation is None else SCHEMA_VERSION_V2
     players, competitions, team_names = _identity_lookups(inputs)
     role_lookup = inputs.players.select(
         pl.col("wyId").alias("player_id"), pl.col("role").struct.field("name").alias("role")
@@ -647,7 +653,7 @@ def build_showcase_bundle(
         )
         profile = {
             "contract": CONTRACT,
-            "schema_version": SCHEMA_VERSION if representation is None else "2.0.0",
+            "schema_version": schema_version,
             "dataset_version": VERSION_PLACEHOLDER,
             "profile_key": key,
             "identity": identity,
@@ -715,17 +721,19 @@ def build_showcase_bundle(
     artifacts: dict[str, dict] = {
         "feature-catalog.json": {
             "contract": CONTRACT,
-            "schema_version": SCHEMA_VERSION if representation is None else "2.0.0",
+            "schema_version": schema_version,
             "dataset_version": VERSION_PLACEHOLDER,
             "features": FEATURE_CATALOG,
         },
         "players.index.json": {
             "contract": CONTRACT,
-            "schema_version": SCHEMA_VERSION if representation is None else "2.0.0",
+            "schema_version": schema_version,
             "dataset_version": VERSION_PLACEHOLDER,
             "profiles": index_items,
         },
-        "research-summary.json": build_research_summary(VERSION_PLACEHOLDER, inputs.research_sources),
+        "research-summary.json": build_research_summary(
+            VERSION_PLACEHOLDER, inputs.research_sources, schema_version=schema_version
+        ),
         **profile_artifacts,
     }
     digest = canonical_content_digest(artifacts)

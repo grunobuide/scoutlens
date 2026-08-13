@@ -68,7 +68,16 @@ def _experiment(
     }
 
 
-def build_research_summary(dataset_version: str, sources: dict[str, dict]) -> dict:
+def build_research_summary(
+    dataset_version: str, sources: dict[str, dict], *, schema_version: str = SCHEMA_VERSION
+) -> dict:
+    """The research summary for one dataset.
+
+    `schema_version` is a parameter rather than the module constant because the
+    summary is published under whichever contract major the bundle is: a v2
+    bundle carrying a `1.0.0`-stamped summary is rejected, and a consumer
+    reading that field would route it to the cosine schema.
+    """
     gate2 = sources["gate2"]
     robustness = sources["robustness"]
     transfer = sources["transfer"]
@@ -227,7 +236,7 @@ def build_research_summary(dataset_version: str, sources: dict[str, dict]) -> di
 
     return {
         "contract": CONTRACT,
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": schema_version,
         "dataset_version": dataset_version,
         "supported_claim": (
             "Event-derived profiles contain a reproducible individual fingerprint that supports same-player "
