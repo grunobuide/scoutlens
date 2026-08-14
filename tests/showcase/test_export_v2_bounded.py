@@ -1,6 +1,6 @@
 """End-to-end bounded showcase-v2 export (`scoutlens-qop.6.4.2`, AC2 and AC5).
 
-Bounded means one competition (~260 profiles) rather than the full 1,257: the
+Bounded means one competition rather than the full 1,257: the
 contract semantics are proven end to end without a production regeneration,
 which is explicitly this leaf's non-goal.
 
@@ -9,21 +9,10 @@ Wyscout data and the diagonal uncertainty run. Skipped by default so the
 offline suite stays offline.
 
 This suite is the first thing to route a schema-complete artifact through
-`major=2`, and it is what proved the frozen v2 contract unsatisfiable: the
-schema pinned `schema_version` to `"1.0.0"` on the catalog, index, profile and
-research artifacts while `validate_v2_bundle` required `"2.0.0"`.
-`scoutlens-qop.6.4.5` corrected that, and the whole 225-profile bundle now
-passes `validate_v2_bundle`.
-
-**Still blocked, now on this leaf's own remaining work.** `export_showcase`
-then calls `validate_published_directory`, which is v1-hardcoded: it validates
-the on-disk manifest at the default major and applies v1 profile semantics. A
-v2 bundle is rejected there, after the contract validator has already accepted
-it. Making that path major-aware is `scoutlens-qop.6.4.2`'s own AC2/AC5 work on
-its own allowed surface.
-
-The block is `xfail(strict=True)` rather than a skip on purpose: a skip would
-hide the failure, and a non-strict xfail would rot silently.
+`major=2`, and it is what found both blockers it since cleared: the frozen v2
+schema pinned `schema_version` to `"1.0.0"` on four artifact types
+(`scoutlens-qop.6.4.5`, `D048`), and the publication path was v1-hardcoded
+below the contract validator.
 """
 
 from __future__ import annotations
@@ -42,7 +31,11 @@ PROCESSED = REPO_ROOT / "data" / "processed"
 DIAGONAL_RUN = REPO_ROOT / "artifacts" / "uncertainty" / "match_bootstrap_diagonal_v1"
 BENCHMARK = REPO_ROOT / "artifacts" / "benchmark" / "diagonal-results.json"
 
-BOUNDED_COMPETITION = 426  # smallest eligible cohort, ~225 profiles
+#: The editorially featured profile is ``wy-8287-c-795``, so the bounded
+#: cohort is competition 795: the manifest names that profile and validation
+#: requires it to resolve. Choosing a cohort without it would have meant
+#: relaxing a published-directory rule to fit a fixture.
+BOUNDED_COMPETITION = 795
 REPRESENTATION_ID = "rep-f018e6041ccbad10"
 
 pytestmark = [
@@ -51,11 +44,6 @@ pytestmark = [
         or not (PROCESSED / "period_profiles.parquet").is_file()
         or not (DIAGONAL_RUN / "run.json").is_file(),
         reason="requires local processed data, the diagonal uncertainty run and SCOUTLENS_SHOWCASE_INTEGRATION=1",
-    ),
-    pytest.mark.xfail(
-        strict=True,
-        reason="blocked by the remaining scoutlens-qop.6.4.2 work: validate_published_directory is "
-        "v1-hardcoded and rejects a v2 bundle that validate_v2_bundle has already accepted",
     ),
 ]
 

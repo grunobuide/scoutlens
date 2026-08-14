@@ -49,6 +49,7 @@ from scoutlens.showcase.uncertainty import (
     load_bootstrap_summaries,
 )
 from scoutlens.showcase.validation import (
+    records_for,
     validate_bundle,
     validate_published_directory,
     validate_v2_bundle,
@@ -154,18 +155,6 @@ def build_representation_artifact(representation, dataset_version: str, training
     }
 
 
-def _records_for(path: str, artifact: dict) -> int:
-    if path == V2_REPRESENTATION_PATH:
-        return len(artifact["representation"]["weights"])
-    if path == "feature-catalog.json":
-        return len(artifact["features"])
-    if path == "players.index.json":
-        return len(artifact["profiles"])
-    if path == "research-summary.json":
-        return len(artifact["experiments"])
-    return 1
-
-
 def _build_manifest(
     *,
     bundle,
@@ -238,7 +227,7 @@ def _build_manifest(
                 "media_type": "application/json",
                 "sha256": sha256_bytes(serialized[path]),
                 "bytes": len(serialized[path]),
-                "records": _records_for(path, artifacts[path]),
+                "records": records_for(path, artifacts[path]),
             }
             for path in sorted(serialized)
         ],
@@ -340,6 +329,7 @@ def export_showcase(
             staging,
             expected_profile_count=expected_profile_count,
             research_sources=inputs.research_sources,
+            schema_version=schema_version,
         )
         publish_directory(staging, output_dir)
     except Exception:

@@ -379,3 +379,54 @@ def test_the_v1_uncertainty_path_is_unchanged_by_the_gate(tmp_path) -> None:
     with pytest.raises(Exception) as caught:
         load_bootstrap_summaries(tmp_path, UNCERTAINTY_CONFIG_PATH)
     assert "representation" not in str(caught.value).lower()
+
+
+# --- The publication path is major-aware (scoutlens-qop.6.4.2, AC2/AC5) ----
+
+
+def test_producer_and_validator_share_one_record_rule() -> None:
+    """`records_for` was written twice and the copies disagreed about
+    `representation.json`: the exporter counted its weights, the validator
+    returned 1, so every v2 bundle failed its own manifest integrity check.
+    Identity, not equal behaviour - two functions that agree today can drift."""
+    from scoutlens.showcase import export, validation
+
+    assert export.records_for is validation.records_for
+
+
+def test_the_representation_record_count_is_its_weight_count(artifact) -> None:
+    from scoutlens.showcase.validation import records_for
+
+    assert records_for(V2_REPRESENTATION_PATH, artifact) == 28
+
+
+def test_the_publication_path_still_defaults_to_v1() -> None:
+    """A v1 caller that never heard of majors must keep its exact behaviour."""
+    import inspect
+
+    from scoutlens.showcase.validation import validate_bundle, validate_published_directory
+
+    for function in (validate_bundle, validate_published_directory):
+        default = inspect.signature(function).parameters["schema_version"].default
+        assert default == V1_SCHEMA_VERSION, function.__name__
+
+
+def test_an_unknown_major_has_no_score_field() -> None:
+    """Fail closed rather than guessing which field carries the score."""
+    from scoutlens.showcase.validation import _score_field
+
+    with pytest.raises(ValueError, match="unsupported showcase schema major"):
+        _score_field(3)
+
+
+def test_each_major_names_its_own_score_and_ordering_field() -> None:
+    """v2 orders evidence by `weighted_contribution` because that is what
+    reconstructs the score it publishes; ordering v2 evidence by the unweighted
+    audit view would rank the explanation by a number the reader is not shown."""
+    from scoutlens.showcase.validation import (
+        EVIDENCE_SORT_FIELD_BY_MAJOR,
+        SCORE_FIELD_BY_MAJOR,
+    )
+
+    assert SCORE_FIELD_BY_MAJOR == {1: "cosine_similarity", 2: "similarity_score"}
+    assert EVIDENCE_SORT_FIELD_BY_MAJOR == {1: "contribution", 2: "weighted_contribution"}
