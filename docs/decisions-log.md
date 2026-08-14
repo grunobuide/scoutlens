@@ -1880,3 +1880,66 @@ browser recomputation or a primary-flow toggle.
 `match_bootstrap_diagonal_v1`; later leaves generate artifacts. Each is gated on
 this contract rather than the reverse. Any change to v2 semantics is a new
 decision record, and a change that alters meaning is a new major.
+
+## D048 — 2026-08-13 — Showcase 2.0.0 schema_version consts corrected
+
+**Decision:** correct `schema_version` from `1.0.0` to `2.0.0` on the four v2
+artifact types that were pinned to the wrong major, regenerate the v2 consumer
+types, and make the producer stamp whichever major the bundle is published
+under (`scoutlens-qop.6.4.5`). This amends `D047`; it does not reopen it.
+
+**The defect.** `D047` froze the v2 contract as a schema plus a validator.
+`showcase-2.0.0.schema.json` pinned `schema_version` to `"1.0.0"` on
+`feature_catalog_artifact`, `player_index_artifact`, `player_profile_artifact`
+and `research_summary_artifact`, while `validate_v2_bundle` required `"2.0.0"`
+on any artifact declaring one. Both rules are reachable on every v2 bundle and
+`schema_version` is `required`, so **no v2 catalog, index, profile or research
+summary could be published at all**. The contract was unsatisfiable for four of
+its six artifact types from the moment it was frozen.
+
+It is an isolated omission rather than a design choice. v2 otherwise drops
+`cosine_similarity`, adds `similarity_score`, requires `representation_id` on
+all six ranking-bearing blocks and excludes `match_bootstrap_v1`. The shared
+`dataset_version` `$def` received the `-v2-` marker and the inlined `manifest`
+const received `2.0.0`; the four other **inlined** consts were missed. A
+constant written once in a shared definition was updated; the same constant
+written by hand in five places was updated in one of them.
+
+**Why not conform to the schema instead.** Stamping v2 artifacts `1.0.0` would
+make `artifact_major()` route a diagonal profile to the cosine schema, which
+rejects its `-v2-` dataset version and its `similarity_score`. A v2 artifact
+that self-describes as the v1 contract is the precise silent break `D047` was
+written to prevent, so the schema is what was wrong, not the producer.
+
+**How it survived the freeze.** Every v2 test written by `scoutlens-qop.6.2`
+used stub artifacts, which cannot reach full schema validation. The defect was
+found by `scoutlens-qop.6.4.2`, whose bounded end-to-end export was the first
+thing to route a schema-complete artifact through `major=2`. A validator
+exercised only against stubs has not been exercised against its own contract.
+
+**Corrections.** Four consts in the v2 schema; `pnpm contracts:generate`
+regenerating `showcase-v2.ts` and `showcase-v2.schema.json` (four lines each,
+v1 generated types byte-identical); the v2 major declared once as
+`catalog.SCHEMA_VERSION_V2` beside the v1 constant, so no producer module can
+drift from another; `build_showcase_bundle` and `build_research_summary`
+stamping the major the bundle is published under rather than the module
+constant.
+
+**Guard.** The new test is an invariant over `$defs` rather than four
+assertions: every artifact type in a major must declare that major's version.
+It covers artifact types added later, in either major. Alongside it, three real
+published v1 artifacts are restamped as v2 and validated, after the test first
+proves those three types differ between majors by nothing but the two version
+strings — so the restamp is provably the whole delta rather than a hopeful
+minimum. Eight of the fourteen fail against the pre-fix schema.
+
+**Impact:** no `public/**` file, payload pack, uncertainty artifact, ranking
+value or UI copy changed. v1 schema, v1 generated types and v1 behaviour are
+unchanged. No v2 artifact existed to invalidate: this correction lands before
+the first v2 dataset is published, which is the only reason it is an amendment
+rather than a breaking change to a published contract.
+
+**How to apply:** `scoutlens-qop.6.4.2` completes the v2 publication path -
+`validate_published_directory` is still v1-hardcoded and rejects a v2 bundle
+that `validate_v2_bundle` has already accepted - and then `scoutlens-qop.6.4.3`
+regenerates and audits the production artifacts.

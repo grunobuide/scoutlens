@@ -951,7 +951,7 @@
           "const": "scoutlens.showcase"
         },
         "schema_version": {
-          "const": "1.0.0"
+          "const": "2.0.0"
         },
         "dataset_version": {
           "$ref": "#/$defs/dataset_version"
@@ -1049,7 +1049,7 @@
           "const": "scoutlens.showcase"
         },
         "schema_version": {
-          "const": "1.0.0"
+          "const": "2.0.0"
         },
         "dataset_version": {
           "$ref": "#/$defs/dataset_version"
@@ -1085,7 +1085,7 @@
           "const": "scoutlens.showcase"
         },
         "schema_version": {
-          "const": "1.0.0"
+          "const": "2.0.0"
         },
         "dataset_version": {
           "$ref": "#/$defs/dataset_version"
@@ -1356,7 +1356,7 @@
           "const": "scoutlens.showcase"
         },
         "schema_version": {
-          "const": "1.0.0"
+          "const": "2.0.0"
         },
         "dataset_version": {
           "$ref": "#/$defs/dataset_version"

@@ -11,6 +11,11 @@ from scoutlens.features.aggregation import FEATURE_COLUMNS, FEATURE_FAMILIES
 
 CONTRACT = "scoutlens.showcase"
 SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION_V2 = "2.0.0"
+"""The diagonal-representation major (D047). Declared once, beside the v1
+constant, so no producer module can drift from another: `scoutlens-qop.6.4.5`
+exists because the same version string was written by hand in several places
+and four of them were missed."""
 EXPECTED_PROFILE_COUNT = 1257
 FEATURED_PROFILE_KEY = "wy-8287-c-795"
 FEATURED_PROFILE_REASON = (

@@ -8,18 +8,22 @@ Opt-in, like the other integration suites, because it needs local processed
 Wyscout data and the diagonal uncertainty run. Skipped by default so the
 offline suite stays offline.
 
-**Currently blocked by `scoutlens-qop.6.4.5`.** This suite is the first thing
-to route a schema-complete artifact through `major=2`, and it proved the frozen
-v2 contract unsatisfiable: `showcase-2.0.0.schema.json` pins
-`schema_version` to `"1.0.0"` on the catalog, index, profile and research
-artifacts, while `validation.py:596` requires `"2.0.0"` on anything that
-declares one. Both rules are reachable on every v2 bundle and `schema_version`
-is required, so no such artifact can be published. The schema and the generated
-consumer types are outside this leaf's ownership; `qop.6.4.5` owns them.
+This suite is the first thing to route a schema-complete artifact through
+`major=2`, and it is what proved the frozen v2 contract unsatisfiable: the
+schema pinned `schema_version` to `"1.0.0"` on the catalog, index, profile and
+research artifacts while `validate_v2_bundle` required `"2.0.0"`.
+`scoutlens-qop.6.4.5` corrected that, and the whole 225-profile bundle now
+passes `validate_v2_bundle`.
+
+**Still blocked, now on this leaf's own remaining work.** `export_showcase`
+then calls `validate_published_directory`, which is v1-hardcoded: it validates
+the on-disk manifest at the default major and applies v1 profile semantics. A
+v2 bundle is rejected there, after the contract validator has already accepted
+it. Making that path major-aware is `scoutlens-qop.6.4.2`'s own AC2/AC5 work on
+its own allowed surface.
 
 The block is `xfail(strict=True)` rather than a skip on purpose: a skip would
-hide the failure, and a non-strict xfail would rot silently. When `qop.6.4.5`
-lands, these turn XPASS and fail until the marker is removed.
+hide the failure, and a non-strict xfail would rot silently.
 """
 
 from __future__ import annotations
@@ -50,9 +54,8 @@ pytestmark = [
     ),
     pytest.mark.xfail(
         strict=True,
-        reason="blocked by scoutlens-qop.6.4.5: the frozen v2 schema pins schema_version to 1.0.0 "
-        "on the catalog, index, profile and research artifacts while validate_v2_bundle requires "
-        "2.0.0, so no v2 bundle is publishable until the schema is corrected",
+        reason="blocked by the remaining scoutlens-qop.6.4.2 work: validate_published_directory is "
+        "v1-hardcoded and rejects a v2 bundle that validate_v2_bundle has already accepted",
     ),
 ]
 
