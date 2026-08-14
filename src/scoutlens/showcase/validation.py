@@ -22,7 +22,7 @@ from scoutlens.showcase.catalog import (
 )
 from scoutlens.showcase.io import canonical_json_bytes, sha256_bytes
 from scoutlens.showcase.research import build_research_summary
-from scoutlens.showcase.schema import validate_schema
+from scoutlens.showcase.schema import parse_major, validate_schema
 
 CATALOG_GZIP_BUDGET = 400 * 1024
 PROFILE_GZIP_BUDGET = 30 * 1024
@@ -63,7 +63,25 @@ def _walk_numbers(value: Any, path: str = "root") -> None:
             _walk_numbers(child, f"{path}[{index}]")
 
 
-def _validate_evidence(profile: dict) -> None:
+SCORE_FIELD_BY_MAJOR = {1: "cosine_similarity", 2: "similarity_score"}
+"""The published retrieval score, per contract major. v2 renamed it because a
+weighted metric must not be published under a name claiming plain cosine
+(D047)."""
+
+EVIDENCE_SORT_FIELD_BY_MAJOR = {1: "contribution", 2: "weighted_contribution"}
+"""The evidence field the deterministic order is taken over. The rule is
+unchanged between majors - descending magnitude, ties broken by catalog order -
+but it applies to each major's own contribution to the score it publishes."""
+
+
+def _score_field(major: int) -> str:
+    field = SCORE_FIELD_BY_MAJOR.get(major)
+    if field is None:
+        raise ValueError(f"unsupported showcase schema major {major}")
+    return field
+
+
+def _validate_evidence(profile: dict, *, major: int) -> None:
     evidence = profile["evidence_index"]
     evidence_by_id = {item["evidence_id"]: item for item in evidence}
     if len(evidence_by_id) != len(evidence):
@@ -83,9 +101,10 @@ def _validate_evidence(profile: dict) -> None:
     by_subject: dict[str, list[dict]] = defaultdict(list)
     for item in evidence:
         by_subject[item["subject"]].append(item)
-    expected_scores = {"self_retrieval": profile["retrieval"]["global"]["cosine_similarity"]}
+    score_field = _score_field(major)
+    expected_scores = {"self_retrieval": profile["retrieval"]["global"][score_field]}
     expected_scores.update(
-        {f"neighbor:{neighbor['profile_key']}": neighbor["cosine_similarity"] for neighbor in profile["neighbors"]}
+        {f"neighbor:{neighbor['profile_key']}": neighbor[score_field] for neighbor in profile["neighbors"]}
     )
     if set(by_subject) != set(expected_scores):
         raise ValueError(f"{profile['profile_key']}: evidence subjects do not match retrieval subjects")
@@ -96,15 +115,24 @@ def _validate_evidence(profile: dict) -> None:
             raise ValueError(f"{profile['profile_key']}/{subject}: incomplete additive evidence")
         if {item["feature_id"] for item in feature_items} != set(FEATURE_COLUMNS):
             raise ValueError(f"{profile['profile_key']}/{subject}: feature evidence does not cover catalog")
+        sort_field = EVIDENCE_SORT_FIELD_BY_MAJOR[major]
         expected_order = sorted(
             feature_items,
-            key=lambda item: (-abs(item["contribution"]), FEATURE_ORDER[item["feature_id"]]),
+            key=lambda item: (-abs(item[sort_field]), FEATURE_ORDER[item["feature_id"]]),
         )
         if feature_items != expected_order:
             raise ValueError(f"{profile['profile_key']}/{subject}: feature evidence order is not deterministic")
         score = expected_scores[subject]
         if score is None:
             raise ValueError(f"{profile['profile_key']}/{subject}: cosine evidence has a null score")
+        if major != 1:
+            # In v2 `contribution` stays the unweighted cosine audit view, so it
+            # reconstructs the cosine rather than the published
+            # `similarity_score`. The weighted reconstruction is the normative
+            # v2 rule and is checked by validate_v2_weighted_evidence; asserting
+            # the v1 identity here would demand that the audit view equal a
+            # number it does not describe.
+            continue
         if not math.isclose(math.fsum(item["contribution"] for item in feature_items), score, abs_tol=1e-9):
             raise ValueError(f"{profile['profile_key']}/{subject}: feature contributions do not reconstruct cosine")
         if not math.isclose(math.fsum(item["contribution"] for item in family_items), score, abs_tol=1e-9):
@@ -198,6 +226,8 @@ def _validate_profile(
     index_by_key: dict[str, dict],
     feature_ids: list[str],
     uncertainty_mode: str,
+    *,
+    major: int,
 ) -> None:
     key = profile["profile_key"]
     if profile["identity"]["player_key"] != index_by_key[key]["player_key"]:
@@ -232,8 +262,9 @@ def _validate_profile(
         raise ValueError(f"{key}: same-human profile leaked into neighbors")
     if any(neighbor["role"] != role for neighbor in neighbors):
         raise ValueError(f"{key}: neighbor role differs from query role")
+    score_field = _score_field(major)
     expected_neighbors = sorted(
-        neighbors, key=lambda neighbor: (-neighbor["cosine_similarity"], neighbor["profile_key"])
+        neighbors, key=lambda neighbor: (-neighbor[score_field], neighbor["profile_key"])
     )
     if neighbors != expected_neighbors or [neighbor["rank"] for neighbor in neighbors] != [1, 2, 3, 4, 5]:
         raise ValueError(f"{key}: neighbors are not deterministically ranked")
@@ -284,7 +315,7 @@ def _validate_profile(
             raise ValueError(f"{key}: top-level uncertainty field {field} must not be null in production")
     if not isinstance(top["warning"], str) or not top["warning"]:
         raise ValueError(f"{key}: top-level uncertainty warning is missing")
-    _validate_evidence(profile)
+    _validate_evidence(profile, major=major)
 
 
 def validate_bundle(
@@ -293,12 +324,14 @@ def validate_bundle(
     expected_profile_count: int | None = EXPECTED_PROFILE_COUNT,
     research_sources: dict[str, dict] | None = None,
     uncertainty_mode: str = "available",
+    schema_version: str = SCHEMA_VERSION,
 ) -> None:
+    major = parse_major(schema_version)
     artifacts = bundle.artifacts
     for path, artifact in artifacts.items():
-        validate_schema(artifact, label=path)
+        validate_schema(artifact, label=path, major=major)
         _walk_numbers(artifact, path)
-        if artifact["contract"] != CONTRACT or artifact["schema_version"] != SCHEMA_VERSION:
+        if artifact["contract"] != CONTRACT or artifact["schema_version"] != schema_version:
             raise ValueError(f"{path}: contract identity mismatch")
         if artifact["dataset_version"] != bundle.dataset_version:
             raise ValueError(f"{path}: dataset version mismatch")
@@ -339,14 +372,16 @@ def validate_bundle(
         profile = artifacts[path]
         if path != f"players/{profile['profile_key']}.json":
             raise ValueError(f"{path}: file name and profile key differ")
-        _validate_profile(profile, index_by_key, feature_ids, uncertainty_mode)
+        _validate_profile(profile, index_by_key, feature_ids, uncertainty_mode, major=major)
         _validate_identity_text(profile["identity"], f"{path}.identity")
         for rank, neighbor in enumerate(profile["neighbors"], start=1):
             _validate_identity_text(neighbor, f"{path}.neighbors[{rank}]")
 
     research = artifacts["research-summary.json"]
     if research_sources is not None:
-        expected_research = build_research_summary(bundle.dataset_version, research_sources)
+        expected_research = build_research_summary(
+            bundle.dataset_version, research_sources, schema_version=schema_version
+        )
         if research != expected_research:
             raise ValueError("research summary values drifted from their versioned source artifacts")
 
@@ -355,7 +390,16 @@ def validate_bundle(
             raise ValueError(f"{path}: StatsBomb data is permitted only in aggregate research experiments")
 
 
-def _records_for(path: str, artifact: dict) -> int:
+def records_for(path: str, artifact: dict) -> int:
+    """How many records the manifest must declare for an artifact.
+
+    Defined once and imported by the exporter. It was written twice, and the
+    two copies disagreed about `representation.json` - one counted its weights,
+    the other returned 1 - so every v2 bundle failed its own integrity check.
+    A rule that both producer and validator must apply is one rule.
+    """
+    if path == V2_REPRESENTATION_PATH:
+        return len(artifact["representation"]["weights"])
     if path == "feature-catalog.json":
         return len(artifact["features"])
     if path == "players.index.json":
@@ -387,11 +431,12 @@ def validate_published_directory(
     expected_profile_count: int | None = EXPECTED_PROFILE_COUNT,
     research_sources: dict[str, dict] | None = None,
     uncertainty_mode: str = "available",
+    schema_version: str = SCHEMA_VERSION,
 ) -> dict[str, int]:
     manifest_path = directory / "manifest.json"
     manifest_bytes = manifest_path.read_bytes()
     manifest = json.loads(manifest_bytes)
-    validate_schema(manifest, label="manifest.json")
+    validate_schema(manifest, label="manifest.json", major=parse_major(schema_version))
     _walk_numbers(manifest, "manifest.json")
     if canonical_json_bytes(manifest) != manifest_bytes:
         raise ValueError("manifest.json is not canonically serialized")
@@ -413,7 +458,7 @@ def validate_published_directory(
         entry = entry_by_path[relative_path]
         if entry["sha256"] != sha256_bytes(payload) or entry["bytes"] != len(payload):
             raise ValueError(f"{relative_path}: manifest integrity metadata mismatch")
-        if entry["records"] != _records_for(relative_path, artifact):
+        if entry["records"] != records_for(relative_path, artifact):
             raise ValueError(f"{relative_path}: manifest record count mismatch")
         artifacts[relative_path] = artifact
 
@@ -427,6 +472,7 @@ def validate_published_directory(
         expected_profile_count=expected_profile_count,
         research_sources=research_sources,
         uncertainty_mode=uncertainty_mode,
+        schema_version=schema_version,
     )
     if manifest["population"]["profile_count"] != len(artifacts["players.index.json"]["profiles"]):
         raise ValueError("manifest profile count differs from index")
