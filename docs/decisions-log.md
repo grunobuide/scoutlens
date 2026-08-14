@@ -1943,3 +1943,45 @@ rather than a breaking change to a published contract.
 `validate_published_directory` is still v1-hardcoded and rejects a v2 bundle
 that `validate_v2_bundle` has already accepted - and then `scoutlens-qop.6.4.3`
 regenerates and audits the production artifacts.
+
+## D049 — 2026-08-13 — Showcase 2.0.0 retrieval method renamed to diagonal
+
+**Decision:** `identity_retrieval.method` in `scoutlens.showcase/2.0.0` becomes
+`combined_scaler_diagonal_v1` (`scoutlens-qop.6.4.6`). This amends `D047`; v1
+keeps `combined_scaler_cosine_v1` byte-identical.
+
+**The defect.** The v2 schema pinned `method` to the v1 value and
+`builder.py` emitted it unconditionally, so a v2 profile stated that its
+rankings were produced by plain cosine while `representation.ranking_method` in
+the same dataset stated `weighted_cosine_diagonal_v1`. Two fields, one payload,
+contradicting each other - and the first of them is the rule `D047` wrote for
+itself: a weighted metric must not be published under a name claiming plain
+cosine.
+
+**It is reader-facing, not internal.** `web/src/components/lab-explorer.tsx`
+renders `profile.retrieval.method` verbatim as `<code>`. A published v2 dataset
+would have shown "combined_scaler_cosine_v1" beside diagonal scores.
+
+**Why this value.** Parallel construction to v1. The combined scaler is
+unchanged, so the prefix stays true; only the scorer name moves. It stays
+distinct from `representation.ranking_method`, which names the scorer exactly,
+so the two fields describe the procedure and the metric without either claiming
+to be the other.
+
+**The class, and the guard.** This is the second instance of the defect `D048`
+records: a v1 value carried into v2 that no longer describes the payload. Both
+were found by inspection rather than by a test, so the guard is now a standing
+sweep over every `const`, `enum` and `pattern` in the v2 schema, failing on any
+value naming plain cosine or a `_v1` scorer outside two documented
+audit-baseline references. The exception list is deliberately short: a long one
+is how this class hides. Sweeping every fixed value catches the next instance;
+a per-field assertion only catches the fields someone remembered.
+
+**Impact:** no `public/**` file, payload pack, uncertainty artifact, ranking
+value or UI component changed. No v2 artifact existed to invalidate -
+`scoutlens-qop.6.4.3` found this while preparing the first production
+regeneration and stopped before running it, which is why this is an amendment
+and not a republication.
+
+**How to apply:** `scoutlens-qop.6.4.3` resumes, regenerates the 1,257-profile
+v2 dataset twice, audits it independently and promotes the audited bytes.

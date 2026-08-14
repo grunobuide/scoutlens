@@ -24,6 +24,7 @@ from pathlib import Path
 
 import pytest
 
+from scoutlens.showcase.catalog import RETRIEVAL_METHOD_V2
 from scoutlens.showcase.export import V2_REPRESENTATION_PATH, V2_SCHEMA_VERSION, export_showcase
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -133,6 +134,17 @@ def test_profiles_report_a_similarity_score_not_a_cosine(exported: Path) -> None
     for neighbor in profile["neighbors"]:
         assert "similarity_score" in neighbor
         assert "cosine_similarity" not in neighbor
+
+
+def test_the_profile_does_not_claim_the_v1_cosine_method(exported: Path) -> None:
+    """`retrieval.method` is rendered verbatim in the Lab, so a v2 profile
+    stating `combined_scaler_cosine_v1` would tell a reader that diagonal
+    rankings came from plain cosine (`scoutlens-qop.6.4.6`)."""
+    profile = json.loads(
+        next(iter(sorted((exported / "players").glob("*.json")))).read_text(encoding="utf-8")
+    )
+    assert profile["retrieval"]["method"] == RETRIEVAL_METHOD_V2
+    assert "cosine" not in profile["retrieval"]["method"]
 
 
 def test_uncertainty_is_diagonal_throughout(exported: Path) -> None:

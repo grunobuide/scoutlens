@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -192,3 +193,64 @@ def test_one_artifact_left_at_the_v1_version_fails_the_bundle(
     bundle["feature-catalog.json"]["schema_version"] = V1_SCHEMA_VERSION
     with pytest.raises(ValueError, match="feature-catalog.json"):
         validate_v2_bundle(bundle)
+
+
+# --- The standing sweep (scoutlens-qop.6.4.6) ----------------------------
+
+#: Values in the v2 schema that legitimately name the v1 cosine method. Each is
+#: a deliberate reference to the frozen audit baseline, not a leftover. Any
+#: other v1-flavoured value is a defect; the list is short on purpose, because
+#: a long exception list is how this class of bug hides.
+V2_AUDIT_BASELINE_REFERENCES = {
+    ("representation.audit_baseline.method", '"cosine_v1"'),
+    ("representation.audit_baseline.contract", '"scoutlens.showcase/1.0.0"'),
+}
+
+
+def _fixed_values(schema: dict) -> list[tuple[str, str]]:
+    """Every `const`, `enum` and `pattern` in a schema, with its location."""
+    found: list[tuple[str, str]] = []
+
+    def walk(node: Any, path: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in ("const", "enum", "pattern"):
+                    found.append((f"{path}.{key}", json.dumps(value)))
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                walk(value, f"{path}[{index}]")
+
+    walk(schema, "")
+    return [
+        (path.replace(".$defs.", "").replace(".properties", "").lstrip("."), value)
+        for path, value in found
+    ]
+
+
+def test_no_v2_value_claims_the_v1_cosine_method() -> None:
+    """The generalisation of `qop.6.4.5` and `qop.6.4.6`.
+
+    Both were the same defect: a v1 value carried into v2 that no longer
+    described the payload. `schema_version` was pinned to `1.0.0` on four
+    artifact types, and `identity_retrieval.method` said
+    `combined_scaler_cosine_v1` while the rankings were diagonal - visible to
+    readers, since the Lab renders that field verbatim.
+
+    Sweeping every fixed value is what catches the next one. A per-field
+    assertion only catches the fields someone remembered.
+    """
+    offenders = [
+        (path, value)
+        for path, value in _fixed_values(showcase_schema(2))
+        if ("cosine" in value.lower() or "_v1" in value.lower() or "-v1-" in value.lower())
+        and "diagonal" not in value.lower()
+        and (path.rsplit(".", 1)[0], value) not in V2_AUDIT_BASELINE_REFERENCES
+    ]
+    assert offenders == [], offenders
+
+
+def test_the_v1_schema_still_claims_the_v1_method() -> None:
+    """v1 is the frozen cosine contract; correcting v2 must not touch it."""
+    v1_values = dict(_fixed_values(showcase_schema(1)))
+    assert v1_values["identity_retrieval.method.const"] == '"combined_scaler_cosine_v1"'

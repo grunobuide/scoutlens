@@ -24,6 +24,8 @@ from scoutlens.showcase.catalog import (
     FEATURE_CATALOG,
     FEATURE_ORDER,
     RATIO_SUPPORT_COLUMNS,
+    RETRIEVAL_METHOD,
+    RETRIEVAL_METHOD_V2,
     SCHEMA_VERSION,
     SCHEMA_VERSION_V2,
 )
@@ -462,6 +464,7 @@ def build_showcase_bundle(
     # consumer reading that field would route a diagonal payload to the cosine
     # schema.
     schema_version = SCHEMA_VERSION if representation is None else SCHEMA_VERSION_V2
+    retrieval_method = RETRIEVAL_METHOD if representation is None else RETRIEVAL_METHOD_V2
     players, competitions, team_names = _identity_lookups(inputs)
     role_lookup = inputs.players.select(
         pl.col("wyId").alias("player_id"), pl.col("role").struct.field("name").alias("role")
@@ -668,7 +671,7 @@ def build_showcase_bundle(
             "retrieval": {
                 "query_period": "a",
                 "candidate_period": "b",
-                "method": "combined_scaler_cosine_v1",
+                "method": retrieval_method,
                 "global": _retrieval_outcome(
                     ranked_global.height,
                     int(global_self["rank"]),

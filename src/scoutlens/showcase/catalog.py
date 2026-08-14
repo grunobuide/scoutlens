@@ -16,6 +16,15 @@ SCHEMA_VERSION_V2 = "2.0.0"
 constant, so no producer module can drift from another: `scoutlens-qop.6.4.5`
 exists because the same version string was written by hand in several places
 and four of them were missed."""
+
+RETRIEVAL_METHOD = "combined_scaler_cosine_v1"
+RETRIEVAL_METHOD_V2 = "combined_scaler_diagonal_v1"
+"""How a profile describes the procedure that produced its ranking.
+
+v2 keeps the still-true `combined_scaler` prefix and drops the cosine claim: a
+v2 profile ranked by the diagonal metric must not state that it was ranked by
+plain cosine, which is the rule D047 wrote for itself. It stays distinct from
+`representation.ranking_method`, which names the scorer exactly."""
 EXPECTED_PROFILE_COUNT = 1257
 FEATURED_PROFILE_KEY = "wy-8287-c-795"
 FEATURED_PROFILE_REASON = (
