@@ -647,7 +647,7 @@ def build_showcase_bundle(
         )
         profile = {
             "contract": CONTRACT,
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": SCHEMA_VERSION if representation is None else "2.0.0",
             "dataset_version": VERSION_PLACEHOLDER,
             "profile_key": key,
             "identity": identity,
@@ -715,13 +715,13 @@ def build_showcase_bundle(
     artifacts: dict[str, dict] = {
         "feature-catalog.json": {
             "contract": CONTRACT,
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": SCHEMA_VERSION if representation is None else "2.0.0",
             "dataset_version": VERSION_PLACEHOLDER,
             "features": FEATURE_CATALOG,
         },
         "players.index.json": {
             "contract": CONTRACT,
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": SCHEMA_VERSION if representation is None else "2.0.0",
             "dataset_version": VERSION_PLACEHOLDER,
             "profiles": index_items,
         },
@@ -729,7 +729,11 @@ def build_showcase_bundle(
         **profile_artifacts,
     }
     digest = canonical_content_digest(artifacts)
-    dataset_version = f"wyscout-2017-18-v1-{digest[:12]}"
+    # The generation marker follows the contract major. A v2 dataset must not
+    # publish a v1-marked version string: the two majors are distinguished by
+    # it, and the v2 schema rejects a v1 marker outright.
+    marker = "v1" if representation is None else "v2"
+    dataset_version = f"wyscout-2017-18-{marker}-{digest[:12]}"
     for artifact in artifacts.values():
         artifact["dataset_version"] = dataset_version
     return ShowcaseBundle(dataset_version=dataset_version, artifacts=artifacts, profile_count=profile_count)

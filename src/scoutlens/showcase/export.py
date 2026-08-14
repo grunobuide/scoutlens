@@ -173,7 +173,9 @@ def _build_manifest(
     config: dict,
     inventory: list[tuple[str, Path]],
     serialized: dict[str, bytes],
+    artifacts: dict[str, dict],
     representation: Any = None,
+    leagues: list[int] | None = None,
 ) -> dict:
     run_manifest = build_run_manifest(config, [path for _, path in inventory], config_path=CONFIG_PATH)
     return {
@@ -205,7 +207,9 @@ def _build_manifest(
         "population": {
             "analytical_unit": "player_competition",
             "chronological_periods": ["a", "b"],
-            "domestic_competition_ids": config["domestic_leagues"],
+            "domestic_competition_ids": (
+                config["domestic_leagues"] if leagues is None else leagues
+            ),
             "minutes_threshold_per_period": config["primary_minutes_threshold"],
             "profile_count": bundle.profile_count,
             "feature_count": 32,
@@ -234,7 +238,7 @@ def _build_manifest(
                 "media_type": "application/json",
                 "sha256": sha256_bytes(serialized[path]),
                 "bytes": len(serialized[path]),
-                "records": _records_for(path, bundle.artifacts[path]),
+                "records": _records_for(path, artifacts[path]),
             }
             for path in sorted(serialized)
         ],
@@ -251,6 +255,7 @@ def export_showcase(
     schema_version: str = V1_SCHEMA_VERSION,
     representation_artifact: Path | None = None,
     expected_profile_count: int | None = EXPECTED_PROFILE_COUNT,
+    competition_ids: list[int] | None = None,
 ) -> dict[str, int | str]:
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
         raise ValueError(
@@ -274,12 +279,15 @@ def export_showcase(
             )
         representation = load_representation(benchmark_path=representation_artifact)
     config = load_experiment_config()
+    # A bounded export restricts the cohort so contract semantics can be
+    # proven end to end without a full production regeneration.
+    leagues = config["domestic_leagues"] if competition_ids is None else list(competition_ids)
     inventory = _input_inventory(processed_dir, artifact_dir, bootstrap_run_dir)
     missing = [str(path) for _, path in inventory if not path.is_file()]
     if missing:
         raise FileNotFoundError("missing showcase inputs: " + ", ".join(missing))
 
-    inputs = load_showcase_inputs(processed_dir, artifact_dir, config["domestic_leagues"])
+    inputs = load_showcase_inputs(processed_dir, artifact_dir, leagues)
     uncertainty = load_bootstrap_summaries(
         bootstrap_run_dir,
         uncertainty_config_path=(
@@ -289,7 +297,7 @@ def export_showcase(
     )
     bundle = build_showcase_bundle(
         inputs,
-        competition_ids=config["domestic_leagues"],
+        competition_ids=leagues,
         minutes_threshold=config["primary_minutes_threshold"],
         expected_profile_count=expected_profile_count,
         uncertainty=uncertainty,
@@ -319,7 +327,9 @@ def export_showcase(
             config=config,
             inventory=inventory,
             serialized=serialized,
+            artifacts=artifacts,
             representation=representation,
+            leagues=leagues,
         )
         write_canonical_json(staging / "manifest.json", manifest)
         if representation is not None:
@@ -328,7 +338,7 @@ def export_showcase(
             validate_v2_bundle({**artifacts, "manifest.json": manifest})
         budgets = validate_published_directory(
             staging,
-            expected_profile_count=EXPECTED_PROFILE_COUNT,
+            expected_profile_count=expected_profile_count,
             research_sources=inputs.research_sources,
         )
         publish_directory(staging, output_dir)
