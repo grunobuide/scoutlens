@@ -34,8 +34,64 @@ import { fileURLToPath } from "node:url";
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
 const repoRoot = resolve(webRoot, "..");
-const publishedRoot = resolve(repoRoot, "public", "showcase", "v1");
-const fixtureId = process.env.SCOUTLENS_FIXTURE_ID ?? "lab-max-content";
+// Which contract major this pack speaks. The published dataset for that major
+// supplies the catalog, index, research summary and (for v2) the representation,
+// so the fixture never hand-authors contract metadata - only the synthetic
+// profiles that stress the Lab's layout.
+export const FIXTURE_MAJOR = Number(process.env.SCOUTLENS_FIXTURE_MAJOR ?? "1");
+if (FIXTURE_MAJOR !== 1 && FIXTURE_MAJOR !== 2) {
+  throw new Error(`SCOUTLENS_FIXTURE_MAJOR must be 1 or 2, got ${FIXTURE_MAJOR}`);
+}
+const publishedRoot = resolve(repoRoot, "public", "showcase", `v${FIXTURE_MAJOR}`);
+const fixtureId =
+  process.env.SCOUTLENS_FIXTURE_ID ??
+  (FIXTURE_MAJOR === 2 ? "lab-max-content-v2" : "lab-max-content");
+
+// Assigned from the published representation before any profile is built. The
+// fixture reuses the real weights so `feature_weight` matches what the
+// representation publishes; a fixture that invented weights would satisfy the
+// schema while failing the binding the consumer actually enforces.
+let publishedRepresentation = null;
+
+function representationId() {
+  if (FIXTURE_MAJOR !== 2) {
+    return null;
+  }
+  if (publishedRepresentation === null) {
+    throw new Error("The v2 representation must be loaded before building profiles");
+  }
+  return publishedRepresentation.representation.id;
+}
+
+/** Adds the v2 binding to an already-built uncertainty block.
+ *
+ * Applied at the call site so the three builders keep one return shape each:
+ * every branch of every one of them would otherwise need the same two lines,
+ * which is how a branch gets missed.
+ */
+function bound(block) {
+  return { ...block, ...v2Binding() };
+}
+
+/** Fields every ranking-bearing v2 block carries, and no v1 block has. */
+function v2Binding(extra = {}) {
+  return FIXTURE_MAJOR === 2 ? { representation_id: representationId(), ...extra } : {};
+}
+
+const RETRIEVAL_METHOD = {
+  1: "combined_scaler_cosine_v1",
+  2: "combined_scaler_diagonal_v1",
+};
+const UNCERTAINTY_DESIGN = {
+  1: "match_bootstrap_v1",
+  2: "match_bootstrap_diagonal_v1",
+};
+
+/** The score field each major publishes. v2 renamed it because a weighted
+ * metric must not be published under a name claiming plain cosine (D047). */
+function scoreField(value) {
+  return FIXTURE_MAJOR === 2 ? { similarity_score: value } : { cosine_similarity: value };
+}
 const fixturesRoot = resolve(webRoot, "e2e", "fixtures");
 const fixtureRoot = resolve(fixturesRoot, fixtureId);
 
@@ -199,6 +255,7 @@ function featureUncertainty(status, pct) {
       valid_resamples: 500,
       raw_ci_95: [round(0.1, 4), round(0.2, 4)],
       within_role_percentile_ci_95: [round(Math.max(0, pct - 7), 2), round(Math.min(100, pct + 7), 2)],
+      ...v2Binding(),
     };
   }
   if (status === "insufficient") {
@@ -207,6 +264,7 @@ function featureUncertainty(status, pct) {
       valid_resamples: 4,
       raw_ci_95: null,
       within_role_percentile_ci_95: null,
+      ...v2Binding(),
     };
   }
   return {
@@ -214,6 +272,7 @@ function featureUncertainty(status, pct) {
     valid_resamples: null,
     raw_ci_95: null,
     within_role_percentile_ci_95: null,
+    ...v2Binding(),
   };
 }
 
@@ -257,17 +316,45 @@ function subjectOf(subject) {
 
 // Evidence contributions whose feature sum and family sum both reconstruct the
 // subject cosine exactly (up to float grouping error well below 1e-9).
-function buildEvidenceSet(catalog, profile, subject, cosine) {
+/** A series that sums exactly to `total`, deterministic in the profile seed. */
+function additiveSeries(count, seed, total) {
+  const raw = Array.from({ length: count }, (unused, index) =>
+    Math.sin(index * 2.3 + count + seed) * 0.5,
+  );
+  const magnitude = raw.reduce((sum, value) => sum + Math.abs(value), 0);
+  const scale = magnitude === 0 ? 0 : total / magnitude;
+  const scaled = raw.map((value) => value * scale);
+  const head = scaled.slice(0, -1).reduce((sum, value) => sum + value, 0);
+  scaled[scaled.length - 1] = total - head;
+  return scaled;
+}
+
+/**
+ * Both decompositions, built to reconstruct independently.
+ *
+ * `contribution` sums to the unweighted cosine audit view and
+ * `weighted_contribution` sums to the published score - the same pair of
+ * identities the real producer satisfies. A fixture that reused one series for
+ * both would satisfy the schema while hiding the only interesting v2 property.
+ */
+function buildEvidenceSet(catalog, profile, subject, score) {
   const order = familyOrderOf(catalog);
   const definitions = [...catalog.features].sort((a, b) => a.order - b.order);
-  const raw = definitions.map((feature, index) =>
-    Math.sin(index * 2.3 + definitions.length + profile.seed * 0.11) * 0.5,
-  );
-  const totalMagnitude = raw.reduce((sum, value) => sum + Math.abs(value), 0);
-  const scale = totalMagnitude === 0 ? 0 : cosine / totalMagnitude;
-  const scaled = raw.map((value) => value * scale);
-  const featureSum = scaled.slice(0, -1).reduce((sum, value) => sum + value, 0);
-  scaled[scaled.length - 1] = cosine - featureSum;
+  const weights =
+    FIXTURE_MAJOR === 2
+      ? new Map(
+          publishedRepresentation.representation.weights.map((entry) => [
+            entry.feature_id,
+            entry.weight,
+          ]),
+        )
+      : new Map();
+  // In v2 the audit view is a different number from the published score, so the
+  // fixture gives it its own series rather than reusing one.
+  const cosine = FIXTURE_MAJOR === 2 ? round(score * 0.94, 6) : score;
+  const scaled = additiveSeries(definitions.length, profile.seed * 0.11, cosine);
+  const weighted =
+    FIXTURE_MAJOR === 2 ? additiveSeries(definitions.length, profile.seed * 0.17, score) : scaled;
 
   const featureItems = definitions.map((feature, index) => {
     const contribution = scaled[index];
@@ -282,13 +369,16 @@ function buildEvidenceSet(catalog, profile, subject, cosine) {
       contribution,
       interpretation:
         Math.abs(contribution) < 1e-9 ? "neutral" : contribution < 0 ? "disagreement" : "alignment",
+      ...v2Binding({
+        feature_weight: weights.get(feature.feature_id) ?? 0,
+        weighted_contribution: weighted[index],
+      }),
     };
   });
 
   const familyItems = [...order.keys()].map((family) => {
-    const contribution = featureItems
-      .filter((item) => item.family === family)
-      .reduce((sum, item) => sum + item.contribution, 0);
+    const members = featureItems.filter((item) => item.family === family);
+    const contribution = members.reduce((sum, item) => sum + item.contribution, 0);
     return {
       evidence_id: `evidence-${subject}-fam-${family}`,
       subject: subjectOf(subject),
@@ -300,11 +390,23 @@ function buildEvidenceSet(catalog, profile, subject, cosine) {
       contribution,
       interpretation:
         Math.abs(contribution) < 1e-9 ? "neutral" : contribution < 0 ? "disagreement" : "alignment",
+      ...v2Binding({
+        feature_weight: null,
+        weighted_contribution: members.reduce(
+          (sum, item) => sum + item.weighted_contribution,
+          0,
+        ),
+      }),
     };
   });
 
+  // Ordered by the contribution to the score this major publishes: ordering v2
+  // evidence by the unweighted audit view would rank the explanation by a
+  // number the reader is never shown.
+  const magnitudeOf = (item) =>
+    FIXTURE_MAJOR === 2 ? item.weighted_contribution : item.contribution;
   const compare = (left, right) =>
-    Math.abs(right.contribution) - Math.abs(left.contribution) ||
+    Math.abs(magnitudeOf(right)) - Math.abs(magnitudeOf(left)) ||
     (left.kind === "feature_contribution"
       ? featureOrder(catalog, left.feature_id) - featureOrder(catalog, right.feature_id)
       : (order.get(left.family) ?? Number.MAX_SAFE_INTEGER)
@@ -395,7 +497,7 @@ function uncertaintyBlock(status) {
   if (status === "available") {
     return {
       status,
-      design_version: "match_bootstrap_v1",
+      design_version: UNCERTAINTY_DESIGN[FIXTURE_MAJOR],
       seed: 1729,
       requested_resamples: 500,
       valid_resamples: 500,
@@ -409,7 +511,7 @@ function uncertaintyBlock(status) {
   if (status === "insufficient") {
     return {
       status,
-      design_version: "match_bootstrap_v1",
+      design_version: UNCERTAINTY_DESIGN[FIXTURE_MAJOR],
       seed: 1729,
       requested_resamples: 500,
       valid_resamples: 4,
@@ -495,9 +597,10 @@ function buildNeighbors(catalog, profile, roleCandidates) {
       competition: candidate.competition,
       teams: candidate.period_contexts.b.teams.map((team) => ({ id: team.id, name: team.name })),
       candidate_period: "b",
-      cosine_similarity: cosine,
+      ...scoreField(cosine),
       evidence_refs: evidence.references,
-      stability: neighborStability(profile.uncertainty),
+      stability: bound(neighborStability(profile.uncertainty)),
+      ...v2Binding(),
     };
   });
 }
@@ -516,17 +619,19 @@ function buildProfileArtifact(catalog, manifest, profile, indexProfileItems) {
     candidate_count: 1,
     self_rank: 1,
     reciprocal_rank: 1,
-    cosine_similarity: null,
+    ...scoreField(null),
     evidence_refs: [],
-    uncertainty: rankUncertainty(profile.uncertainty, 1),
+    uncertainty: bound(rankUncertainty(profile.uncertainty, 1)),
+    ...v2Binding(),
   };
   const retrievalGlobal = {
     candidate_count: 1257,
     self_rank: profile.selfRank,
     reciprocal_rank: round(1 / profile.selfRank, 6),
-    cosine_similarity: selfCosine,
+    ...scoreField(selfCosine),
     evidence_refs: self.references,
-    uncertainty: rankUncertainty(profile.uncertainty, profile.selfRank),
+    uncertainty: bound(rankUncertainty(profile.uncertainty, profile.selfRank)),
+    ...v2Binding(),
   };
 
   const roleCounts = { Goalkeeper: 92, Defender: 398, Midfielder: 446, Forward: 321 };
@@ -537,7 +642,7 @@ function buildProfileArtifact(catalog, manifest, profile, indexProfileItems) {
         catalog,
         withZScores,
         `neighbor:${neighbor.profile_key}`,
-        neighbor.cosine_similarity,
+        FIXTURE_MAJOR === 2 ? neighbor.similarity_score : neighbor.cosine_similarity,
       );
       return evidence.items;
     }),
@@ -545,7 +650,7 @@ function buildProfileArtifact(catalog, manifest, profile, indexProfileItems) {
 
   return {
     contract: "scoutlens.showcase",
-    schema_version: "1.0.0",
+    schema_version: manifest.schema_version,
     dataset_version: manifest.dataset_version,
     profile_key: profile.profile_key,
     identity: {
@@ -578,13 +683,13 @@ function buildProfileArtifact(catalog, manifest, profile, indexProfileItems) {
     retrieval: {
       query_period: "a",
       candidate_period: "b",
-      method: "combined_scaler_cosine_v1",
+      method: RETRIEVAL_METHOD[FIXTURE_MAJOR],
       global: retrievalGlobal,
       within_role: { ...retrievalGlobal },
       baseline_role_minutes: baseline,
     },
     neighbors,
-    uncertainty: uncertaintyBlock(profile.uncertainty),
+    uncertainty: bound(uncertaintyBlock(profile.uncertainty)),
     caveats: buildCaveats(catalog, profile),
     evidence_index: evidenceIndex,
     provenance_ref: "manifest.json",
@@ -643,6 +748,14 @@ function resolveProfileTemplates() {
 async function buildFixturePack() {
   const catalog = await readJson(resolve(publishedRoot, "feature-catalog.json"));
   const manifest = await readJson(resolve(publishedRoot, "manifest.json"));
+  if (FIXTURE_MAJOR === 2) {
+    // Real weights and a real representation id, so the fixture satisfies the
+    // binding the consumer enforces rather than a shape that merely validates.
+    publishedRepresentation = await readJson(resolve(publishedRoot, "representation.json"));
+    if (publishedRepresentation.representation.id !== manifest.representation_id) {
+      throw new Error("The published v2 manifest and representation disagree");
+    }
+  }
   const index = await readJson(resolve(publishedRoot, "players.index.json"));
   const researchSummary = await readJson(resolve(publishedRoot, "research-summary.json"));
 
@@ -676,7 +789,7 @@ async function buildFixturePack() {
 
   const fixtureIndex = {
     contract: "scoutlens.showcase",
-    schema_version: "1.0.0",
+    schema_version: manifest.schema_version,
     dataset_version: manifest.dataset_version,
     profiles: [...index.profiles, ...indexItems],
   };
@@ -696,6 +809,9 @@ async function buildFixturePack() {
   pack.set("feature-catalog.json", catalog);
   pack.set("research-summary.json", researchSummary);
   pack.set("players.index.json", fixtureIndex);
+  if (FIXTURE_MAJOR === 2) {
+    pack.set("representation.json", publishedRepresentation);
+  }
   for (const [filename, artifact] of profiles) {
     pack.set(`players/${filename}`, artifact);
   }

@@ -9,7 +9,7 @@
 //   2. runs `next build` with SCOUTLENS_SHOWCASE_ROOT=<pack> so the server
 //      components bake the synthetic selector and profile data into the export;
 //   3. moves the static export out of the shared `out/` into out-fixtures/<id>;
-//   4. replaces <export>/showcase/v1 with the fixture pack, so the browser's
+//   4. replaces <export>/showcase/v<major> with the fixture pack, so the browser's
 //      lazy manifest+profile fetches resolve natively against fixture data;
 //   5. fails unless the fixture identity actually appears in the built Lab HTML.
 //
@@ -25,6 +25,11 @@ import { FIXTURE_MARKERS, fixtureDirectory, verifyFixturePack } from "./fixture-
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
+
+// The fixture export replaces the served showcase tree, so it must target
+// the same major the pack was generated for.
+const fixtureMajor = Number(process.env.SCOUTLENS_FIXTURE_MAJOR ?? "1");
+const showcaseDir = `v${fixtureMajor}`;
 
 function fixtureArg() {
   const index = process.argv.indexOf("--fixture");
@@ -88,7 +93,7 @@ async function moveDirectoryTo(from, to) {
 }
 
 async function replaceShowcaseAssets(exportRoot, packRoot) {
-  const target = resolve(exportRoot, "showcase", "v1");
+  const target = resolve(exportRoot, "showcase", showcaseDir);
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
   await cp(packRoot, target, { recursive: true });
@@ -149,6 +154,10 @@ async function main() {
     // path.resolve, while backslashes would be mangled by Next's env handling.
     SCOUTLENS_SHOWCASE_ROOT: packRoot.replaceAll("\\", "/"),
     SCOUTLENS_DIST_DIR: buildDir,
+    // The consumer resolves its base URL and validating schema from this, so a
+    // v2 pack built without it would be served under /showcase/v1/ and rejected
+    // for declaring the wrong major - correctly, but confusingly.
+    NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR: String(fixtureMajor),
   });
 
   // With output: "export" the static files land in web/out unless the build
