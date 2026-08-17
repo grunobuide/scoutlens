@@ -23,7 +23,7 @@ import requests
 
 from scoutlens.evaluation.run_manifest import REPO_ROOT
 from scoutlens.showcase.io import canonical_json_bytes, discard_staging, make_staging_directory, publish_directory
-from scoutlens.showcase.schema import validate_schema
+from scoutlens.showcase.schema import artifact_major, validate_schema
 
 PAYLOAD_CONTRACT = "scoutlens.showcase-payload-pack"
 PAYLOAD_SCHEMA_VERSION = "1.0.0"
@@ -127,7 +127,10 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     # Accept that transport-only conversion while rejecting every other byte drift.
     if canonical_json_bytes(manifest) != payload.replace(b"\r\n", b"\n"):
         raise ValueError("manifest.json is not canonically serialized")
-    validate_schema(manifest, label="manifest.json")
+    # The major comes from the manifest itself. Packing a v2 dataset against the
+    # v1 schema would reject it, and packing it against whichever schema is
+    # newest would validate a payload nobody has read.
+    validate_schema(manifest, label="manifest.json", major=artifact_major(manifest))
     return manifest
 
 
@@ -188,7 +191,7 @@ def _verify_source_files(source_root: Path, entries: dict[str, dict[str, Any]]) 
             raise ValueError(f"{name}: manifest integrity metadata mismatch")
 
 
-def build_payload_archive(source_root: Path, output_path: Path) -> PayloadBuild:
+def build_payload_archive(source_root: Path, output_path: Path, *, sidecar: bool = False) -> PayloadBuild:
     """Build a deterministic archive containing exactly manifest player paths."""
     source_root = source_root.resolve()
     manifest = _load_manifest(source_root / "manifest.json")
@@ -219,13 +222,59 @@ def build_payload_archive(source_root: Path, output_path: Path) -> PayloadBuild:
         temporary.replace(output_path)
     finally:
         temporary.unlink(missing_ok=True)
-    return PayloadBuild(
+    build = PayloadBuild(
         dataset_version=manifest["dataset_version"],
         filename=output_path.name,
         sha256=digest,
         archive_bytes=archive_bytes,
         path_count=len(entries),
     )
+    if sidecar:
+        write_payload_sidecar(output_path, build, manifest)
+    return build
+
+
+def proposed_archive_name(prefix: str, dataset_version: str, digest: str) -> str:
+    """The content-addressed name a release asset must be published under.
+
+    Identity first, then the digest of the exact bytes: a consumer that pins the
+    name has pinned the content, and a rebuild that differs cannot silently take
+    the same URL.
+    """
+    return f"{prefix}-{dataset_version}-{digest}.tar.gz"
+
+
+def write_payload_sidecar(output_path: Path, build: PayloadBuild, manifest: dict[str, Any]) -> Path:
+    """Hand `scoutlens-qop.6.6` everything it needs to publish and re-verify.
+
+    Written beside the candidate rather than into the pin: this leaf never
+    publishes and never repins, so the proposed name is a proposal.
+    """
+    sidecar_path = output_path.with_name(f"{output_path.name}.metadata.json")
+    document = {
+        "contract": PAYLOAD_CONTRACT,
+        "schema_version": PAYLOAD_SCHEMA_VERSION,
+        "kind": "player_payload_candidate",
+        "dataset_version": build.dataset_version,
+        "showcase_schema_version": manifest["schema_version"],
+        "representation_id": manifest.get("representation_id"),
+        "archive": {
+            "candidate_filename": build.filename,
+            "proposed_filename": proposed_archive_name(
+                "scoutlens-showcase", build.dataset_version, build.sha256
+            ),
+            "format": PAYLOAD_FORMAT,
+            "bytes": build.archive_bytes,
+            "sha256": build.sha256,
+            "member_count": build.path_count,
+        },
+        "source": {
+            "manifest_sha256": hashlib.sha256(canonical_json_bytes(manifest)).hexdigest(),
+            "profile_count": manifest["population"]["profile_count"],
+        },
+    }
+    sidecar_path.write_bytes(canonical_json_bytes(document))
+    return sidecar_path
 
 
 def _download_archive(metadata: PayloadMetadata, destination: Path) -> None:
@@ -335,6 +384,11 @@ def main() -> None:
     build_parser = subparsers.add_parser("build", help="build a deterministic player payload archive")
     build_parser.add_argument("--source-root", type=Path, default=DEFAULT_SHOWCASE_ROOT)
     build_parser.add_argument("--output", type=Path, required=True)
+    build_parser.add_argument(
+        "--sidecar",
+        action="store_true",
+        help="also write <output>.metadata.json for the publication leaf",
+    )
 
     hydrate_parser = subparsers.add_parser("hydrate", help="verify and atomically hydrate the player payload")
     hydrate_parser.add_argument("--archive", type=Path)
@@ -344,7 +398,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "build":
-        result = build_payload_archive(args.source_root, args.output).as_dict()
+        result = build_payload_archive(args.source_root, args.output, sidecar=args.sidecar).as_dict()
     else:
         result = hydrate_payload(
             archive_path=args.archive,

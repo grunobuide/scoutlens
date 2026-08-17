@@ -318,3 +318,88 @@ def test_real_payload_is_deterministic_complete_and_hydrates(tmp_path: Path) -> 
         output_dir=published / "players",
     )
     validate_published_directory(published)
+
+
+# --- the v2 payload candidate (scoutlens-qop.6.4.4) ------------------------
+
+REAL_V2_ROOT = REPO_ROOT / "public" / "showcase" / "v2"
+HAS_REAL_V2_PAYLOAD = (REAL_V2_ROOT / "players").is_dir()
+V2_DATASET_VERSION = "wyscout-2017-18-v2-0123456789ab"
+V2_REPRESENTATION_ID = "rep-f018e6041ccbad10"
+
+
+def _write_v2_fixture(root: Path) -> Path:
+    """The v1 fixture restamped as v2, which is the whole difference the packer
+    sees: it reads the manifest, not the profiles."""
+    _write_fixture(root)
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    manifest["schema_version"] = "2.0.0"
+    manifest["dataset_version"] = V2_DATASET_VERSION
+    manifest["representation_id"] = V2_REPRESENTATION_ID
+    manifest["files"].append(_file_entry("representation.json", b"{}\n"))
+    (root / "manifest.json").write_bytes(canonical_json_bytes(manifest))
+    return root
+
+
+def test_the_packer_reads_the_major_from_the_manifest(tmp_path: Path) -> None:
+    """A v2 dataset validated against the v1 schema is rejected, and validating
+    it against whichever schema is newest would accept a payload nobody read.
+    The manifest declares its own major."""
+    source = _write_v2_fixture(tmp_path / "v2")
+    build = build_payload_archive(source, tmp_path / "candidate.tar.gz")
+    assert build.dataset_version == V2_DATASET_VERSION
+    assert build.path_count == 2
+
+
+def test_the_v2_candidate_packs_only_player_members(tmp_path: Path) -> None:
+    """`representation.json` and the other four artifacts are tracked in Git;
+    the archive exists for the part that is not."""
+    source = _write_v2_fixture(tmp_path / "v2")
+    build_payload_archive(source, tmp_path / "candidate.tar.gz")
+    with tarfile.open(tmp_path / "candidate.tar.gz", mode="r:gz") as archive:
+        names = [member.name for member in archive.getmembers()]
+    assert names == ["players/wy-1-c-1.json", "players/wy-2-c-1.json"]
+
+
+def test_a_v1_manifest_still_packs_as_v1(tmp_path: Path) -> None:
+    source, _ = _write_fixture(tmp_path / "v1")
+    build = build_payload_archive(source, tmp_path / "candidate.tar.gz")
+    assert build.dataset_version == DATASET_VERSION
+
+
+def test_the_payload_sidecar_is_content_addressed_and_names_the_representation(
+    tmp_path: Path,
+) -> None:
+    source = _write_v2_fixture(tmp_path / "v2")
+    build = build_payload_archive(source, tmp_path / "candidate.tar.gz", sidecar=True)
+    sidecar = json.loads((tmp_path / "candidate.tar.gz.metadata.json").read_text(encoding="utf-8"))
+    assert sidecar["archive"]["sha256"] == build.sha256
+    assert build.sha256 in sidecar["archive"]["proposed_filename"]
+    assert V2_DATASET_VERSION in sidecar["archive"]["proposed_filename"]
+    assert sidecar["representation_id"] == V2_REPRESENTATION_ID
+    assert sidecar["showcase_schema_version"] == "2.0.0"
+    assert sidecar["archive"]["member_count"] == build.path_count
+
+
+def test_no_sidecar_is_written_unless_asked(tmp_path: Path) -> None:
+    source = _write_v2_fixture(tmp_path / "v2")
+    build_payload_archive(source, tmp_path / "candidate.tar.gz")
+    assert not (tmp_path / "candidate.tar.gz.metadata.json").exists()
+
+
+@pytest.mark.skipif(
+    os.environ.get("SCOUTLENS_SHOWCASE_PAYLOAD_INTEGRATION") != "1" or not HAS_REAL_V2_PAYLOAD,
+    reason="requires the published v2 payload and SCOUTLENS_SHOWCASE_PAYLOAD_INTEGRATION=1",
+)
+def test_the_real_v2_payload_is_deterministic_and_within_budget(tmp_path: Path) -> None:
+    first = build_payload_archive(REAL_V2_ROOT, tmp_path / "first.tar.gz", sidecar=True)
+    second = build_payload_archive(REAL_V2_ROOT, tmp_path / "second.tar.gz")
+    assert (tmp_path / "first.tar.gz").read_bytes() == (tmp_path / "second.tar.gz").read_bytes()
+    assert first.sha256 == second.sha256
+    assert first.path_count == 1257
+    assert first.dataset_version.startswith("wyscout-2017-18-v2-")
+    assert first.archive_bytes <= MAX_ARCHIVE_BYTES
+
+    sidecar = json.loads((tmp_path / "first.tar.gz.metadata.json").read_text(encoding="utf-8"))
+    assert sidecar["representation_id"] == V2_REPRESENTATION_ID
+    assert sidecar["source"]["profile_count"] == 1257
