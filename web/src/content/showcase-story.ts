@@ -1,11 +1,13 @@
 import type {
+  AnyFeatureCatalogArtifact,
+  AnyManifest,
+  AnyPlayerProfileArtifact,
+  AnyResearchSummaryArtifact,
+} from "@/contracts/showcase-repository";
+import type {
   Caveat,
-  FeatureCatalogArtifact,
-  Manifest,
-  PlayerProfileArtifact,
   ResearchExperiment,
   ResearchMetric,
-  ResearchSummaryArtifact,
 } from "@/contracts/generated/showcase";
 
 export const EXPERIMENT_IDS = {
@@ -28,9 +30,9 @@ export interface FingerprintFeature {
 }
 
 export interface ShowcaseStory {
-  manifest: Manifest;
-  research: ResearchSummaryArtifact;
-  featuredProfile: PlayerProfileArtifact;
+  manifest: AnyManifest;
+  research: AnyResearchSummaryArtifact;
+  featuredProfile: AnyPlayerProfileArtifact;
   featuredName: string;
   featuredTeam: string;
   fingerprintFeatures: ReadonlyArray<FingerprintFeature>;
@@ -38,7 +40,7 @@ export interface ShowcaseStory {
 }
 
 function requireExperiment(
-  research: ResearchSummaryArtifact,
+  research: AnyResearchSummaryArtifact,
   experimentId: string,
 ): ResearchExperiment {
   const experiment = research.experiments.find((item) => item.experiment_id === experimentId);
@@ -68,7 +70,7 @@ export function formatMetricInterval(metric: ResearchMetric): string | null {
 }
 
 export function caveatsFor(
-  research: ResearchSummaryArtifact,
+  research: AnyResearchSummaryArtifact,
   experiment: ResearchExperiment,
 ): ReadonlyArray<Caveat> {
   return experiment.caveat_codes.map((code) => {
@@ -81,8 +83,8 @@ export function caveatsFor(
 }
 
 function selectFingerprintFeatures(
-  catalog: FeatureCatalogArtifact,
-  profile: PlayerProfileArtifact,
+  catalog: AnyFeatureCatalogArtifact,
+  profile: AnyPlayerProfileArtifact,
 ): ReadonlyArray<FingerprintFeature> {
   const definitionsByFamily = new Map<string, Array<(typeof catalog.features)[number]>>();
   for (const definition of catalog.features) {
@@ -115,10 +117,10 @@ function selectFingerprintFeatures(
 }
 
 export function buildShowcaseStory(
-  manifest: Manifest,
-  research: ResearchSummaryArtifact,
-  featuredProfile: PlayerProfileArtifact,
-  catalog: FeatureCatalogArtifact,
+  manifest: AnyManifest,
+  research: AnyResearchSummaryArtifact,
+  featuredProfile: AnyPlayerProfileArtifact,
+  catalog: AnyFeatureCatalogArtifact,
 ): ShowcaseStory {
   if (featuredProfile.profile_key !== manifest.featured_profile.profile_key) {
     throw new Error("The loaded profile is not the editorially featured profile");

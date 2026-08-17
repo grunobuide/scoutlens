@@ -1,17 +1,22 @@
 import type {
-  FeatureCatalogArtifact,
-  PlayerIndexItem,
-  PlayerProfileArtifact,
-} from "@/contracts/generated/showcase";
+  AnyFeatureCatalogArtifact,
+  AnyPlayerIndexItem,
+  AnyPlayerProfileArtifact,
+  ShowcaseMajor,
+} from "@/contracts/showcase-repository";
 import { describeLabError, type LabProblem } from "@/content/showcase-lab";
 import { createServerShowcaseRepository } from "@/content/showcase-server";
 
 export interface ReadyShowcaseLabData {
   status: "ready";
   datasetVersion: string;
-  catalog: FeatureCatalogArtifact;
-  profiles: ReadonlyArray<PlayerIndexItem>;
-  initialProfile: PlayerProfileArtifact;
+  /** The contract major this page was built against. Presentation reads the
+   * score field and the method disclosure from it rather than sniffing which
+   * key happens to be present. */
+  major: ShowcaseMajor;
+  catalog: AnyFeatureCatalogArtifact;
+  profiles: ReadonlyArray<AnyPlayerIndexItem>;
+  initialProfile: AnyPlayerProfileArtifact;
 }
 
 export interface FailedShowcaseLabData {
@@ -37,6 +42,7 @@ export async function loadShowcaseLab(): Promise<ShowcaseLabData> {
     return {
       status: "ready",
       datasetVersion,
+      major: repository.major,
       catalog,
       profiles,
       initialProfile,

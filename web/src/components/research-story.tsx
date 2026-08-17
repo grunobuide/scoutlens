@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-import type { ResearchExperiment, ResearchSummaryArtifact } from "@/contracts/generated/showcase";
+import type {
+  ResearchExperiment,
+} from "@/contracts/generated/showcase";
 import {
   caveatsFor,
   formatMetric,
@@ -9,6 +11,9 @@ import {
   type ShowcaseStory,
 } from "@/content/showcase-story";
 import { explainMetric } from "@/content/evidence-explanations";
+import type {
+  AnyResearchSummaryArtifact,
+} from "@/contracts/showcase-repository";
 
 const repositoryRoot = "https://github.com/grunobuide/scoutlens/blob/main/";
 
@@ -23,7 +28,7 @@ function providerLabel(provider: ResearchExperiment["provider"]): string {
 
 interface ExperimentCardProps {
   experiment: ResearchExperiment;
-  research: ResearchSummaryArtifact;
+  research: AnyResearchSummaryArtifact;
   metricIds?: ReadonlyArray<string>;
   emphasis?: "default" | "warning" | "signal";
 }
@@ -88,7 +93,7 @@ export function ExperimentCard({
   );
 }
 
-export function ClaimsMatrix({ research }: { research: ResearchSummaryArtifact }) {
+export function ClaimsMatrix({ research }: { research: AnyResearchSummaryArtifact }) {
   return (
     <section className="claims-matrix" aria-labelledby="claims-heading">
       <div className="claims-matrix__supported">

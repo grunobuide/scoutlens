@@ -1,12 +1,58 @@
 import type {
   EvidenceItem,
-  FeatureCatalogArtifact,
   FeatureDefinition,
   FeatureValue,
-  PlayerIndexItem,
-  PlayerProfileArtifact,
+  RetrievalOutcome,
   StatisticalNeighbor,
 } from "@/contracts/generated/showcase";
+import type {
+  EvidenceItem as EvidenceItemV2,
+  FeatureDefinition as FeatureDefinitionV2,
+  FeatureValue as FeatureValueV2,
+  RetrievalOutcome as RetrievalOutcomeV2,
+  StatisticalNeighbor as StatisticalNeighborV2,
+} from "@/contracts/generated/showcase-v2";
+import type {
+  AnyFeatureCatalogArtifact,
+  AnyPlayerIndexItem,
+  AnyPlayerProfileArtifact,
+} from "@/contracts/showcase-repository";
+
+export type AnyEvidenceItem = EvidenceItem | EvidenceItemV2;
+export type AnyFeatureDefinition = FeatureDefinition | FeatureDefinitionV2;
+export type AnyFeatureValue = FeatureValue | FeatureValueV2;
+export type AnyRetrievalOutcome = RetrievalOutcome | RetrievalOutcomeV2;
+export type AnyStatisticalNeighbor = StatisticalNeighbor | StatisticalNeighborV2;
+
+/**
+ * Which published field carries the score, per contract major.
+ *
+ * v2 renamed `cosine_similarity` to `similarity_score` because a weighted
+ * metric must not be published under a name claiming plain cosine (D047).
+ * These readers narrow on the field that is present. They never compute a
+ * score, and there is no fallback branch that would let a missing field read
+ * as zero - a missing field is a type error here, not a silent nought.
+ */
+export function retrievalScore(outcome: AnyRetrievalOutcome): number | null {
+  return "similarity_score" in outcome ? outcome.similarity_score : outcome.cosine_similarity;
+}
+
+export function neighborScore(neighbor: AnyStatisticalNeighbor): number {
+  return "similarity_score" in neighbor ? neighbor.similarity_score : neighbor.cosine_similarity;
+}
+
+/**
+ * The contribution a subject's evidence is ordered and summed by.
+ *
+ * The rule is unchanged between majors - descending magnitude, ties broken by
+ * catalog order - but it applies to each major's own contribution to the score
+ * it publishes. In v2 `contribution` remains the unweighted cosine audit view,
+ * so ordering by it would rank the explanation by a number the reader is never
+ * shown, and summing it would fail to reconstruct `similarity_score`.
+ */
+export function evidenceContribution(item: AnyEvidenceItem): number {
+  return "weighted_contribution" in item ? item.weighted_contribution : item.contribution;
+}
 
 export type PercentileScope = "within_role" | "global";
 
@@ -24,9 +70,9 @@ export interface ProfileFilterOptions {
 }
 
 export interface FingerprintRow {
-  definition: FeatureDefinition;
-  periodA: FeatureValue;
-  periodB: FeatureValue;
+  definition: AnyFeatureDefinition;
+  periodA: AnyFeatureValue;
+  periodB: AnyFeatureValue;
 }
 
 export interface FingerprintFamily {
@@ -36,14 +82,14 @@ export interface FingerprintFamily {
 }
 
 export interface ContributionEvidence {
-  features: ReadonlyArray<EvidenceItem>;
-  families: ReadonlyArray<EvidenceItem>;
+  features: ReadonlyArray<AnyEvidenceItem>;
+  families: ReadonlyArray<AnyEvidenceItem>;
   featureSum: number;
   familySum: number;
 }
 
 export interface NeighborEvidence {
-  neighbor: StatisticalNeighbor;
+  neighbor: AnyStatisticalNeighbor;
   evidence: ContributionEvidence;
 }
 
@@ -89,7 +135,7 @@ export function normalizeSearchText(value: string): string {
     .trim();
 }
 
-export function profileTeamNames(profile: PlayerIndexItem): ReadonlyArray<string> {
+export function profileTeamNames(profile: AnyPlayerIndexItem): ReadonlyArray<string> {
   return [
     ...new Set(
       [...profile.period_contexts.a.teams, ...profile.period_contexts.b.teams].map((team) => team.name),
@@ -98,7 +144,7 @@ export function profileTeamNames(profile: PlayerIndexItem): ReadonlyArray<string
 }
 
 export function buildProfileFilterOptions(
-  profiles: ReadonlyArray<PlayerIndexItem>,
+  profiles: ReadonlyArray<AnyPlayerIndexItem>,
 ): ProfileFilterOptions {
   const uniqueSorted = (values: ReadonlyArray<string>) =>
     [...new Set(values)].sort(identityCollator.compare);
@@ -110,7 +156,7 @@ export function buildProfileFilterOptions(
   };
 }
 
-function compareProfiles(left: PlayerIndexItem, right: PlayerIndexItem): number {
+function compareProfiles(left: AnyPlayerIndexItem, right: AnyPlayerIndexItem): number {
   return (
     identityCollator.compare(left.display_name, right.display_name) ||
     identityCollator.compare(left.competition.name, right.competition.name) ||
@@ -119,9 +165,9 @@ function compareProfiles(left: PlayerIndexItem, right: PlayerIndexItem): number 
 }
 
 export function filterProfiles(
-  profiles: ReadonlyArray<PlayerIndexItem>,
+  profiles: ReadonlyArray<AnyPlayerIndexItem>,
   filters: ProfileFilters,
-): ReadonlyArray<PlayerIndexItem> {
+): ReadonlyArray<AnyPlayerIndexItem> {
   const queryTokens = normalizeSearchText(filters.query).split(/\s+/).filter(Boolean);
   return profiles
     .filter((profile) => {
@@ -156,8 +202,8 @@ function featureMap(values: ReadonlyArray<FeatureValue>, period: string): Map<st
 }
 
 export function buildFingerprintRows(
-  catalog: FeatureCatalogArtifact,
-  profile: PlayerProfileArtifact,
+  catalog: AnyFeatureCatalogArtifact,
+  profile: AnyPlayerProfileArtifact,
 ): ReadonlyArray<FingerprintRow> {
   if (
     catalog.features.length !== 32 ||
@@ -201,8 +247,8 @@ export function groupFingerprintRows(
   }));
 }
 
-function contributionSum(items: ReadonlyArray<EvidenceItem>): number {
-  return items.reduce((sum, item) => sum + item.contribution, 0);
+function contributionSum(items: ReadonlyArray<AnyEvidenceItem>): number {
+  return items.reduce((sum, item) => sum + evidenceContribution(item), 0);
 }
 
 function assertContributionSum(
@@ -211,29 +257,31 @@ function assertContributionSum(
   label: string,
 ): void {
   if (Math.abs(actual - expected) > CONTRIBUTION_TOLERANCE) {
-    throw new Error(`${label} contribution sum ${actual} does not reconstruct cosine ${expected}`);
+    throw new Error(
+      `${label} contribution sum ${actual} does not reconstruct the stored score ${expected}`,
+    );
   }
 }
 
 function sameOrderedIds(
-  actual: ReadonlyArray<EvidenceItem>,
-  expected: ReadonlyArray<EvidenceItem>,
+  actual: ReadonlyArray<AnyEvidenceItem>,
+  expected: ReadonlyArray<AnyEvidenceItem>,
 ): boolean {
   return actual.every((item, index) => item.evidence_id === expected[index]?.evidence_id);
 }
 
 export function resolveContributionEvidence(
-  catalog: FeatureCatalogArtifact,
-  profile: PlayerProfileArtifact,
+  catalog: AnyFeatureCatalogArtifact,
+  profile: AnyPlayerProfileArtifact,
   evidenceRefs: ReadonlyArray<string>,
   subject: string,
-  expectedCosine: number,
+  expectedScore: number,
 ): ContributionEvidence {
   if (new Set(evidenceRefs).size !== evidenceRefs.length) {
     throw new Error(`${subject} repeats an evidence reference`);
   }
 
-  const evidenceById = new Map<string, EvidenceItem>();
+  const evidenceById = new Map<string, AnyEvidenceItem>();
   for (const item of profile.evidence_index) {
     if (evidenceById.has(item.evidence_id)) {
       throw new Error(`Evidence index repeats ${item.evidence_id}`);
@@ -283,14 +331,14 @@ export function resolveContributionEvidence(
 
   const sortedFeatures = [...features].sort(
     (left, right) =>
-      Math.abs(right.contribution) - Math.abs(left.contribution) ||
+      Math.abs(evidenceContribution(right)) - Math.abs(evidenceContribution(left)) ||
       (featureOrder.get(left.feature_id ?? "") ?? Number.MAX_SAFE_INTEGER) -
         (featureOrder.get(right.feature_id ?? "") ?? Number.MAX_SAFE_INTEGER) ||
       identityCollator.compare(left.evidence_id, right.evidence_id),
   );
   const sortedFamilies = [...families].sort(
     (left, right) =>
-      Math.abs(right.contribution) - Math.abs(left.contribution) ||
+      Math.abs(evidenceContribution(right)) - Math.abs(evidenceContribution(left)) ||
       (familyOrder.get(left.family) ?? Number.MAX_SAFE_INTEGER) -
         (familyOrder.get(right.family) ?? Number.MAX_SAFE_INTEGER) ||
       identityCollator.compare(left.evidence_id, right.evidence_id),
@@ -301,23 +349,23 @@ export function resolveContributionEvidence(
 
   const featureSum = contributionSum(features);
   const familySum = contributionSum(families);
-  assertContributionSum(featureSum, expectedCosine, `${subject} feature`);
-  assertContributionSum(familySum, expectedCosine, `${subject} family`);
+  assertContributionSum(featureSum, expectedScore, `${subject} feature`);
+  assertContributionSum(familySum, expectedScore, `${subject} family`);
   return { features, families, featureSum, familySum };
 }
 
 export function buildProfileEvidence(
-  catalog: FeatureCatalogArtifact,
-  profile: PlayerProfileArtifact,
+  catalog: AnyFeatureCatalogArtifact,
+  profile: AnyPlayerProfileArtifact,
 ): ProfileEvidence {
   if (profile.neighbors.length !== 5) {
     throw new Error("The retrieval evidence contract requires exactly five neighbors");
   }
 
-  const globalCosine = profile.retrieval.global.cosine_similarity;
-  const withinRoleCosine = profile.retrieval.within_role.cosine_similarity;
-  if (globalCosine === null || withinRoleCosine === null) {
-    throw new Error("Combined-scaler retrieval must expose a stored cosine score");
+  const globalScore = retrievalScore(profile.retrieval.global);
+  const withinRoleScore = retrievalScore(profile.retrieval.within_role);
+  if (globalScore === null || withinRoleScore === null) {
+    throw new Error("Combined-scaler retrieval must expose a stored similarity score");
   }
   if (
     profile.retrieval.global.evidence_refs.join("\u0000") !==
@@ -330,14 +378,14 @@ export function buildProfileEvidence(
     profile,
     profile.retrieval.global.evidence_refs,
     "self_retrieval",
-    globalCosine,
+    globalScore,
   );
-  assertContributionSum(self.featureSum, withinRoleCosine, "within-role self feature");
+  assertContributionSum(self.featureSum, withinRoleScore, "within-role self feature");
   if (
-    profile.retrieval.baseline_role_minutes.cosine_similarity !== null ||
+    retrievalScore(profile.retrieval.baseline_role_minutes) !== null ||
     profile.retrieval.baseline_role_minutes.evidence_refs.length !== 0
   ) {
-    throw new Error("Role-and-minutes baseline cannot expose cosine evidence");
+    throw new Error("Role-and-minutes baseline cannot expose similarity evidence");
   }
 
   const seenProfiles = new Set<string>();
@@ -362,7 +410,7 @@ export function buildProfileEvidence(
         profile,
         neighbor.evidence_refs,
         `neighbor:${neighbor.profile_key}`,
-        neighbor.cosine_similarity,
+        neighborScore(neighbor),
       ),
     };
   });

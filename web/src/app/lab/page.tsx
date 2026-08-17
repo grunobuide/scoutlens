@@ -45,6 +45,7 @@ export default async function LabPage() {
       {lab.status === "ready" ? (
         <LabExplorer
           datasetVersion={lab.datasetVersion}
+          major={lab.major}
           catalog={lab.catalog}
           profiles={lab.profiles}
           initialProfile={lab.initialProfile}
