@@ -524,7 +524,7 @@
           "const": "b"
         },
         "method": {
-          "const": "combined_scaler_cosine_v1"
+          "const": "combined_scaler_diagonal_v1"
         },
         "global": {
           "$ref": "#/$defs/retrieval_outcome"

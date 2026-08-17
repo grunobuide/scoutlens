@@ -37,7 +37,13 @@ break, so three things change together:
 2. every ranking-bearing block must name the **representation** that produced
    it;
 3. the dataset version marker moves from `-v1-` to `-v2-`, so the two can never
-   be confused by version string alone.
+   be confused by version string alone;
+4. `retrieval.method` moves from `combined_scaler_cosine_v1` to
+   **`combined_scaler_diagonal_v1`** (`D049`). The combined scaler is unchanged
+   and the prefix stays; the cosine claim goes, because that field is rendered
+   verbatim to readers and would otherwise state that diagonal rankings came
+   from plain cosine. It remains distinct from
+   `representation.ranking_method`, which names the scorer exactly.
 
 ## 2. File layout
 

@@ -589,7 +589,7 @@ export interface FeatureUncertainty {
 export interface IdentityRetrieval {
   query_period: "a";
   candidate_period: "b";
-  method: "combined_scaler_cosine_v1";
+  method: "combined_scaler_diagonal_v1";
   global: RetrievalOutcome;
   within_role: RetrievalOutcome;
   baseline_role_minutes: RetrievalOutcome;

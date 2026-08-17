@@ -430,3 +430,17 @@ def test_each_major_names_its_own_score_and_ordering_field() -> None:
 
     assert SCORE_FIELD_BY_MAJOR == {1: "cosine_similarity", 2: "similarity_score"}
     assert EVIDENCE_SORT_FIELD_BY_MAJOR == {1: "contribution", 2: "weighted_contribution"}
+
+
+def test_each_major_names_its_own_retrieval_method() -> None:
+    """The v1 value is frozen; the v2 value must not claim plain cosine.
+
+    Declared once in `catalog`, like the schema majors, because the previous
+    two defects in this contract were both a constant written by hand in more
+    than one place.
+    """
+    from scoutlens.showcase.catalog import RETRIEVAL_METHOD, RETRIEVAL_METHOD_V2
+
+    assert RETRIEVAL_METHOD == "combined_scaler_cosine_v1"
+    assert RETRIEVAL_METHOD_V2 == "combined_scaler_diagonal_v1"
+    assert "cosine" not in RETRIEVAL_METHOD_V2
