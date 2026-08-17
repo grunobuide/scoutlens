@@ -1,4 +1,5 @@
 public/showcase/v1/*.json text eol=lf
+public/showcase/v2/*.json text eol=lf
 config/showcase-payload-pack.json text eol=lf
 src/scoutlens/showcase/schemas/*.json text eol=lf
 web/src/contracts/generated/* text eol=lf

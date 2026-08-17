@@ -63,3 +63,7 @@ bd_recover.py
 CLAUDE.md
 AGENTS.md
 docs/frontend-agent-contract.md
+
+# The v2 player set is the same size problem as v1 above; scoutlens-qop.6.4.4
+# packs the archive that rehydrates it.
+public/showcase/v2/players/
