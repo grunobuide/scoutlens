@@ -42,6 +42,7 @@ import {
   type NeighborEvidence,
   type PercentileScope,
   type ProfileFilters,
+  methodDisclosure,
   neighborScore,
   retrievalScore,
   type AnyRetrievalOutcome,
@@ -92,6 +93,8 @@ interface LabExplorerProps {
    * score field and the method disclosure from it rather than sniffing which
    * key happens to be present on a payload. */
   major: ShowcaseMajor;
+  /** Weighted feature count from the published representation; null for v1. */
+  weightedFeatureCount: number | null;
   catalog: AnyFeatureCatalogArtifact;
   profiles: ReadonlyArray<AnyPlayerIndexItem>;
   initialProfile: AnyPlayerProfileArtifact;
@@ -116,6 +119,7 @@ function problemForUnknownProfile(profileKey: string): LabProblem {
 export function LabExplorer({
   datasetVersion,
   major,
+  weightedFeatureCount,
   catalog,
   profiles,
   initialProfile,
@@ -352,6 +356,7 @@ export function LabExplorer({
         {loadState.status === "ready" ? (
           <FingerprintProfile
             major={major}
+            weightedFeatureCount={weightedFeatureCount}
             key={loadState.profile.profile_key}
             catalog={catalog}
             profiles={profiles}
@@ -571,6 +576,51 @@ function RetrievalOutcomeCard({
   );
 }
 
+/**
+ * The frozen v2 method disclosure.
+ *
+ * Rendered only for major 2. v1 keeps the copy it already had, because this
+ * bead was given authority over the v2 wording and none over v1's - and
+ * "the layout looked better with it everywhere" is not a reason to restate a
+ * frozen contract.
+ *
+ * There is deliberately no representation toggle. Cosine is reachable as the
+ * published audit baseline and as the decision record, never as a control that
+ * invites a reader to pick the number they prefer (D047).
+ */
+function MethodDisclosurePanel({
+  major,
+  weightedFeatureCount,
+}: {
+  major: ShowcaseMajor;
+  weightedFeatureCount: number | null;
+}) {
+  if (major !== 2 || weightedFeatureCount === null) {
+    return null;
+  }
+  const disclosure = methodDisclosure(weightedFeatureCount);
+  return (
+    <section className="method-disclosure" aria-labelledby="method-disclosure-heading">
+      <header className="lab-narrative-heading">
+        <div>
+          <p className="eyebrow">Ranking method</p>
+          <h2 id="method-disclosure-heading">{disclosure.label}</h2>
+        </div>
+        <p>{disclosure.summary}</p>
+      </header>
+      <p className="method-disclosure__audit">{disclosure.auditStatement}</p>
+      <p className="method-disclosure__boundary">{disclosure.boundary}</p>
+      <details className="method-disclosure__advanced">
+        <summary>{disclosure.advancedTitle}</summary>
+        <p>{disclosure.advancedBody}</p>
+        <p>
+          <a href={disclosure.decisionUrl}>Decision record D045</a>
+        </p>
+      </details>
+    </section>
+  );
+}
+
 function RetrievalReplay({ profile, scoreLabel }: { profile: AnyPlayerProfileArtifact; scoreLabel: string }) {
   const teamConfound = caveatFor(profile, "same_season_team_confound");
   return (
@@ -744,8 +794,9 @@ function StatisticalNeighbors({
   );
 }
 
-export function FingerprintProfile({ catalog, profiles, profile, major }: {
+export function FingerprintProfile({ catalog, profiles, profile, major, weightedFeatureCount }: {
   major: ShowcaseMajor;
+  weightedFeatureCount?: number | null;
   catalog: AnyFeatureCatalogArtifact;
   profiles: ReadonlyArray<AnyPlayerIndexItem>;
   profile: AnyPlayerProfileArtifact;
@@ -893,6 +944,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major }: {
         </aside>
       </div>
 
+      <MethodDisclosurePanel major={major} weightedFeatureCount={weightedFeatureCount ?? null} />
       <RetrievalReplay profile={profile} scoreLabel={scoreLabel} />
       <StatisticalNeighbors
         catalog={catalog}

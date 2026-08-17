@@ -46,6 +46,7 @@ export default async function LabPage() {
         <LabExplorer
           datasetVersion={lab.datasetVersion}
           major={lab.major}
+          weightedFeatureCount={lab.weightedFeatureCount}
           catalog={lab.catalog}
           profiles={lab.profiles}
           initialProfile={lab.initialProfile}

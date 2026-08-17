@@ -17,6 +17,10 @@ export interface ReadyShowcaseLabData {
   catalog: AnyFeatureCatalogArtifact;
   profiles: ReadonlyArray<AnyPlayerIndexItem>;
   initialProfile: AnyPlayerProfileArtifact;
+  /** How many features the published representation weights, or null for major
+   * 1, which has no representation. Read from the artifact so the disclosure
+   * never states a count the dataset does not. */
+  weightedFeatureCount: number | null;
 }
 
 export interface FailedShowcaseLabData {
@@ -34,10 +38,11 @@ export async function loadShowcaseLab(): Promise<ShowcaseLabData> {
   try {
     const manifest = await repository.getManifest();
     datasetVersion = manifest.dataset_version;
-    const [catalog, profiles, initialProfile] = await Promise.all([
+    const [catalog, profiles, initialProfile, representation] = await Promise.all([
       repository.getFeatureCatalog(),
       repository.listProfiles(),
       repository.getProfile(manifest.featured_profile.profile_key),
+      repository.getRepresentation(),
     ]);
     return {
       status: "ready",
@@ -46,6 +51,7 @@ export async function loadShowcaseLab(): Promise<ShowcaseLabData> {
       catalog,
       profiles,
       initialProfile,
+      weightedFeatureCount: representation?.representation.feature_count ?? null,
     };
   } catch (error) {
     return {

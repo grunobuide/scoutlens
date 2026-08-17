@@ -551,3 +551,50 @@ export function describeLabError(error: unknown): LabProblem {
     canRetry: true,
   };
 }
+
+/**
+ * The frozen v2 method disclosure, frozen by `scoutlens-qop.6.5`.
+ *
+ * One typed source, rendered in one place. Every sentence here is contractual:
+ * the label, the fitted-weight disclosure, the unit-weight audit statement, the
+ * unsupported-claim boundary and the advanced section were fixed by the bead
+ * before the migration started, so a future edit is a decision rather than a
+ * wording preference.
+ *
+ * No metric value is duplicated into this text. `featureCount` is read from the
+ * published representation at render time, because a number retyped into copy
+ * is a number that can silently disagree with the artifact it describes.
+ */
+export interface MethodDisclosure {
+  label: string;
+  summary: string;
+  auditStatement: string;
+  boundary: string;
+  advancedTitle: string;
+  advancedBody: string;
+  decisionUrl: string;
+}
+
+const DECISION_LOG_D045 =
+  "https://github.com/grunobuide/scoutlens/blob/main/docs/decisions-log.md#d045";
+
+export function methodDisclosure(featureCount: number): MethodDisclosure {
+  return {
+    label: "Learned weighted similarity",
+    summary:
+      `Ranks use ${featureCount} non-negative feature weights fitted on the frozen ` +
+      "Wyscout training split.",
+    auditStatement:
+      "Unit weights reproduce the cosine audit baseline exactly, so the frozen cosine " +
+      "contract remains a faithful check on this one rather than a different family of method.",
+    boundary:
+      "The gain concerns temporal identity retrieval. It does not measure player quality, " +
+      "tactical fit or recruitment value.",
+    advancedTitle: "Why this model, and why not the neural one?",
+    advancedBody:
+      "Cosine remains the transparent audit baseline: it is published in full under the frozen " +
+      "1.0.0 contract and any ranking here can be checked against it. The preregistered compact " +
+      "neural arm lost to this interpretable weighted model, so it was not promoted.",
+    decisionUrl: DECISION_LOG_D045,
+  };
+}
