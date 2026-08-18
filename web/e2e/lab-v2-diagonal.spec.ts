@@ -110,3 +110,64 @@ test.describe("the v2 Lab presents the diagonal method", () => {
     await expectNoSeriousOrCriticalViolations(page);
   });
 });
+
+// The remaining cells of the frozen matrix. 320/360/768/1280 come from the
+// project list; these three states are orthogonal to width and are asserted
+// once each rather than per viewport.
+test.describe("the v2 disclosure survives the degraded states", () => {
+  test("stays readable at 375 and 1440 px", async ({ page }) => {
+    for (const width of [375, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/lab/?player=${MAX_CONTENT}`);
+      const disclosure = page.locator(".method-disclosure");
+      await expect(disclosure).toBeVisible();
+      await expect(disclosure).toContainText("Learned weighted similarity");
+      await expect(disclosure).toContainText(
+        "does not measure player quality, tactical fit or recruitment value",
+      );
+      await expectNoPageOverflow(page);
+    }
+  });
+
+  test("stays readable at 200% zoom", async ({ page }) => {
+    // 200% zoom reflow is equivalent to halving the CSS viewport, which is how
+    // WCAG 1.4.10 is normally exercised in a headless browser.
+    await page.setViewportSize({ width: 640, height: 512 });
+    await page.goto(`/lab/?player=${MAX_CONTENT}`);
+    const disclosure = page.locator(".method-disclosure");
+    await expect(disclosure).toBeVisible();
+    await expect(disclosure).toContainText(
+      "does not measure player quality, tactical fit or recruitment value",
+    );
+    await expectNoPageOverflow(page);
+  });
+
+  test("reaches the neural-null rationale by keyboard alone", async ({ page }) => {
+    await page.goto(`/lab/?player=${MAX_CONTENT}`);
+    const summary = page.locator(".method-disclosure__advanced > summary");
+    await summary.focus();
+    await expect(summary).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".method-disclosure__advanced")).toContainText(
+      "preregistered compact neural arm lost",
+    );
+  });
+});
+
+test.describe("the v2 disclosure without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("still states the method, the audit baseline and the boundary", async ({ page }) => {
+    // The disclosure is server-rendered, so the sentence that bounds the claim
+    // must not depend on hydration. A boundary that only appears once the
+    // bundle loads is a boundary the first paint does not have.
+    await page.goto(`/lab/?player=${MAX_CONTENT}`);
+    const disclosure = page.locator(".method-disclosure");
+    await expect(disclosure).toBeVisible();
+    await expect(disclosure).toContainText("Learned weighted similarity");
+    await expect(disclosure).toContainText("Unit weights reproduce the cosine audit baseline exactly");
+    await expect(disclosure).toContainText(
+      "does not measure player quality, tactical fit or recruitment value",
+    );
+  });
+});
