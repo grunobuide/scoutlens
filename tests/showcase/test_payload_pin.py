@@ -89,17 +89,30 @@ def _write(tmp_path: Path, document: dict, name: str = "pin.json") -> Path:
 # --- the two schemas are exact and distinct -------------------------------
 
 
-def test_the_repository_pin_still_loads_and_targets_v1() -> None:
-    """AC1: the shipped pin must keep working, unchanged, before any repin."""
+def test_the_repository_pin_is_internally_consistent() -> None:
+    """The shipped pin must agree with itself, whichever major it names.
+
+    It named v1 when this test was written and names v2 since
+    `scoutlens-qop.6.6.2` repinned it. Pinning the major here would only record
+    which repin ran last; what has to hold is that the schema, the dataset
+    prefix, the hydration root and the v2-only fields all describe the same
+    dataset. The frozen v1 shape stays covered by the fixtures below, so
+    rollback is still tested.
+    """
     metadata = load_payload_metadata()
-    assert metadata.schema_version == PAYLOAD_SCHEMA_VERSION
-    assert metadata.dataset_version.startswith("wyscout-2017-18-v1-")
-    assert metadata.showcase_major == 1
-    assert metadata.showcase_root.name == "v1"
+    assert metadata.schema_version in (PAYLOAD_SCHEMA_VERSION, PAYLOAD_SCHEMA_VERSION_V2)
+    assert metadata.dataset_version.startswith(f"wyscout-2017-18-v{metadata.showcase_major}-")
+    assert metadata.showcase_root.name == f"v{metadata.showcase_major}"
     assert metadata.path_count == 1257
-    # The legacy shape predates the distinction and must not acquire v2 fields.
-    assert metadata.showcase_schema_version is None
-    assert metadata.representation_id is None
+
+    if metadata.schema_version == PAYLOAD_SCHEMA_VERSION:
+        # The legacy shape predates the distinction and must not acquire v2 fields.
+        assert metadata.showcase_schema_version is None
+        assert metadata.representation_id is None
+    else:
+        assert metadata.showcase_schema_version == "2.0.0"
+        assert metadata.representation_id is not None
+        assert metadata.manifest_sha256 is not None
 
 
 def test_a_v2_pin_loads_and_targets_v2(tmp_path: Path) -> None:
