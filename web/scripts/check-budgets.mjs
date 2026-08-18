@@ -20,8 +20,15 @@ const budgets = JSON.parse(await readFile(resolve(webRoot, "quality-budgets.json
 const lighthouseConfig = JSON.parse(
   await readFile(resolve(webRoot, "lighthouserc.json"), "utf8"),
 );
+// Budgets are measured against the major the build actually shipped.
+const showcaseMajor = Number(process.env.NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR ?? "1");
+if (showcaseMajor !== 1 && showcaseMajor !== 2) {
+  throw new Error(`NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR must be 1 or 2, got ${showcaseMajor}`);
+}
+const showcaseDir = `v${showcaseMajor}`;
+
 const manifest = JSON.parse(
-  await readFile(resolve(outputRoot, "showcase", "v1", "manifest.json"), "utf8"),
+  await readFile(resolve(outputRoot, "showcase", showcaseDir, "manifest.json"), "utf8"),
 );
 
 function gzipBytes(bytes) {
@@ -124,14 +131,14 @@ const initialStyles = (
   await Promise.all(stylesheetPaths.map((path) => gzipFile(path)))
 ).reduce((total, bytes) => total + bytes, 0);
 const labInitialTransfer = gzipBytes(labHtmlBytes) + initialJavaScript + initialStyles;
-const catalog = await gzipFile("showcase/v1/feature-catalog.json");
+const catalog = await gzipFile(`showcase/${showcaseDir}/feature-catalog.json`);
 
 let largestProfile = { bytes: 0, path: "" };
 for (const file of manifest.files) {
   if (!file.path.startsWith("players/")) {
     continue;
   }
-  const bytes = await gzipFile(`showcase/v1/${file.path}`);
+  const bytes = await gzipFile(`showcase/${showcaseDir}/${file.path}`);
   if (bytes > largestProfile.bytes) {
     largestProfile = { bytes, path: file.path };
   }

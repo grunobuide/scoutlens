@@ -1,7 +1,8 @@
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 
-import schema from "@/contracts/generated/showcase.schema.json";
+import schemaV1 from "@/contracts/generated/showcase.schema.json";
+import schemaV2 from "@/contracts/generated/showcase-v2.schema.json";
 import type {
   FeatureCatalogArtifact,
   Manifest,
@@ -11,9 +12,69 @@ import type {
   ResearchSummaryArtifact,
   ScoutLensShowcaseArtifacts100,
 } from "@/contracts/generated/showcase";
+import type {
+  FeatureCatalogArtifact as FeatureCatalogArtifactV2,
+  Manifest as ManifestV2,
+  PlayerIndexArtifact as PlayerIndexArtifactV2,
+  PlayerIndexItem as PlayerIndexItemV2,
+  PlayerProfileArtifact as PlayerProfileArtifactV2,
+  RepresentationArtifact as RepresentationArtifactV2,
+  ResearchSummaryArtifact as ResearchSummaryArtifactV2,
+  ScoutLensShowcaseArtifacts200,
+} from "@/contracts/generated/showcase-v2";
 
-const SUPPORTED_SCHEMA_MAJOR = 1;
-const DEFAULT_BASE_URL = "/showcase/v1/";
+/** Known contract majors. An unknown major fails closed rather than falling
+ * back to the newest schema: silently validating a future payload against
+ * today's rules reports success for something this consumer does not
+ * understand (D047). */
+export const SUPPORTED_SCHEMA_MAJORS = [1, 2] as const;
+export type ShowcaseMajor = (typeof SUPPORTED_SCHEMA_MAJORS)[number];
+
+/** The major the deployed site serves today.
+ *
+ * Still 1, and deliberately so: the archive a clean clone hydrates is the v1
+ * player set pinned in `config/showcase-payload-pack.json`. Publishing a v2
+ * manifest whose 1,257 profiles nobody can fetch would be a broken site, not a
+ * migration. `scoutlens-qop.6.6` repins the payload and flips this constant;
+ * everything below already speaks both majors and is proven against v2
+ * fixtures. */
+const DEPLOYED_SHOWCASE_MAJOR: ShowcaseMajor = 1;
+
+export function isSupportedMajor(value: number): value is ShowcaseMajor {
+  return (SUPPORTED_SCHEMA_MAJORS as ReadonlyArray<number>).includes(value);
+}
+
+function resolveActiveMajor(): ShowcaseMajor {
+  const raw = process.env.NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR;
+  if (raw === undefined || raw === "") {
+    return DEPLOYED_SHOWCASE_MAJOR;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!isSupportedMajor(parsed)) {
+    throw new Error(
+      `NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR must be one of ${SUPPORTED_SCHEMA_MAJORS.join(", ")}, got ${raw}`,
+    );
+  }
+  return parsed;
+}
+
+/** The major this build loads. Resolved once, at module load, so the served
+ * assets and the validating schema can never disagree. */
+export const ACTIVE_SHOWCASE_MAJOR: ShowcaseMajor = resolveActiveMajor();
+
+export function showcaseBaseUrl(major: ShowcaseMajor = ACTIVE_SHOWCASE_MAJOR): string {
+  return `/showcase/v${major}/`;
+}
+
+const DEFAULT_BASE_URL = showcaseBaseUrl();
+
+export type ShowcaseArtifact = ScoutLensShowcaseArtifacts100 | ScoutLensShowcaseArtifacts200;
+export type AnyManifest = Manifest | ManifestV2;
+export type AnyFeatureCatalogArtifact = FeatureCatalogArtifact | FeatureCatalogArtifactV2;
+export type AnyPlayerIndexArtifact = PlayerIndexArtifact | PlayerIndexArtifactV2;
+export type AnyPlayerIndexItem = PlayerIndexItem | PlayerIndexItemV2;
+export type AnyPlayerProfileArtifact = PlayerProfileArtifact | PlayerProfileArtifactV2;
+export type AnyResearchSummaryArtifact = ResearchSummaryArtifact | ResearchSummaryArtifactV2;
 
 export type ShowcaseContractErrorCode =
   | "artifact_kind"
@@ -24,6 +85,7 @@ export type ShowcaseContractErrorCode =
   | "invalid_json"
   | "missing_evidence"
   | "profile_mismatch"
+  | "representation_mismatch"
   | "schema_validation"
   | "unsafe_path"
   | "unsupported_schema_major";
@@ -40,11 +102,14 @@ export class ShowcaseContractError extends Error {
 }
 
 export interface ShowcaseRepository {
-  getManifest(): Promise<Manifest>;
-  getFeatureCatalog(): Promise<FeatureCatalogArtifact>;
-  getResearchSummary(): Promise<ResearchSummaryArtifact>;
-  listProfiles(): Promise<ReadonlyArray<PlayerIndexItem>>;
-  getProfile(profileKey: string): Promise<PlayerProfileArtifact>;
+  readonly major: ShowcaseMajor;
+  getManifest(): Promise<AnyManifest>;
+  getFeatureCatalog(): Promise<AnyFeatureCatalogArtifact>;
+  getResearchSummary(): Promise<AnyResearchSummaryArtifact>;
+  listProfiles(): Promise<ReadonlyArray<AnyPlayerIndexItem>>;
+  getProfile(profileKey: string): Promise<AnyPlayerProfileArtifact>;
+  /** The published representation, or `null` for major 1, which has none. */
+  getRepresentation(): Promise<RepresentationArtifactV2 | null>;
 }
 
 export type ShowcaseFetch = (input: string) => Promise<Response>;
@@ -56,22 +121,39 @@ interface AssetBytes {
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 addFormats(ajv);
-const validateArtifact: ValidateFunction<unknown> = ajv.compile(schema);
+const validatorByMajor: Record<ShowcaseMajor, ValidateFunction<unknown>> = {
+  1: ajv.compile(schemaV1),
+  2: ajv.compile(schemaV2),
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function assertSupportedMajor(value: unknown, artifactPath: string): void {
+function assertDeclaredMajor(
+  value: unknown,
+  expected: ShowcaseMajor,
+  artifactPath: string,
+): void {
   if (!isRecord(value) || typeof value.schema_version !== "string") {
     return;
   }
 
   const major = Number.parseInt(value.schema_version.split(".")[0] ?? "", 10);
-  if (!Number.isInteger(major) || major !== SUPPORTED_SCHEMA_MAJOR) {
+  if (!Number.isInteger(major) || !isSupportedMajor(major)) {
     throw new ShowcaseContractError(
       "unsupported_schema_major",
       `Unsupported showcase schema major: ${value.schema_version}`,
+      artifactPath,
+    );
+  }
+  // A known-but-different major is refused too. A dataset that mixes majors is
+  // not a partially valid dataset; validating one of its artifacts against the
+  // other's rules is how a diagonal payload gets read as cosine.
+  if (major !== expected) {
+    throw new ShowcaseContractError(
+      "unsupported_schema_major",
+      `${artifactPath} declares major ${major}, but this dataset is major ${expected}`,
       artifactPath,
     );
   }
@@ -80,10 +162,12 @@ function assertSupportedMajor(value: unknown, artifactPath: string): void {
 function assertSchema(
   value: unknown,
   artifactPath: string,
-): asserts value is ScoutLensShowcaseArtifacts100 {
-  assertSupportedMajor(value, artifactPath);
-  if (!validateArtifact(value)) {
-    const details = ajv.errorsText(validateArtifact.errors, { separator: "; " });
+  major: ShowcaseMajor,
+): asserts value is ShowcaseArtifact {
+  assertDeclaredMajor(value, major, artifactPath);
+  const validate = validatorByMajor[major];
+  if (!validate(value)) {
+    const details = ajv.errorsText(validate.errors, { separator: "; " });
     throw new ShowcaseContractError(
       "schema_validation",
       `Invalid showcase artifact ${artifactPath}: ${details}`,
@@ -92,28 +176,73 @@ function assertSchema(
   }
 }
 
-function isManifest(value: ScoutLensShowcaseArtifacts100): value is Manifest {
+function isManifest(value: ShowcaseArtifact): value is AnyManifest {
   return "files" in value && "producer" in value;
 }
 
-function isResearchSummary(
-  value: ScoutLensShowcaseArtifacts100,
-): value is ResearchSummaryArtifact {
+function isResearchSummary(value: ShowcaseArtifact): value is AnyResearchSummaryArtifact {
   return "experiments" in value && "supported_claim" in value;
 }
 
-function isFeatureCatalog(
-  value: ScoutLensShowcaseArtifacts100,
-): value is FeatureCatalogArtifact {
-  return "features" in value && !('periods' in value);
+function isFeatureCatalog(value: ShowcaseArtifact): value is AnyFeatureCatalogArtifact {
+  return "features" in value && !("periods" in value);
 }
 
-function isPlayerIndex(value: ScoutLensShowcaseArtifacts100): value is PlayerIndexArtifact {
+function isPlayerIndex(value: ShowcaseArtifact): value is AnyPlayerIndexArtifact {
   return "profiles" in value;
 }
 
-function isPlayerProfile(value: ScoutLensShowcaseArtifacts100): value is PlayerProfileArtifact {
+function isPlayerProfile(value: ShowcaseArtifact): value is AnyPlayerProfileArtifact {
   return "profile_key" in value && "evidence_index" in value;
+}
+
+function isRepresentation(value: ShowcaseArtifact): value is RepresentationArtifactV2 {
+  return "representation" in value;
+}
+
+/** Every `representation_id` anywhere in an artifact, with the path it sat at.
+ *
+ * Walked rather than read from a fixed list of fields: the binding rule is
+ * "every ranking-bearing block names the representation", and a rule enforced
+ * only at the places someone remembered is not the rule. */
+function collectRepresentationIds(
+  value: unknown,
+  found: Array<{ path: string; id: unknown }>,
+  path = "",
+): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectRepresentationIds(item, found, `${path}[${index}]`));
+    return;
+  }
+  if (!isRecord(value)) {
+    return;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    const childPath = path === "" ? key : `${path}.${key}`;
+    if (key === "representation_id") {
+      found.push({ path: childPath, id: child });
+    } else {
+      collectRepresentationIds(child, found, childPath);
+    }
+  }
+}
+
+function collectUncertaintyDesigns(value: unknown, found: Array<{ path: string; design: unknown }>, path = ""): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectUncertaintyDesigns(item, found, `${path}[${index}]`));
+    return;
+  }
+  if (!isRecord(value)) {
+    return;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    const childPath = path === "" ? key : `${path}.${key}`;
+    if (key === "design_version") {
+      found.push({ path: childPath, design: child });
+    } else {
+      collectUncertaintyDesigns(child, found, childPath);
+    }
+  }
 }
 
 function assertSafePath(path: string): void {
@@ -137,8 +266,8 @@ async function sha256(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
 }
 
 function assertDatasetVersion(
-  artifact: ScoutLensShowcaseArtifacts100,
-  manifest: Manifest,
+  artifact: ShowcaseArtifact,
+  manifest: AnyManifest,
   artifactPath: string,
 ): void {
   if (artifact.dataset_version !== manifest.dataset_version) {
@@ -150,7 +279,7 @@ function assertDatasetVersion(
   }
 }
 
-function assertEvidence(profile: PlayerProfileArtifact, artifactPath: string): void {
+function assertEvidence(profile: AnyPlayerProfileArtifact, artifactPath: string): void {
   const evidenceIds = new Set(profile.evidence_index.map((item) => item.evidence_id));
   if (evidenceIds.size !== profile.evidence_index.length) {
     throw new ShowcaseContractError(
@@ -177,27 +306,64 @@ function assertEvidence(profile: PlayerProfileArtifact, artifactPath: string): v
   }
 }
 
+export const REPRESENTATION_PATH = "representation.json";
+const V2_UNCERTAINTY_DESIGN = "match_bootstrap_diagonal_v1";
+
 export class StaticShowcaseRepository implements ShowcaseRepository {
   private readonly baseUrl: string;
+  readonly major: ShowcaseMajor;
 
   constructor(
     private readonly fetchAsset: ShowcaseFetch = (input) => fetch(input),
     baseUrl = DEFAULT_BASE_URL,
+    major: ShowcaseMajor = ACTIVE_SHOWCASE_MAJOR,
   ) {
     this.baseUrl = `${baseUrl.replace(/\/+$/, "")}/`;
+    this.major = major;
   }
 
-  async getManifest(): Promise<Manifest> {
+  async getManifest(): Promise<AnyManifest> {
     const artifactPath = "manifest.json";
     const artifact = this.parse(await this.read(artifactPath), artifactPath);
-    assertSchema(artifact, artifactPath);
+    assertSchema(artifact, artifactPath, this.major);
     if (!isManifest(artifact)) {
       throw new ShowcaseContractError("artifact_kind", "Expected a showcase manifest", artifactPath);
+    }
+    if (this.major === 2 && typeof (artifact as ManifestV2).representation_id !== "string") {
+      throw new ShowcaseContractError(
+        "representation_mismatch",
+        "A v2 manifest must name the representation that produced its rankings",
+        artifactPath,
+      );
     }
     return artifact;
   }
 
-  async getResearchSummary(): Promise<ResearchSummaryArtifact> {
+  async getRepresentation(): Promise<RepresentationArtifactV2 | null> {
+    if (this.major !== 2) {
+      return null;
+    }
+    const manifest = await this.getManifest();
+    const artifact = await this.readVerified(REPRESENTATION_PATH, manifest);
+    if (!isRepresentation(artifact)) {
+      throw new ShowcaseContractError(
+        "artifact_kind",
+        "Expected a representation artifact",
+        REPRESENTATION_PATH,
+      );
+    }
+    const declared = (manifest as ManifestV2).representation_id;
+    if (artifact.representation.id !== declared) {
+      throw new ShowcaseContractError(
+        "representation_mismatch",
+        `${REPRESENTATION_PATH} publishes ${artifact.representation.id}, but the manifest names ${declared}`,
+        REPRESENTATION_PATH,
+      );
+    }
+    return artifact;
+  }
+
+  async getResearchSummary(): Promise<AnyResearchSummaryArtifact> {
     const manifest = await this.getManifest();
     const artifactPath = "research-summary.json";
     const artifact = await this.readVerified(artifactPath, manifest);
@@ -207,7 +373,7 @@ export class StaticShowcaseRepository implements ShowcaseRepository {
     return artifact;
   }
 
-  async getFeatureCatalog(): Promise<FeatureCatalogArtifact> {
+  async getFeatureCatalog(): Promise<AnyFeatureCatalogArtifact> {
     const manifest = await this.getManifest();
     const artifactPath = "feature-catalog.json";
     const artifact = await this.readVerified(artifactPath, manifest);
@@ -217,12 +383,12 @@ export class StaticShowcaseRepository implements ShowcaseRepository {
     return artifact;
   }
 
-  async listProfiles(): Promise<ReadonlyArray<PlayerIndexItem>> {
+  async listProfiles(): Promise<ReadonlyArray<AnyPlayerIndexItem>> {
     const manifest = await this.getManifest();
     return (await this.getIndex(manifest)).profiles;
   }
 
-  async getProfile(profileKey: string): Promise<PlayerProfileArtifact> {
+  async getProfile(profileKey: string): Promise<AnyPlayerProfileArtifact> {
     const manifest = await this.getManifest();
     const index = await this.getIndex(manifest);
     const item = index.profiles.find((candidate) => candidate.profile_key === profileKey);
@@ -251,10 +417,17 @@ export class StaticShowcaseRepository implements ShowcaseRepository {
       );
     }
     assertEvidence(artifact, item.artifact_path);
+    if (this.major === 2) {
+      assertRepresentationBinding(
+        artifact,
+        (manifest as ManifestV2).representation_id,
+        item.artifact_path,
+      );
+    }
     return artifact;
   }
 
-  private async getIndex(manifest: Manifest): Promise<PlayerIndexArtifact> {
+  private async getIndex(manifest: AnyManifest): Promise<AnyPlayerIndexArtifact> {
     const artifactPath = "players.index.json";
     const artifact = await this.readVerified(artifactPath, manifest);
     if (!isPlayerIndex(artifact)) {
@@ -265,8 +438,8 @@ export class StaticShowcaseRepository implements ShowcaseRepository {
 
   private async readVerified(
     artifactPath: string,
-    manifest: Manifest,
-  ): Promise<ScoutLensShowcaseArtifacts100> {
+    manifest: AnyManifest,
+  ): Promise<ShowcaseArtifact> {
     assertSafePath(artifactPath);
     const expected = manifest.files.find((file) => file.path === artifactPath);
     if (expected === undefined) {
@@ -295,7 +468,7 @@ export class StaticShowcaseRepository implements ShowcaseRepository {
     }
 
     const artifact = this.parse(asset, artifactPath);
-    assertSchema(artifact, artifactPath);
+    assertSchema(artifact, artifactPath, this.major);
     assertDatasetVersion(artifact, manifest, artifactPath);
     return artifact;
   }
@@ -324,5 +497,52 @@ export class StaticShowcaseRepository implements ShowcaseRepository {
         artifactPath,
       );
     }
+  }
+}
+
+/** Every representation reference and uncertainty design in a v2 profile must
+ * agree with the dataset.
+ *
+ * A mismatch is refused rather than downgraded. A v1 interval attached to a
+ * diagonal ranking would show a number describing the sampling stability of a
+ * different metric, which is the trap D047 named explicitly; a foreign
+ * representation id means the block was produced by something other than what
+ * the dataset publishes. Neither is a weaker v2 payload - neither is a v2
+ * payload. */
+function assertRepresentationBinding(
+  profile: AnyPlayerProfileArtifact,
+  expected: string,
+  artifactPath: string,
+): void {
+  const references: Array<{ path: string; id: unknown }> = [];
+  collectRepresentationIds(profile, references);
+  if (references.length === 0) {
+    throw new ShowcaseContractError(
+      "representation_mismatch",
+      `${artifactPath} publishes rankings without naming a representation`,
+      artifactPath,
+    );
+  }
+  const foreign = references.find((reference) => reference.id !== expected);
+  if (foreign !== undefined) {
+    throw new ShowcaseContractError(
+      "representation_mismatch",
+      `${artifactPath}: ${foreign.path} names ${String(foreign.id)}, expected ${expected}`,
+      artifactPath,
+    );
+  }
+
+  const designs: Array<{ path: string; design: unknown }> = [];
+  collectUncertaintyDesigns(profile, designs);
+  const wrong = designs.find(
+    (entry) => entry.design !== null && entry.design !== V2_UNCERTAINTY_DESIGN,
+  );
+  if (wrong !== undefined) {
+    throw new ShowcaseContractError(
+      "representation_mismatch",
+      `${artifactPath}: ${wrong.path} carries uncertainty design ${String(wrong.design)}, ` +
+        `expected ${V2_UNCERTAINTY_DESIGN}`,
+      artifactPath,
+    );
   }
 }

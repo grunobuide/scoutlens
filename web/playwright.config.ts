@@ -49,11 +49,21 @@ export default defineConfig({
       timeout: 30_000,
       url: "http://127.0.0.1:4174/lab/",
     },
+    // Diagonal Lab gate (scoutlens-qop.6.5): the same delegated mechanism, one
+    // major up. Served separately rather than swapped in, so the v1 fixture
+    // gate keeps running unchanged and a v2 regression cannot be mistaken for
+    // a v1 one.
+    {
+      command: "node scripts/serve-static.mjs --port 4175 --root out-fixtures/lab-max-content-v2",
+      reuseExistingServer: false,
+      timeout: 30_000,
+      url: "http://127.0.0.1:4175/lab/",
+    },
   ],
   projects: [
     {
       name: "desktop",
-      testIgnore: /lab-fixtures\.spec\.ts/,
+      testIgnore: /lab-fixtures\.spec\.ts|lab-v2-diagonal\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 900 },
@@ -61,7 +71,7 @@ export default defineConfig({
     },
     {
       name: "mobile-360",
-      testIgnore: /lab-fixtures\.spec\.ts/,
+      testIgnore: /lab-fixtures\.spec\.ts|lab-v2-diagonal\.spec\.ts/,
       use: {
         browserName: "chromium",
         deviceScaleFactor: 1,
@@ -81,6 +91,20 @@ export default defineConfig({
           isMobile: viewport.width < 600,
           viewport: { width: viewport.width, height: viewport.height },
           baseURL: "http://127.0.0.1:4174",
+        },
+      }),
+    ),
+    ...FIXTURE_VIEWPORTS.map(
+      (viewport): Project => ({
+        name: `fixtures-v2-${viewport.width}`,
+        testMatch: /lab-v2-diagonal\.spec\.ts/,
+        use: {
+          browserName: "chromium",
+          deviceScaleFactor: 1,
+          hasTouch: viewport.width < 600,
+          isMobile: viewport.width < 600,
+          viewport: { width: viewport.width, height: viewport.height },
+          baseURL: "http://127.0.0.1:4175",
         },
       }),
     ),

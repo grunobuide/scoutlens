@@ -6,9 +6,6 @@ import { useEffect, useMemo, useRef } from "react";
 import type {
   Caveat,
   EvidenceItem,
-  FeatureCatalogArtifact,
-  PlayerProfileArtifact,
-  StatisticalNeighbor,
 } from "@/contracts/generated/showcase";
 import {
   familyLabel,
@@ -16,20 +13,26 @@ import {
   formatCosine,
   formatZScore,
   type ContributionEvidence,
+  neighborScore,
+  type AnyStatisticalNeighbor,
 } from "@/content/showcase-lab";
 
 import { formatRank } from "./rank-format";
+import type {
+  AnyFeatureCatalogArtifact,
+  AnyPlayerProfileArtifact,
+} from "@/contracts/showcase-repository";
 
 interface NeighborComparisonDrawerProps {
-  catalog: FeatureCatalogArtifact;
-  profile: PlayerProfileArtifact;
-  neighbor: StatisticalNeighbor;
+  catalog: AnyFeatureCatalogArtifact;
+  profile: AnyPlayerProfileArtifact;
+  neighbor: AnyStatisticalNeighbor;
   evidence: ContributionEvidence;
   candidateMinutes: number | null;
   onClose: () => void;
 }
 
-function caveatFor(profile: PlayerProfileArtifact, code: string): Caveat | undefined {
+function caveatFor(profile: AnyPlayerProfileArtifact, code: string): Caveat | undefined {
   return profile.caveats.find((caveat) => caveat.code === code);
 }
 
@@ -46,7 +49,7 @@ function evidenceInterpretation(item: EvidenceItem): string {
   return "Neutral contribution";
 }
 
-function stabilityText(neighbor: StatisticalNeighbor): string {
+function stabilityText(neighbor: AnyStatisticalNeighbor): string {
   const stability = neighbor.stability;
   if (stability.status === "pending") {
     return "Pending · no resampled rank interval or top-five selection rate is available yet.";
@@ -141,7 +144,7 @@ export function NeighborComparisonDrawer({
 
         <section className="neighbor-drawer__score" aria-label="Stored comparison context">
           <dl>
-            <div><dt>Stored cosine</dt><dd>{formatCosine(neighbor.cosine_similarity)}</dd></div>
+            <div><dt>Stored cosine</dt><dd>{formatCosine(neighborScore(neighbor))}</dd></div>
             <div><dt>Neighbor rank</dt><dd>{neighbor.rank} of five shown</dd></div>
             <div><dt>Candidate period</dt><dd>Period B</dd></div>
             <div>
@@ -172,7 +175,7 @@ export function NeighborComparisonDrawer({
             ))}
           </ol>
           <p className="neighbor-drawer__reconstruction">
-            Family sum {formatContribution(evidence.familySum)} · stored cosine {formatCosine(neighbor.cosine_similarity)}
+            Family sum {formatContribution(evidence.familySum)} · stored cosine {formatCosine(neighborScore(neighbor))}
           </p>
         </section>
 
@@ -211,7 +214,7 @@ export function NeighborComparisonDrawer({
             </table>
           </div>
           <p className="neighbor-drawer__reconstruction">
-            Feature sum {formatContribution(evidence.featureSum)} · stored cosine {formatCosine(neighbor.cosine_similarity)}
+            Feature sum {formatContribution(evidence.featureSum)} · stored cosine {formatCosine(neighborScore(neighbor))}
           </p>
         </section>
 

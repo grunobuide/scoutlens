@@ -1,6 +1,9 @@
 import Link from "next/link";
+import type {
+  AnyManifest,
+  AnyResearchSummaryArtifact,
+} from "@/contracts/showcase-repository";
 
-import type { Manifest, ResearchSummaryArtifact } from "@/contracts/generated/showcase";
 
 // scoutlens-9a3.3: artifact-backed data vintage, provenance and provider
 // boundary presentation. Every fact is read from the versioned manifest and
@@ -8,7 +11,7 @@ import type { Manifest, ResearchSummaryArtifact } from "@/contracts/generated/sh
 // hard-coded in this module or in its consumers.
 
 export interface DataVintageBadgeProps {
-  manifest: Manifest;
+  manifest: AnyManifest;
 }
 
 /** Concise, no-JavaScript-safe heritage chip for the first interpretation
@@ -26,8 +29,8 @@ export function DataVintageBadge({ manifest }: DataVintageBadgeProps) {
 }
 
 export interface ProviderBoundaryProps {
-  manifest: Manifest;
-  research: ResearchSummaryArtifact;
+  manifest: AnyManifest;
+  research: AnyResearchSummaryArtifact;
 }
 
 /** Distinguishes the primary per-profile evidence (Wyscout/Pappalardo) from

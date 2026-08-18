@@ -1,17 +1,26 @@
 import { readFile } from "node:fs/promises";
 import { resolve, sep } from "node:path";
 
-import { StaticShowcaseRepository, type ShowcaseFetch } from "@/contracts/showcase-repository";
+import {
+  ACTIVE_SHOWCASE_MAJOR,
+  StaticShowcaseRepository,
+  showcaseBaseUrl,
+  type ShowcaseFetch,
+} from "@/contracts/showcase-repository";
 
 // The published pack is the default. SCOUTLENS_SHOWCASE_ROOT is a build-time
 // only override used by the delegated test-only fixture export
 // (scoutlens-uze.7): with the variable unset the production `pnpm build`
 // resolves the identical root and ships no fixture data or code path.
+//
+// The default root follows the active major, so the bytes on disk and the
+// schema they are validated against are chosen by one constant rather than by
+// two strings that have to be kept in step.
+const publicUrlPrefix = showcaseBaseUrl(ACTIVE_SHOWCASE_MAJOR);
 const publicAssetRoot = resolve(
   process.cwd(),
-  process.env.SCOUTLENS_SHOWCASE_ROOT ?? "public/showcase/v1",
+  process.env.SCOUTLENS_SHOWCASE_ROOT ?? `public${publicUrlPrefix}`.replace(/\/$/, ""),
 );
-const publicUrlPrefix = "/showcase/v1/";
 
 export const readPublicShowcaseAsset: ShowcaseFetch = async (input) => {
   if (!input.startsWith(publicUrlPrefix)) {

@@ -14,11 +14,8 @@ import {
 
 import type {
   Caveat,
-  FeatureCatalogArtifact,
   FeatureValue,
   PeriodContext,
-  PlayerIndexItem,
-  PlayerProfileArtifact,
 } from "@/contracts/generated/showcase";
 import { formatRank, formatRankBound } from "./rank-format";
 import {
@@ -45,7 +42,17 @@ import {
   type NeighborEvidence,
   type PercentileScope,
   type ProfileFilters,
+  methodDisclosure,
+  neighborScore,
+  retrievalScore,
+  type AnyRetrievalOutcome,
 } from "@/content/showcase-lab";
+import type {
+  AnyFeatureCatalogArtifact,
+  AnyPlayerIndexItem,
+  AnyPlayerProfileArtifact,
+  ShowcaseMajor,
+} from "@/contracts/showcase-repository";
 
 const NeighborComparisonDrawer = lazy(() =>
   import("@/components/neighbor-comparison-drawer").then((module) => ({
@@ -62,16 +69,35 @@ const requiredCaveats = new Set([
   "uncertainty_sampling_only",
 ]);
 
+/**
+ * What the retrieval score is called, per contract major.
+ *
+ * v2 must not present its weighted score under a label claiming plain cosine
+ * (D047). The label is chosen from the major the page was built against, not
+ * from which field happens to be present on a payload, so a mislabelled score
+ * is impossible rather than merely unlikely.
+ */
+const SCORE_LABEL_BY_MAJOR: Record<ShowcaseMajor, string> = {
+  1: "Cosine",
+  2: "Similarity score",
+};
+
 type ProfileLoadState =
-  | { status: "ready"; profile: PlayerProfileArtifact }
+  | { status: "ready"; profile: AnyPlayerProfileArtifact }
   | { status: "loading"; profileKey: string }
   | { status: "problem"; profileKey: string; problem: LabProblem };
 
 interface LabExplorerProps {
   datasetVersion: string;
-  catalog: FeatureCatalogArtifact;
-  profiles: ReadonlyArray<PlayerIndexItem>;
-  initialProfile: PlayerProfileArtifact;
+  /** The contract major the page was built against. Presentation reads the
+   * score field and the method disclosure from it rather than sniffing which
+   * key happens to be present on a payload. */
+  major: ShowcaseMajor;
+  /** Weighted feature count from the published representation; null for v1. */
+  weightedFeatureCount: number | null;
+  catalog: AnyFeatureCatalogArtifact;
+  profiles: ReadonlyArray<AnyPlayerIndexItem>;
+  initialProfile: AnyPlayerProfileArtifact;
 }
 
 function updateProfileUrl(profileKey: string, mode: "push" | "replace"): void {
@@ -92,6 +118,8 @@ function problemForUnknownProfile(profileKey: string): LabProblem {
 
 export function LabExplorer({
   datasetVersion,
+  major,
+  weightedFeatureCount,
   catalog,
   profiles,
   initialProfile,
@@ -327,6 +355,8 @@ export function LabExplorer({
         ) : null}
         {loadState.status === "ready" ? (
           <FingerprintProfile
+            major={major}
+            weightedFeatureCount={weightedFeatureCount}
             key={loadState.profile.profile_key}
             catalog={catalog}
             profiles={profiles}
@@ -456,7 +486,7 @@ function modelEvidence(value: FeatureValue): string {
     : formatZScore(value.global_z_score);
 }
 
-function caveatFor(profile: PlayerProfileArtifact, code: string): Caveat | undefined {
+function caveatFor(profile: AnyPlayerProfileArtifact, code: string): Caveat | undefined {
   return profile.caveats.find((caveat) => caveat.code === code);
 }
 
@@ -489,7 +519,7 @@ function featureUncertaintyCell(value: FeatureValue): string {
   return `${block.valid_resamples} valid${intervalText}`;
 }
 
-type RetrievalOutcome = PlayerProfileArtifact["retrieval"]["global"];
+type RetrievalOutcome = AnyPlayerProfileArtifact["retrieval"]["global"];
 
 function rankStabilityText(outcome: RetrievalOutcome): string {
   if (outcome.uncertainty.status === "pending") {
@@ -516,11 +546,14 @@ function RetrievalOutcomeCard({
   label,
   detail,
   outcome,
+  scoreLabel,
 }: {
   label: string;
   detail: string;
-  outcome: RetrievalOutcome;
+  outcome: AnyRetrievalOutcome;
+  scoreLabel: string;
 }) {
+  const score = retrievalScore(outcome);
   return (
     <article className="retrieval-outcome" data-retrieval-scope={label.toLowerCase().replaceAll(" ", "-")}>
       <header>
@@ -534,8 +567,8 @@ function RetrievalOutcomeCard({
       <dl>
         <div><dt>Reciprocal rank</dt><dd>{outcome.reciprocal_rank.toFixed(4)}</dd></div>
         <div>
-          <dt>Cosine</dt>
-          <dd>{outcome.cosine_similarity === null ? "Not used" : formatCosine(outcome.cosine_similarity)}</dd>
+          <dt>{scoreLabel}</dt>
+          <dd>{score === null ? "Not used" : formatCosine(score)}</dd>
         </div>
       </dl>
       <p className="retrieval-outcome__stability">{rankStabilityText(outcome)}</p>
@@ -543,7 +576,52 @@ function RetrievalOutcomeCard({
   );
 }
 
-function RetrievalReplay({ profile }: { profile: PlayerProfileArtifact }) {
+/**
+ * The frozen v2 method disclosure.
+ *
+ * Rendered only for major 2. v1 keeps the copy it already had, because this
+ * bead was given authority over the v2 wording and none over v1's - and
+ * "the layout looked better with it everywhere" is not a reason to restate a
+ * frozen contract.
+ *
+ * There is deliberately no representation toggle. Cosine is reachable as the
+ * published audit baseline and as the decision record, never as a control that
+ * invites a reader to pick the number they prefer (D047).
+ */
+function MethodDisclosurePanel({
+  major,
+  weightedFeatureCount,
+}: {
+  major: ShowcaseMajor;
+  weightedFeatureCount: number | null;
+}) {
+  if (major !== 2 || weightedFeatureCount === null) {
+    return null;
+  }
+  const disclosure = methodDisclosure(weightedFeatureCount);
+  return (
+    <section className="method-disclosure" aria-labelledby="method-disclosure-heading">
+      <header className="lab-narrative-heading">
+        <div>
+          <p className="eyebrow">Ranking method</p>
+          <h2 id="method-disclosure-heading">{disclosure.label}</h2>
+        </div>
+        <p>{disclosure.summary}</p>
+      </header>
+      <p className="method-disclosure__audit">{disclosure.auditStatement}</p>
+      <p className="method-disclosure__boundary">{disclosure.boundary}</p>
+      <details className="method-disclosure__advanced">
+        <summary>{disclosure.advancedTitle}</summary>
+        <p>{disclosure.advancedBody}</p>
+        <p>
+          <a href={disclosure.decisionUrl}>Decision record D045</a>
+        </p>
+      </details>
+    </section>
+  );
+}
+
+function RetrievalReplay({ profile, scoreLabel }: { profile: AnyPlayerProfileArtifact; scoreLabel: string }) {
   const teamConfound = caveatFor(profile, "same_season_team_confound");
   return (
     <section className="retrieval-replay" aria-labelledby="retrieval-replay-heading">
@@ -570,16 +648,19 @@ function RetrievalReplay({ profile }: { profile: PlayerProfileArtifact }) {
           label="Global"
           detail="All eligible profiles"
           outcome={profile.retrieval.global}
+          scoreLabel={scoreLabel}
         />
         <RetrievalOutcomeCard
           label="Within role"
           detail={`Only ${profile.identity.role.toLowerCase()} profiles`}
           outcome={profile.retrieval.within_role}
+          scoreLabel={scoreLabel}
         />
         <RetrievalOutcomeCard
           label="Role + minutes baseline"
           detail="Context-only control"
           outcome={profile.retrieval.baseline_role_minutes}
+          scoreLabel={scoreLabel}
         />
       </div>
 
@@ -600,9 +681,9 @@ function StatisticalNeighbors({
   profilesByKey,
   neighbors,
 }: {
-  catalog: FeatureCatalogArtifact;
-  profile: PlayerProfileArtifact;
-  profilesByKey: ReadonlyMap<string, PlayerIndexItem>;
+  catalog: AnyFeatureCatalogArtifact;
+  profile: AnyPlayerProfileArtifact;
+  profilesByKey: ReadonlyMap<string, AnyPlayerIndexItem>;
   neighbors: ReadonlyArray<NeighborEvidence>;
 }) {
   const [selected, setSelected] = useState<NeighborEvidence | null>(null);
@@ -654,7 +735,7 @@ function StatisticalNeighbors({
                   </div>
                 </header>
                 <dl className="neighbor-card__context">
-                  <div><dt>Stored cosine</dt><dd>{formatCosine(neighbor.cosine_similarity)}</dd></div>
+                  <div><dt>Stored cosine</dt><dd>{formatCosine(neighborScore(neighbor))}</dd></div>
                   <div>
                     <dt>Period-B minutes</dt>
                     <dd>{indexItem?.period_contexts.b.minutes.toLocaleString("en-US") ?? "Unavailable"}</dd>
@@ -713,11 +794,14 @@ function StatisticalNeighbors({
   );
 }
 
-export function FingerprintProfile({ catalog, profiles, profile }: {
-  catalog: FeatureCatalogArtifact;
-  profiles: ReadonlyArray<PlayerIndexItem>;
-  profile: PlayerProfileArtifact;
+export function FingerprintProfile({ catalog, profiles, profile, major, weightedFeatureCount }: {
+  major: ShowcaseMajor;
+  weightedFeatureCount?: number | null;
+  catalog: AnyFeatureCatalogArtifact;
+  profiles: ReadonlyArray<AnyPlayerIndexItem>;
+  profile: AnyPlayerProfileArtifact;
 }) {
+  const scoreLabel = SCORE_LABEL_BY_MAJOR[major];
   const [scope, setScope] = useState<PercentileScope>("within_role");
   const fingerprint = useMemo(() => {
     try {
@@ -746,7 +830,7 @@ export function FingerprintProfile({ catalog, profiles, profile }: {
         rows: [],
         families: [],
         evidence: null,
-        profilesByKey: new Map<string, PlayerIndexItem>(),
+        profilesByKey: new Map<string, AnyPlayerIndexItem>(),
         problem: describeLabError(error),
       };
     }
@@ -860,7 +944,8 @@ export function FingerprintProfile({ catalog, profiles, profile }: {
         </aside>
       </div>
 
-      <RetrievalReplay profile={profile} />
+      <MethodDisclosurePanel major={major} weightedFeatureCount={weightedFeatureCount ?? null} />
+      <RetrievalReplay profile={profile} scoreLabel={scoreLabel} />
       <StatisticalNeighbors
         catalog={catalog}
         profile={profile}

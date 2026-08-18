@@ -20,6 +20,7 @@ import {
   formatRawValue,
   formatCosine,
   formatSupport,
+  neighborScore,
   profileHref,
 } from "@/content/showcase-lab";
 
@@ -78,7 +79,7 @@ describe("searchable period fingerprint Lab", () => {
     );
 
     const html = renderToStaticMarkup(
-      <FingerprintProfile catalog={catalog} profiles={index.profiles} profile={profile} />,
+      <FingerprintProfile major={1} catalog={catalog} profiles={index.profiles} profile={profile} />,
     );
     expect(html.match(/data-fingerprint-row=/g)).toHaveLength(32);
     expect(html).toContain("All 32 measurements");
@@ -99,7 +100,7 @@ describe("searchable period fingerprint Lab", () => {
     nullValue.imputed_for_model = true;
 
     const html = renderToStaticMarkup(
-      <FingerprintProfile catalog={catalog} profiles={index.profiles} profile={withNull} />,
+      <FingerprintProfile major={1} catalog={catalog} profiles={index.profiles} profile={withNull} />,
     );
     expect(html).toContain("Not observed");
     expect(html).toContain("mean-imputed to z=0");
@@ -149,7 +150,7 @@ describe("searchable period fingerprint Lab", () => {
 
   it("replays the stored retrieval values and preserves the five non-self neighbors in artifact order", () => {
     const html = renderToStaticMarkup(
-      <FingerprintProfile catalog={catalog} profiles={index.profiles} profile={profile} />,
+      <FingerprintProfile major={1} catalog={catalog} profiles={index.profiles} profile={profile} />,
     );
 
     for (const outcome of [
@@ -186,8 +187,8 @@ describe("searchable period fingerprint Lab", () => {
       profile.neighbors.map((neighbor) => neighbor.profile_key),
     );
     for (const item of evidence.neighbors) {
-      expect(item.evidence.featureSum).toBeCloseTo(item.neighbor.cosine_similarity, 10);
-      expect(item.evidence.familySum).toBeCloseTo(item.neighbor.cosine_similarity, 10);
+      expect(item.evidence.featureSum).toBeCloseTo(neighborScore(item.neighbor), 10);
+      expect(item.evidence.familySum).toBeCloseTo(neighborScore(item.neighbor), 10);
     }
 
     const corrupt = structuredClone(profile);
@@ -197,7 +198,7 @@ describe("searchable period fingerprint Lab", () => {
       throw new Error("Production fixture is missing its first neighbor contribution");
     }
     contribution.contribution += 0.01;
-    expect(() => buildProfileEvidence(catalog, corrupt)).toThrow(/does not reconstruct cosine/);
+    expect(() => buildProfileEvidence(catalog, corrupt)).toThrow(/does not reconstruct the stored score/);
 
     const incomplete = structuredClone(profile);
     incomplete.neighbors.pop();
@@ -234,7 +235,7 @@ describe("searchable period fingerprint Lab", () => {
 
   it("keeps mandatory caveats adjacent and excludes shortlist or player-rating claims", async () => {
     const html = renderToStaticMarkup(
-      <FingerprintProfile catalog={catalog} profiles={index.profiles} profile={profile} />,
+      <FingerprintProfile major={1} catalog={catalog} profiles={index.profiles} profile={profile} />,
     );
     for (const code of [
       "fingerprint_not_style_proof",
