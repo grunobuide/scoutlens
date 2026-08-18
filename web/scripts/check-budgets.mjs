@@ -20,8 +20,12 @@ const budgets = JSON.parse(await readFile(resolve(webRoot, "quality-budgets.json
 const lighthouseConfig = JSON.parse(
   await readFile(resolve(webRoot, "lighthouserc.json"), "utf8"),
 );
-// Budgets are measured against the major the build actually shipped.
-const showcaseMajor = Number(process.env.NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR ?? "1");
+// Budgets are measured against the major the build actually shipped, which is
+// the one the payload pin names. Same single source as the asset sync.
+const pinnedMajor = JSON.parse(
+  await readFile(resolve(webRoot, "..", "config", "showcase-payload-pack.json"), "utf8"),
+).schema_version.split(".")[0];
+const showcaseMajor = Number(process.env.NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR ?? pinnedMajor);
 if (showcaseMajor !== 1 && showcaseMajor !== 2) {
   throw new Error(`NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR must be 1 or 2, got ${showcaseMajor}`);
 }

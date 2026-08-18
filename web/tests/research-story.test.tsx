@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
+import { ACTIVE_SHOWCASE_MAJOR } from "@/contracts/showcase-repository";
 import { describe, expect, it } from "vitest";
 
 import { ClaimsMatrix, ExperimentCard } from "@/components/research-story";
@@ -70,7 +71,7 @@ describe("evidence-first research story", () => {
 
   it("renders the production headline directly from research-summary.json", async () => {
     const artifact = JSON.parse(
-      await readFile(resolve("public", "showcase", "v1", "research-summary.json"), "utf8"),
+      await readFile(resolve("public", "showcase", `v${ACTIVE_SHOWCASE_MAJOR}`, "research-summary.json"), "utf8"),
     ) as ResearchSummaryArtifact;
     const experiment = artifact.experiments.find(
       (item) => item.experiment_id === "wyscout_global_gate2",

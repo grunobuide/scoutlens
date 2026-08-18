@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 import {
   expectNoSeriousOrCriticalViolations,
   waitForStablePage,
+  SHOWCASE_BASE,
+  MESSI_PROFILE_KEY,
 } from "./helpers";
 
 for (const route of ["/", "/lab/", "/science/"]) {
@@ -23,9 +25,9 @@ test("the open neighbor drawer has no serious or critical automated accessibilit
 test("all rendered local links and static assets resolve", async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "The route crawl runs once");
   const paths = new Set<string>([
-    "/showcase/v1/manifest.json",
-    "/showcase/v1/feature-catalog.json",
-    "/showcase/v1/players.index.json",
+    `${SHOWCASE_BASE}manifest.json`,
+    `${SHOWCASE_BASE}feature-catalog.json`,
+    `${SHOWCASE_BASE}players.index.json`,
   ]);
   for (const route of ["/", "/lab/", "/science/"]) {
     await page.goto(route);
@@ -56,9 +58,9 @@ test("static delivery applies the declared cache policy and gzip", async ({ page
   expect(nextAsset).not.toBeNull();
 
   const cases = [
-    ["/showcase/v1/manifest.json", /max-age=60.*must-revalidate/],
-    ["/showcase/v1/feature-catalog.json", /max-age=31536000.*immutable/],
-    ["/showcase/v1/players/wy-8287-c-795.json", /max-age=31536000.*immutable/],
+    [`${SHOWCASE_BASE}manifest.json`, /max-age=60.*must-revalidate/],
+    [`${SHOWCASE_BASE}feature-catalog.json`, /max-age=31536000.*immutable/],
+    [`${SHOWCASE_BASE}players/${MESSI_PROFILE_KEY}.json`, /max-age=31536000.*immutable/],
     [nextAsset!, /max-age=31536000.*immutable/],
   ] as const;
   for (const [path, expectedCache] of cases) {

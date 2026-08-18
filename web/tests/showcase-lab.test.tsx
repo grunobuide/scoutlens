@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
+import { ACTIVE_SHOWCASE_MAJOR } from "@/contracts/showcase-repository";
 
 import { FingerprintProfile, LabLoadingState, LabProblemPanel } from "@/components/lab-explorer";
 import { NeighborComparisonDrawer } from "@/components/neighbor-comparison-drawer";
@@ -21,6 +22,7 @@ import {
   formatCosine,
   formatSupport,
   neighborScore,
+  retrievalScore,
   profileHref,
 } from "@/content/showcase-lab";
 
@@ -33,7 +35,7 @@ let profile: PlayerProfileArtifact;
 beforeAll(async () => {
   [catalog, index, profile] = await Promise.all(
     ["feature-catalog.json", "players.index.json", FEATURED_PROFILE_PATH].map(async (path) =>
-      JSON.parse(await readFile(resolve("public", "showcase", "v1", path), "utf8")),
+      JSON.parse(await readFile(resolve("public", "showcase", `v${ACTIVE_SHOWCASE_MAJOR}`, path), "utf8")),
     ),
   ) as [FeatureCatalogArtifact, PlayerIndexArtifact, PlayerProfileArtifact];
 });
@@ -161,8 +163,9 @@ describe("searchable period fingerprint Lab", () => {
       expect(html).toContain(`Rank ${outcome.self_rank}`);
       expect(html).toContain(`of ${outcome.candidate_count.toLocaleString("en-US")}`);
       expect(html).toContain(outcome.reciprocal_rank.toFixed(4));
-      if (outcome.cosine_similarity !== null) {
-        expect(html).toContain(formatCosine(outcome.cosine_similarity));
+      const score = retrievalScore(outcome);
+      if (score !== null) {
+        expect(html).toContain(formatCosine(score));
       }
     }
     expect(html.match(/data-retrieval-scope=/g)).toHaveLength(3);
@@ -181,8 +184,9 @@ describe("searchable period fingerprint Lab", () => {
     const evidence = buildProfileEvidence(catalog, profile);
     expect(evidence.self.features).toHaveLength(32);
     expect(evidence.self.families).toHaveLength(8);
-    expect(evidence.self.featureSum).toBeCloseTo(profile.retrieval.global.cosine_similarity!, 10);
-    expect(evidence.self.familySum).toBeCloseTo(profile.retrieval.global.cosine_similarity!, 10);
+    const selfScore = retrievalScore(profile.retrieval.global)!;
+    expect(evidence.self.featureSum).toBeCloseTo(selfScore, 10);
+    expect(evidence.self.familySum).toBeCloseTo(selfScore, 10);
     expect(evidence.neighbors.map((item) => item.neighbor.profile_key)).toEqual(
       profile.neighbors.map((neighbor) => neighbor.profile_key),
     );
@@ -197,7 +201,13 @@ describe("searchable period fingerprint Lab", () => {
     if (contribution === undefined) {
       throw new Error("Production fixture is missing its first neighbor contribution");
     }
-    contribution.contribution += 0.01;
+    // Tamper with the field this major actually sums. v2 reconstructs from
+    // weighted_contribution, so nudging the unweighted audit view would leave
+    // the published score intact and the test would pass for the wrong reason.
+    const summedField =
+      "weighted_contribution" in contribution ? "weighted_contribution" : "contribution";
+    const mutable = contribution as unknown as Record<string, number>;
+    mutable[summedField] = mutable[summedField]! + 0.01;
     expect(() => buildProfileEvidence(catalog, corrupt)).toThrow(/does not reconstruct the stored score/);
 
     const incomplete = structuredClone(profile);

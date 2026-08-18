@@ -346,7 +346,9 @@ async function buildFixture(options: FixtureOptions = {}) {
       ? new Response("not found", { status: 404 })
       : new Response(body, { status: 200, headers: { "content-type": "application/json" } });
   };
-  return new StaticShowcaseRepository(fetchFixture);
+  // A v1 fixture, pinned to major 1: these cases exercise the frozen cosine
+  // contract, which stays supported after the site moved to major 2.
+  return new StaticShowcaseRepository(fetchFixture, "/showcase/v1/", 1);
 }
 
 async function expectContractError(promise: Promise<unknown>, code: string) {

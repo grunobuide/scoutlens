@@ -3,6 +3,9 @@ import { expect, type Page } from "@playwright/test";
 
 import qualityBudgets from "../quality-budgets.json";
 
+/** The showcase path the build actually serves; the pin decides it. */
+export const SHOWCASE_BASE = `/showcase/v${process.env.NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR ?? "2"}/`;
+
 export const MESSI_PROFILE_KEY = "wy-3359-c-795";
 export const INTERACTION_BUDGET_MS = qualityBudgets.lighthouse.interaction_to_next_paint_ms;
 

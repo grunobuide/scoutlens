@@ -30,15 +30,18 @@ import type {
 export const SUPPORTED_SCHEMA_MAJORS = [1, 2] as const;
 export type ShowcaseMajor = (typeof SUPPORTED_SCHEMA_MAJORS)[number];
 
-/** The major the deployed site serves today.
+/** The major the deployed site serves.
  *
- * Still 1, and deliberately so: the archive a clean clone hydrates is the v1
- * player set pinned in `config/showcase-payload-pack.json`. Publishing a v2
- * manifest whose 1,257 profiles nobody can fetch would be a broken site, not a
- * migration. `scoutlens-qop.6.6` repins the payload and flips this constant;
- * everything below already speaks both majors and is proven against v2
- * fixtures. */
-const DEPLOYED_SHOWCASE_MAJOR: ShowcaseMajor = 1;
+ * 2 since `scoutlens-qop.6.6.2` repinned `config/showcase-payload-pack.json` to
+ * the v2 payload. The constant and the pin have to move together: a clean clone
+ * hydrates whatever the pin names, so serving the other major means serving a
+ * manifest whose profiles nobody can fetch. That is exactly what broke CI
+ * between the repin and this flip.
+ *
+ * Rolling back is the same pair in reverse - restore the previous pin and set
+ * this to 1. Major 1 stays fully supported either way; it is simply not the one
+ * being served. */
+const DEPLOYED_SHOWCASE_MAJOR: ShowcaseMajor = 2;
 
 export function isSupportedMajor(value: number): value is ShowcaseMajor {
   return (SUPPORTED_SCHEMA_MAJORS as ReadonlyArray<number>).includes(value);

@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { MESSI_PROFILE_KEY } from "./helpers";
+import { MESSI_PROFILE_KEY, SHOWCASE_BASE } from "./helpers";
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "Failure fixtures run once in desktop Chromium");
@@ -23,7 +23,7 @@ test("unknown profile keeps the selector usable until a valid selection replaces
 });
 
 test("missing profile asset renders the explicit recovery state", async ({ page }) => {
-  await page.route(`**/showcase/v1/players/${MESSI_PROFILE_KEY}.json`, (route) =>
+  await page.route(`**${SHOWCASE_BASE}players/${MESSI_PROFILE_KEY}.json`, (route) =>
     route.fulfill({ status: 404, contentType: "text/plain", body: "missing fixture" }),
   );
   await page.goto(`/lab/?player=${MESSI_PROFILE_KEY}`);
@@ -32,7 +32,7 @@ test("missing profile asset renders the explicit recovery state", async ({ page 
 });
 
 test("checksum mismatch fails closed before profile values render", async ({ page }) => {
-  await page.route(`**/showcase/v1/players/${MESSI_PROFILE_KEY}.json`, (route) =>
+  await page.route(`**${SHOWCASE_BASE}players/${MESSI_PROFILE_KEY}.json`, (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
   );
   await page.goto(`/lab/?player=${MESSI_PROFILE_KEY}`);
@@ -41,7 +41,7 @@ test("checksum mismatch fails closed before profile values render", async ({ pag
 });
 
 test("schema-invalid profile with a matching checksum renders the incompatible-data state", async ({ page }) => {
-  const showcaseRoot = resolve("public", "showcase", "v1");
+  const showcaseRoot = resolve("public", SHOWCASE_BASE.replace(/^\/|\/$/g, ""));
   const manifest = JSON.parse(await readFile(resolve(showcaseRoot, "manifest.json"), "utf8")) as {
     files: Array<{ bytes: number; path: string; sha256: string }>;
   };
@@ -58,10 +58,10 @@ test("schema-invalid profile with a matching checksum renders the incompatible-d
   manifestFile.bytes = invalidBytes.byteLength;
   manifestFile.sha256 = createHash("sha256").update(invalidBytes).digest("hex");
 
-  await page.route("**/showcase/v1/manifest.json", (route) =>
+  await page.route(`**${SHOWCASE_BASE}manifest.json`, (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(manifest) }),
   );
-  await page.route(`**/showcase/v1/players/${MESSI_PROFILE_KEY}.json`, (route) =>
+  await page.route(`**${SHOWCASE_BASE}players/${MESSI_PROFILE_KEY}.json`, (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: invalidBytes }),
   );
   await page.goto(`/lab/?player=${MESSI_PROFILE_KEY}`);
