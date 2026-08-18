@@ -1985,3 +1985,63 @@ and not a republication.
 
 **How to apply:** `scoutlens-qop.6.4.3` resumes, regenerates the 1,257-profile
 v2 dataset twice, audits it independently and promotes the audited bytes.
+
+## D050 — 2026-08-17 — Payload pin contract 2.0.0, and the version it is not
+
+**Decision:** freeze `scoutlens.showcase-payload-pack/2.0.0` as the pin document
+for hydrating a showcase-2.0.0 dataset, and make zero-argument hydration derive
+its target from the validated pin (`scoutlens-qop.6.6.1`). The repository pin is
+**not** changed here; `scoutlens-qop.6.6` repins after publication.
+
+**The distinction this freezes.** The code blurred two version numbers that mean
+different things:
+
+- `schema_version` versions **the pin document itself**;
+- `showcase_schema_version` names **the artifact contract being hydrated**.
+
+A v2 pin is schema `2.0.0` describing a showcase `2.0.0` dataset, but the two
+move independently, and conflating them is how a pin ends up promising a dataset
+it does not describe. They are now separate required fields, and a v2 pin that
+claims to hydrate showcase `1.0.0` is refused.
+
+**Exact key sets, per schema.** `1.0.0` accepts only the frozen legacy shape;
+`2.0.0` additionally requires `showcase_schema_version`, `manifest_sha256` and
+`representation` (`id` and `sha256`). Neither accepts the other's fields, so a
+document that straddles both shapes is rejected outright rather than validating
+on the union. The dataset-version prefix must match the schema's major.
+
+**Why the manifest and representation digests are pinned.** The archive carries
+players only; the manifest and the representation are tracked in Git and could
+be at any revision. Without pinning them, a v2 player set could hydrate against
+a manifest that never produced it and every per-file check would still pass -
+each extracted profile would match a manifest that is simply the wrong one.
+
+**Hydration derives its own target.** With no explicit paths, hydration resolves
+`public/showcase/v{major}/manifest.json` and `players/` from the validated pin,
+and only after validation: a pin that fails its own checks never gets to say
+where it would have written. There is no fallback to v1. Explicit paths remain
+available for tests and recovery and must still agree with every pinned
+identity.
+
+**Building a pin verifies rather than trusts.** The `pin` command recomputes
+every field from the artefacts themselves and then requires the `qop.6.4.4`
+sidecar to agree. The sidecar is an operator convenience, never the authority: a
+pin built from a sidecar alone would attest to whatever the sidecar happened to
+say. The writer round-trips the document through the loader before publishing,
+because a pin this module cannot read is not a pin, and replacing an existing
+pin requires an explicit flag - it retargets every clean clone's hydration.
+
+**v1 rollback.** The frozen `1.0.0` shape stays accepted for exactly the v1
+dataset, so restoring the previous pin file is the whole rollback procedure. The
+repository pin and its v1 behaviour are unchanged by this record and are pinned
+by a test.
+
+**Impact:** no `config/`, `public/`, `web/`, `artifacts/`, producer, scientific
+or generated-contract file changed. No archive was uploaded and no pin was
+repointed.
+
+**How to apply:** `scoutlens-qop.6.6` publishes the `qop.6.4.4` candidates,
+builds the pin with this command, replaces `config/showcase-payload-pack.json`
+under explicit authority, and flips `DEPLOYED_SHOWCASE_MAJOR` in
+`web/src/contracts/showcase-repository.ts` so the site serves what the pin
+hydrates.
