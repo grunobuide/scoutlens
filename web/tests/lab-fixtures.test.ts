@@ -24,7 +24,7 @@ const PUBLISHED_MAX_TEAMS_PER_PERIOD = 2;
 
 function fixtureFetch(): ShowcaseFetch {
   return async (input) => {
-    const relative = input.replace(/^.*\/showcase\/v1\//, "");
+    const relative = input.replace(/^.*\/showcase\/v\d+\//, "");
     const bytes = await readFile(resolve(fixtureRoot, relative));
     return new Response(bytes, {
       status: 200,
@@ -38,7 +38,7 @@ function sha256(text: string): string {
 }
 
 async function repositoryProfile(profileKey: string) {
-  const repository = new StaticShowcaseRepository(fixtureFetch());
+  const repository = new StaticShowcaseRepository(fixtureFetch(), "/showcase/v1/", 1);
   return repository.getProfile(profileKey);
 }
 
@@ -62,7 +62,7 @@ describe("scoutlens-uze.7 fixture pack", () => {
   });
 
   it("renders a list where the synthetic profile is selectable from the same index contract", async () => {
-    const repository = new StaticShowcaseRepository(fixtureFetch());
+    const repository = new StaticShowcaseRepository(fixtureFetch(), "/showcase/v1/", 1);
     const profiles = await repository.listProfiles();
     const item = profiles.find((candidate) => candidate.profile_key === FIXTURE_IDS.maxContent);
     expect(item).toBeDefined();

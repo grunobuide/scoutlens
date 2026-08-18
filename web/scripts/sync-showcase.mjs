@@ -1,15 +1,22 @@
-import { cp, mkdir, readdir, rm } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
 
-// Which major the build serves. Kept in step with DEPLOYED_SHOWCASE_MAJOR in
-// src/contracts/showcase-repository.ts through one environment variable, so the
-// bytes on disk and the schema they are validated against cannot disagree.
-// scoutlens-qop.6.6 repins the payload and moves both together.
-const major = Number(process.env.NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR ?? "1");
+// Which major the build serves. Derived from the payload pin rather than from a
+// second default, because a clean clone hydrates whatever the pin names: if the
+// sync disagreed with the pin it would serve a manifest whose profiles nobody
+// can fetch. That is exactly what broke CI between the qop.6.6.2 repin and the
+// qop.6.6.4 flip, and deriving it removes the drift rather than setting it
+// twice. The env override stays for the delegated fixture exports.
+const pin = JSON.parse(
+  await readFile(resolve(webRoot, "..", "config", "showcase-payload-pack.json"), "utf8"),
+);
+const major = Number(
+  process.env.NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR ?? pin.schema_version.split(".")[0],
+);
 if (major !== 1 && major !== 2) {
   throw new Error(`NEXT_PUBLIC_SCOUTLENS_SHOWCASE_MAJOR must be 1 or 2, got ${major}`);
 }

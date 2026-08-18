@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { showcaseBaseUrl } from "@/contracts/showcase-repository";
 import type {
   ResearchExperiment,
 } from "@/contracts/generated/showcase";
@@ -208,9 +209,9 @@ export function ProvenanceDrawer({ story }: { story: ShowcaseStory }) {
           <div>
             <h3>Published contract</h3>
             <ul>
-              <li><a href="/showcase/v1/manifest.json">Versioned manifest</a></li>
-              <li><a href="/showcase/v1/research-summary.json">Research summary</a></li>
-              <li><a href="/showcase/v1/feature-catalog.json">Feature catalog</a></li>
+              <li><a href={`${showcaseBaseUrl()}manifest.json`}>Versioned manifest</a></li>
+              <li><a href={`${showcaseBaseUrl()}research-summary.json`}>Research summary</a></li>
+              <li><a href={`${showcaseBaseUrl()}feature-catalog.json`}>Feature catalog</a></li>
               <li><a href={repositoryHref(story.manifest.producer.config_path)}>Frozen experiment config</a></li>
             </ul>
           </div>

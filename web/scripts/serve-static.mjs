@@ -29,11 +29,17 @@ const contentTypes = new Map([
 ]);
 const compressible = new Set([".css", ".html", ".js", ".json", ".svg", ".txt"]);
 
+// Any served showcase major, not just the one that happened to exist first: the
+// manifest is the mutable entry point and everything under it is
+// content-addressed, and that is true of v2 exactly as it was of v1.
+const SHOWCASE_MANIFEST = /^\/showcase\/v\d+\/manifest\.json$/;
+const SHOWCASE_ASSET = /^\/showcase\/v\d+\//;
+
 function cacheControl(pathname) {
-  if (pathname === "/showcase/v1/manifest.json") {
+  if (SHOWCASE_MANIFEST.test(pathname)) {
     return "public, max-age=60, must-revalidate";
   }
-  if (pathname.startsWith("/_next/static/") || pathname.startsWith("/showcase/v1/")) {
+  if (pathname.startsWith("/_next/static/") || SHOWCASE_ASSET.test(pathname)) {
     return "public, max-age=31536000, immutable";
   }
   if (pathname.endsWith(".html") || pathname.endsWith("/")) {
