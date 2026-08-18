@@ -11,7 +11,7 @@
     "assets:sync": "node scripts/sync-showcase.mjs",
     "budget:check": "node scripts/check-budgets.mjs",
     "build": "pnpm assets:sync && next build && pnpm static:check",
-    "build:fixtures": "node scripts/fixture-pack.mjs generate && node scripts/build-fixture-export.mjs",
+    "build:fixtures": "node scripts/build-all-fixtures.mjs",
     "contracts:check": "node scripts/generate-contracts.mjs --check",
     "contracts:generate": "node scripts/generate-contracts.mjs",
     "dev": "pnpm assets:sync && next dev",
