@@ -354,11 +354,18 @@ def audit_candidate(root: Path, *, expected_profiles: int, label: str = "candida
         return report
     manifest = parsed["manifest.json"]
 
+    # Artifacts that fail the schema are recorded and then excluded from the
+    # semantic pass. Auditing one anyway means reaching for fields the schema
+    # just proved absent, which raises instead of reporting - the whole bundle
+    # then yields a traceback rather than a list of findings, and the other
+    # 1,256 profiles go unexamined.
+    invalid: set[str] = set()
     for path, artifact in parsed.items():
         try:
             validate_schema(artifact, label=path, major=2)
         except ValueError as error:
             report.fail(str(error)[:200])
+            invalid.add(path)
 
     declared = {entry["path"]: entry for entry in manifest["files"]}
     on_disk = {path for path in files if path != "manifest.json"}
@@ -378,6 +385,11 @@ def audit_candidate(root: Path, *, expected_profiles: int, label: str = "candida
         if entry["sha256"] != actual:
             report.fail(f"{path}: manifest sha256 does not match the file")
 
+    if invalid & {REPRESENTATION_PATH, "feature-catalog.json", "players.index.json"}:
+        # Without a valid representation, catalog or index there is nothing to
+        # audit the profiles against, so stop here with the findings so far
+        # rather than inventing a baseline.
+        return report
     representation_id, weights = _audit_representation(parsed[REPRESENTATION_PATH], report)
     if manifest.get("representation_id") != representation_id:
         report.fail("the manifest names a different representation than representation.json")
@@ -400,6 +412,8 @@ def audit_candidate(root: Path, *, expected_profiles: int, label: str = "candida
         report.fail(f"manifest profile_count is {manifest['population']['profile_count']}")
 
     for path in profile_paths:
+        if path in invalid:
+            continue
         profile = parsed[path]
         if path != f"players/{profile['profile_key']}.json":
             report.fail(f"{path}: file name and profile key differ")

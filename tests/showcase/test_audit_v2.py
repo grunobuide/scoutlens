@@ -272,6 +272,34 @@ def test_a_single_flipped_byte_is_caught(bounded, tmp_path) -> None:
 
 
 @pytestmark_integration
+def test_a_corrupted_key_is_reported_rather_than_raised(bounded, tmp_path) -> None:
+    """The case that produced a traceback in `scoutlens-qop.6.6.3`.
+
+    A byte flip inside a key name leaves valid JSON that fails the schema. The
+    auditor used to record that failure and then audit the artifact anyway,
+    reaching for the field the schema had just proved absent - so the run died
+    with a KeyError and said nothing about the other profiles. It must report
+    and carry on.
+    """
+    root, count = bounded
+    target = tmp_path / "corrupt-key"
+    shutil.copytree(root, target)
+    path = target / "players" / _first_profile(root)
+    payload = path.read_text(encoding="utf-8").replace(
+        '"candidate_global_z"', '"candidate_global_Z"', 1
+    )
+    path.write_text(payload, encoding="utf-8")
+
+    report = audit_candidate(target, expected_profiles=count)
+
+    assert not report.passed
+    assert any("JSON Schema violation" in failure for failure in report.failures)
+    # The other profiles were still audited: a single bad artifact must not
+    # blind the auditor to the rest of the bundle.
+    assert report.stats["profiles_audited"] == count
+
+
+@pytestmark_integration
 def test_a_wrong_profile_count_stops_publication(bounded) -> None:
     root, count = bounded
     report = audit_candidate(root, expected_profiles=count + 1)
