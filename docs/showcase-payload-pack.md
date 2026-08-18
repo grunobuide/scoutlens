@@ -6,17 +6,18 @@ excluded from Git. A content-addressed release asset makes the static showcase
 buildable from a clean clone without downloading or reconstructing provider
 data.
 
-## Pinned v1 asset
+## Pinned asset
 
 | Property | Value |
 |---|---|
-| Dataset | `wyscout-2017-18-v1-1ea86c4a4dbb` |
+| Dataset | `wyscout-2017-18-v2-dc398ff5661c` |
+| Representation | `rep-f018e6041ccbad10` |
 | Manifest-declared paths | 1,257 |
 | Archive format | deterministic `tar+gzip` |
-| Archive bytes | 19,624,821 |
-| SHA-256 | `f4ba05d4f2db25db1808f174036f41e23f748cd35815ce4a59892e1733fb3ee0` |
-| Immutable tag | `showcase-wyscout-2017-18-v1-1ea86c4a4dbb` |
-| Asset | [`scoutlens-showcase-wyscout-2017-18-v1-1ea86c4a4dbb-f4ba05d4f2db25db1808f174036f41e23f748cd35815ce4a59892e1733fb3ee0.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v1-1ea86c4a4dbb/scoutlens-showcase-wyscout-2017-18-v1-1ea86c4a4dbb-f4ba05d4f2db25db1808f174036f41e23f748cd35815ce4a59892e1733fb3ee0.tar.gz) |
+| Archive bytes | 23,453,297 |
+| SHA-256 | `4a5c092d8d6fcee2a5f7a226fe79e7e89079ffb668c43f863da6259df5d29635` |
+| Immutable tag | `showcase-wyscout-2017-18-v2-dc398ff5661c-rep-f018e6041ccbad10` |
+| Asset | [`scoutlens-showcase-wyscout-2017-18-v2-dc398ff5661c-4a5c092d8d6fcee2a5f7a226fe79e7e89079ffb668c43f863da6259df5d29635.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v2-dc398ff5661c-rep-f018e6041ccbad10/scoutlens-showcase-wyscout-2017-18-v2-dc398ff5661c-4a5c092d8d6fcee2a5f7a226fe79e7e89079ffb668c43f863da6259df5d29635.tar.gz) |
 
 The machine-readable authority is
 [`config/showcase-payload-pack.json`](../config/showcase-payload-pack.json).
@@ -62,7 +63,30 @@ uv run --frozen python -m scoutlens.showcase.payload build \
 
 The builder validates the source set and all manifest checksums first, sorts
 paths, and normalizes timestamps, ownership, permissions, gzip headers, and tar
-metadata. Two builds must reproduce the pinned 19,624,821 bytes and SHA-256.
+metadata. Two builds must reproduce the pinned 23,453,297 bytes and SHA-256.
+
+## Scientific evidence asset
+
+Published alongside the payload under the same immutable tag, as a **separate
+asset**. It is offline audit evidence for the intervals the Lab shows, not a
+runtime input: the site never fetches it and hydration does not need it. Only
+the payload URL enters `config/showcase-payload-pack.json`.
+
+| Property | Value |
+|---|---|
+| Archive bytes | 1,660,853 |
+| SHA-256 | `99c273f50ac7c31507ed83dd8ad6b8350a60324f216ce41116760af0d7c5cea2` |
+| Members | `CHECKSUMS.json`, `README.md`, `run.json`, and the three `match_bootstrap_diagonal_v1` parquet summaries |
+| Asset | [`scoutlens-showcase-evidence-wyscout-2017-18-v2-dc398ff5661c-99c273f50ac7c31507ed83dd8ad6b8350a60324f216ce41116760af0d7c5cea2.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v2-dc398ff5661c-rep-f018e6041ccbad10/scoutlens-showcase-evidence-wyscout-2017-18-v2-dc398ff5661c-99c273f50ac7c31507ed83dd8ad6b8350a60324f216ce41116760af0d7c5cea2.tar.gz) |
+
+Verify it before use:
+
+```bash
+uv run --frozen python -m scoutlens.showcase.evidence_bundle verify   --archive <downloaded>.tar.gz
+```
+
+That refuses the archive unless its members are exactly the allowlist in
+canonical order and every source matches `CHECKSUMS.json`.
 
 ## Two versions, and why they are not the same number
 

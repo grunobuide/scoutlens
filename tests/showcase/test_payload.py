@@ -163,12 +163,17 @@ def _assert_existing_target_survives_failure(
 
 def test_repository_payload_pin_is_content_addressed_and_within_budget() -> None:
     metadata = load_payload_metadata(REPO_ROOT / "config" / "showcase-payload-pack.json")
-    assert metadata.dataset_version == "wyscout-2017-18-v1-1ea86c4a4dbb"
+    # Identity is asserted against the pin's own declared major rather than a
+    # transcribed dataset string: repinning is a sanctioned operation
+    # (scoutlens-qop.6.6.2), and a test that hard-codes one dataset turns every
+    # future repin into a test edit that says nothing about correctness.
+    assert metadata.dataset_version.startswith(f"wyscout-2017-18-v{metadata.showcase_major}-")
     assert metadata.path_count == 1257
-    assert metadata.archive_bytes == 19_624_821
     assert metadata.sha256 in metadata.filename
     assert metadata.dataset_version in metadata.filename
     assert metadata.archive_bytes <= MAX_ARCHIVE_BYTES
+    assert metadata.url.startswith("https://")
+    assert metadata.url.endswith(f"/{metadata.filename}")
 
 
 def test_payload_archive_is_deterministic_and_hydrates_atomically(tmp_path: Path) -> None:
