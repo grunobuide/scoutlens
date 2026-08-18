@@ -2045,3 +2045,60 @@ builds the pin with this command, replaces `config/showcase-payload-pack.json`
 under explicit authority, and flips `DEPLOYED_SHOWCASE_MAJOR` in
 `web/src/contracts/showcase-repository.ts` so the site serves what the pin
 hydrates.
+
+## D051 — 2026-08-18 — Identity-challenge contract 2.0.0: artifact bindings follow the public major
+
+**Decision:** advance the identity-challenge contract to specification `2.0.0`
+(`scoutlens-9a3.8`). It supersedes **only** `D039`'s bindings to
+`scoutlens.showcase/1.0.0`. Every placement, state, transition, accessibility
+and performance decision `D039` froze stands unchanged.
+
+**Why the concept survives a major version.** The challenge never computed
+anything - it reveals stored outputs. When the stored outputs changed name and
+meaning under `D047`, the bindings had to follow and the interaction did not.
+A contract that still named `cosine_similarity` was naming a field that no
+longer exists, which is a broken specification rather than a design question.
+
+**What changed, in one line each.** The primary value becomes
+`retrieval.global.similarity_score`, labelled *Learned weighted similarity*
+because a weighted metric must not be presented under a name claiming plain
+cosine. `representation_id` becomes visible provenance at reveal and evidence.
+Contribution lists are consumed from `evidence_refs` in published order rather
+than sorted in the browser. `weighted_contribution` explains the shown score;
+the unweighted `contribution` is retained as the cosine audit view and confined
+to the advanced disclosure. Uncertainty is driven by `uncertainty.status`
+instead of the hard-coded pending case. The full enumeration is §14 of the
+contract; ten deltas, no eleventh.
+
+**Two corrections the field audit forced**, and they are the reason the audit
+happened before the freeze rather than after. The 1.0.0 mandatory-caveat list
+required `uncertainty_pending`, a code the published v2 profiles do not carry -
+requiring it would have failed closed on a valid dataset. And 1.0.0 instructed
+the implementation to state that sampling-stability intervals "are not
+available in this dataset version", which is now false: the published dataset
+reports `available` under `match_bootstrap_diagonal_v1`. A contract that
+asserts a data state instead of reading it goes stale the moment the data
+moves.
+
+**The fitted-weight boundary is stated precisely.** The fingerprint displays 32
+measurements per period; the representation fits weights for 28 of them. Some
+fitted weights are exactly zero - three in the published dataset - so a feature
+can be inside the fitted set and contribute nothing. The copy therefore says
+that 28 features *carry a fitted weight*, not that 28 features influence the
+score, and `feature_weight` on each evidence item is the authority rather than
+a feature's position in a list.
+
+**Boundaries unchanged.** No client-side computation, no gamification, no live
+LLM, deterministic and working without JavaScript. No recruitment, quality,
+tactical-fit, causal or future-performance claim; the forbidden-language lists
+are untouched, with one wording fix where a list explained contributions as
+explaining "the cosine similarity".
+
+**Impact:** documentation only. No web, source, schema, generated-contract,
+artifact or config file changed, and no scientific value, order or precision
+moved. Verified against the published profile `wy-8287-c-795`: every field this
+contract binds already exists, so no schema or artifact change is required.
+
+**How to apply:** `scoutlens-9a3.6` implements this contract. It contains no
+product-design decisions and may not reintroduce browser-side sorting,
+recomputation or a cosine-primary label.
