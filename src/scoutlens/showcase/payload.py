@@ -26,14 +26,43 @@ from scoutlens.showcase.io import canonical_json_bytes, discard_staging, make_st
 from scoutlens.showcase.schema import artifact_major, validate_schema
 
 PAYLOAD_CONTRACT = "scoutlens.showcase-payload-pack"
+
+# Two versions that are easy to confuse and must not be. PAYLOAD_SCHEMA_VERSION
+# versions *the pin document itself*; SHOWCASE_SCHEMA_VERSION_* identifies the
+# artifact contract being hydrated. A v2 pin is schema 2.0.0 describing a
+# showcase 2.0.0 dataset, but the two numbers move independently and blurring
+# them is how a pin ends up promising a dataset it does not describe.
 PAYLOAD_SCHEMA_VERSION = "1.0.0"
+PAYLOAD_SCHEMA_VERSION_V2 = "2.0.0"
+SUPPORTED_PAYLOAD_SCHEMA_VERSIONS = (PAYLOAD_SCHEMA_VERSION, PAYLOAD_SCHEMA_VERSION_V2)
+
+#: Payload schema -> the showcase major it may hydrate, and that major's
+#: dataset-version prefix. Exact, so a mixed pin cannot validate.
+SHOWCASE_MAJOR_BY_PAYLOAD_SCHEMA = {PAYLOAD_SCHEMA_VERSION: 1, PAYLOAD_SCHEMA_VERSION_V2: 2}
+
+_V1_KEYS = {"archive", "contract", "dataset_version", "path_count", "schema_version"}
+_V2_KEYS = _V1_KEYS | {"showcase_schema_version", "manifest_sha256", "representation"}
+_ARCHIVE_KEYS = {"bytes", "filename", "format", "sha256", "url"}
+_REPRESENTATION_KEYS = {"id", "sha256"}
 PAYLOAD_FORMAT = "tar+gzip"
 MAX_ARCHIVE_BYTES = 25 * 1024 * 1024
 DEFAULT_SHOWCASE_ROOT = REPO_ROOT / "public" / "showcase" / "v1"
 DEFAULT_MANIFEST_PATH = DEFAULT_SHOWCASE_ROOT / "manifest.json"
 DEFAULT_OUTPUT_DIR = DEFAULT_SHOWCASE_ROOT / "players"
+REPRESENTATION_FILENAME = "representation.json"
 DEFAULT_METADATA_PATH = REPO_ROOT / "config" / "showcase-payload-pack.json"
 SHA256_PATTERN = re.compile(r"^[a-f0-9]{64}$")
+
+
+def showcase_root_for(major: int) -> Path:
+    """Where a given showcase major's published artifacts live."""
+    return REPO_ROOT / "public" / "showcase" / f"v{major}"
+
+
+def _require_sha256(value: Any, label: str) -> str:
+    if not isinstance(value, str) or SHA256_PATTERN.fullmatch(value) is None:
+        raise ValueError(f"invalid {label}")
+    return value
 
 
 @dataclass(frozen=True)
@@ -44,6 +73,21 @@ class PayloadMetadata:
     archive_bytes: int
     path_count: int
     url: str
+    schema_version: str = PAYLOAD_SCHEMA_VERSION
+    #: The showcase artifact contract this pin hydrates, or None for a v1 pin,
+    #: whose legacy shape predates the distinction.
+    showcase_schema_version: str | None = None
+    manifest_sha256: str | None = None
+    representation_id: str | None = None
+    representation_sha256: str | None = None
+
+    @property
+    def showcase_major(self) -> int:
+        return SHOWCASE_MAJOR_BY_PAYLOAD_SCHEMA[self.schema_version]
+
+    @property
+    def showcase_root(self) -> Path:
+        return showcase_root_for(self.showcase_major)
 
 
 @dataclass(frozen=True)
@@ -76,17 +120,49 @@ def load_payload_metadata(path: Path = DEFAULT_METADATA_PATH) -> PayloadMetadata
         raise ValueError(f"cannot load payload metadata from {path}: {exc}") from exc
     if not isinstance(value, dict):
         raise ValueError("payload metadata must be a JSON object")
+    schema_version = value.get("schema_version")
+    if value.get("contract") != PAYLOAD_CONTRACT:
+        raise ValueError("unsupported payload metadata contract")
+    if schema_version not in SUPPORTED_PAYLOAD_SCHEMA_VERSIONS:
+        raise ValueError(
+            f"unsupported payload metadata schema {schema_version!r}; "
+            f"known: {list(SUPPORTED_PAYLOAD_SCHEMA_VERSIONS)}"
+        )
+    # Exact key sets per schema, so a document that mixes the legacy shape with
+    # v2 fields is rejected outright rather than validating on the union.
     _require_exact_keys(
         value,
-        {"archive", "contract", "dataset_version", "path_count", "schema_version"},
-        label="payload metadata",
+        _V1_KEYS if schema_version == PAYLOAD_SCHEMA_VERSION else _V2_KEYS,
+        label=f"payload metadata {schema_version}",
     )
-    if value["contract"] != PAYLOAD_CONTRACT or value["schema_version"] != PAYLOAD_SCHEMA_VERSION:
-        raise ValueError("unsupported payload metadata contract")
+    major = SHOWCASE_MAJOR_BY_PAYLOAD_SCHEMA[schema_version]
     archive = value["archive"]
     if not isinstance(archive, dict):
         raise ValueError("payload metadata archive must be an object")
-    _require_exact_keys(archive, {"bytes", "filename", "format", "sha256", "url"}, label="archive")
+    _require_exact_keys(archive, _ARCHIVE_KEYS, label="archive")
+
+    showcase_schema_version: str | None = None
+    manifest_sha256: str | None = None
+    representation_id: str | None = None
+    representation_sha256: str | None = None
+    if schema_version == PAYLOAD_SCHEMA_VERSION_V2:
+        showcase_schema_version = value["showcase_schema_version"]
+        if showcase_schema_version != "2.0.0":
+            raise ValueError(
+                f"a {PAYLOAD_SCHEMA_VERSION_V2} pin hydrates showcase 2.0.0, not "
+                f"{showcase_schema_version!r}"
+            )
+        manifest_sha256 = _require_sha256(value["manifest_sha256"], "pinned manifest_sha256")
+        representation = value["representation"]
+        if not isinstance(representation, dict):
+            raise ValueError("payload metadata representation must be an object")
+        _require_exact_keys(representation, _REPRESENTATION_KEYS, label="representation")
+        representation_id = representation["id"]
+        if not isinstance(representation_id, str) or not representation_id.startswith("rep-"):
+            raise ValueError("invalid pinned representation id")
+        representation_sha256 = _require_sha256(
+            representation["sha256"], "pinned representation sha256"
+        )
 
     dataset_version = value["dataset_version"]
     filename = archive["filename"]
@@ -94,8 +170,12 @@ def load_payload_metadata(path: Path = DEFAULT_METADATA_PATH) -> PayloadMetadata
     archive_bytes = archive["bytes"]
     path_count = value["path_count"]
     url = archive["url"]
-    if not isinstance(dataset_version, str) or not dataset_version.startswith("wyscout-2017-18-v1-"):
-        raise ValueError("invalid payload dataset_version")
+    expected_prefix = f"wyscout-2017-18-v{major}-"
+    if not isinstance(dataset_version, str) or not dataset_version.startswith(expected_prefix):
+        raise ValueError(
+            f"a schema {schema_version} pin must name a {expected_prefix}* dataset, "
+            f"got {dataset_version!r}"
+        )
     if not isinstance(filename, str) or PurePosixPath(filename).name != filename or not filename.endswith(".tar.gz"):
         raise ValueError("invalid payload archive filename")
     if archive["format"] != PAYLOAD_FORMAT:
@@ -112,7 +192,19 @@ def load_payload_metadata(path: Path = DEFAULT_METADATA_PATH) -> PayloadMetadata
         raise ValueError("invalid payload path count")
     if not isinstance(url, str) or not url.startswith("https://") or not url.endswith(f"/{filename}"):
         raise ValueError("payload archive URL must be HTTPS and end with the pinned filename")
-    return PayloadMetadata(dataset_version, filename, digest, archive_bytes, path_count, url)
+    return PayloadMetadata(
+        dataset_version=dataset_version,
+        filename=filename,
+        sha256=digest,
+        archive_bytes=archive_bytes,
+        path_count=path_count,
+        url=url,
+        schema_version=schema_version,
+        showcase_schema_version=showcase_schema_version,
+        manifest_sha256=manifest_sha256,
+        representation_id=representation_id,
+        representation_sha256=representation_sha256,
+    )
 
 
 def _load_manifest(path: Path) -> dict[str, Any]:
@@ -350,16 +442,71 @@ def _hydrate_verified_archive(
     }
 
 
+def _verify_showcase_identity(metadata: PayloadMetadata, manifest_path: Path) -> None:
+    """For a v2 pin, check the on-disk dataset is the one the pin describes.
+
+    The archive carries players only; the manifest and representation are
+    tracked in Git and could be at any revision. Pinning their digests is what
+    stops a v2 player set being hydrated against a manifest that never produced
+    it - a mismatch the per-file checks would not catch, because every extracted
+    profile would match a manifest that is simply the wrong one.
+    """
+    if metadata.schema_version != PAYLOAD_SCHEMA_VERSION_V2:
+        return
+
+    actual_manifest = hashlib.sha256(
+        manifest_path.read_bytes().replace(b"\r\n", b"\n")
+    ).hexdigest()
+    if actual_manifest != metadata.manifest_sha256:
+        raise ValueError(
+            f"{manifest_path.name} digest {actual_manifest} does not match the pinned "
+            f"{metadata.manifest_sha256}"
+        )
+
+    representation_path = manifest_path.parent / REPRESENTATION_FILENAME
+    try:
+        representation_bytes = representation_path.read_bytes().replace(b"\r\n", b"\n")
+    except OSError as exc:
+        raise ValueError(f"a v2 pin requires {representation_path}: {exc}") from exc
+    actual_representation = hashlib.sha256(representation_bytes).hexdigest()
+    if actual_representation != metadata.representation_sha256:
+        raise ValueError(
+            f"{REPRESENTATION_FILENAME} digest {actual_representation} does not match the "
+            f"pinned {metadata.representation_sha256}"
+        )
+    published_id = json.loads(representation_bytes)["representation"]["id"]
+    if published_id != metadata.representation_id:
+        raise ValueError(
+            f"{REPRESENTATION_FILENAME} publishes {published_id}, pinned {metadata.representation_id}"
+        )
+
+
 def hydrate_payload(
     *,
     archive_path: Path | None = None,
     metadata_path: Path = DEFAULT_METADATA_PATH,
-    manifest_path: Path = DEFAULT_MANIFEST_PATH,
-    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    manifest_path: Path | None = None,
+    output_dir: Path | None = None,
 ) -> dict[str, int | str]:
-    """Hydrate ``players/`` only after every archive and manifest check passes."""
+    """Hydrate ``players/`` only after every archive and manifest check passes.
+
+    With no explicit paths the target is derived from the validated pin rather
+    than from a hard-coded v1 root, and only after validation: a pin that fails
+    its own checks never gets to say where it would have written.
+    """
     metadata = load_payload_metadata(metadata_path)
+    if manifest_path is None:
+        manifest_path = metadata.showcase_root / "manifest.json"
+    if output_dir is None:
+        output_dir = metadata.showcase_root / "players"
+
     manifest = _load_manifest(manifest_path)
+    if artifact_major(manifest) != metadata.showcase_major:
+        raise ValueError(
+            f"{manifest_path} declares showcase major {artifact_major(manifest)}, but the pin "
+            f"hydrates major {metadata.showcase_major}"
+        )
+    _verify_showcase_identity(metadata, manifest_path)
     if archive_path is not None:
         return _hydrate_verified_archive(
             archive_path.resolve(),
@@ -393,12 +540,38 @@ def main() -> None:
     hydrate_parser = subparsers.add_parser("hydrate", help="verify and atomically hydrate the player payload")
     hydrate_parser.add_argument("--archive", type=Path)
     hydrate_parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA_PATH)
-    hydrate_parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST_PATH)
-    hydrate_parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    # Default None so the target is derived from the validated pin. Explicit
+    # paths stay available for tests and recovery, and still have to agree with
+    # every pinned identity.
+    hydrate_parser.add_argument("--manifest", type=Path, default=None)
+    hydrate_parser.add_argument("--output-dir", type=Path, default=None)
+
+    pin_parser = subparsers.add_parser("pin", help="build a candidate showcase-v2 payload pin")
+    pin_parser.add_argument("--sidecar", type=Path, required=True)
+    pin_parser.add_argument("--verified-archive", type=Path, required=True)
+    pin_parser.add_argument("--manifest", type=Path, required=True)
+    pin_parser.add_argument("--representation", type=Path, required=True)
+    pin_parser.add_argument("--url", required=True)
+    pin_parser.add_argument("--output", type=Path, required=True)
+    pin_parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="overwrite an existing pin; retargets every clean clone's hydration",
+    )
     args = parser.parse_args()
 
     if args.command == "build":
         result = build_payload_archive(args.source_root, args.output, sidecar=args.sidecar).as_dict()
+    elif args.command == "pin":
+        document = build_pin_document(
+            sidecar_path=args.sidecar,
+            archive_path=args.verified_archive,
+            manifest_path=args.manifest,
+            representation_path=args.representation,
+            url=args.url,
+        )
+        written = write_pin(document, args.output, replace=args.replace)
+        result = {"pin": str(written), **{k: v for k, v in document.items() if k != "archive"}}
     else:
         result = hydrate_payload(
             archive_path=args.archive,
@@ -407,6 +580,117 @@ def main() -> None:
             output_dir=args.output_dir,
         )
     print(json.dumps(result, indent=2, sort_keys=True))
+
+
+
+
+def build_pin_document(
+    *,
+    sidecar_path: Path,
+    archive_path: Path,
+    manifest_path: Path,
+    representation_path: Path,
+    url: str,
+) -> dict[str, Any]:
+    """Assemble a v2 pin from bytes that are verified here, not trusted.
+
+    Every field is recomputed from the artefacts themselves and then required to
+    agree with the `qop.6.4.4` sidecar. The sidecar is a convenience for the
+    operator, never the authority: a pin built from a sidecar alone would attest
+    to whatever the sidecar happened to say.
+    """
+    archive_path = archive_path.resolve()
+    digest, archive_bytes = _archive_identity(archive_path)
+
+    sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    if canonical_json_bytes(sidecar) != sidecar_path.read_bytes().replace(b"\r\n", b"\n"):
+        raise ValueError(f"{sidecar_path.name} is not canonically serialized")
+    if sidecar.get("contract") != PAYLOAD_CONTRACT:
+        raise ValueError(f"{sidecar_path.name} is not a payload sidecar")
+    declared = sidecar["archive"]
+    if declared["sha256"] != digest or declared["bytes"] != archive_bytes:
+        raise ValueError(
+            f"sidecar describes {declared['bytes']} bytes / {declared['sha256'][:12]}, "
+            f"archive is {archive_bytes} / {digest[:12]}"
+        )
+
+    manifest = _load_manifest(manifest_path)
+    if artifact_major(manifest) != 2:
+        raise ValueError("the pin command builds showcase 2.0.0 pins only")
+    manifest_digest = hashlib.sha256(
+        manifest_path.read_bytes().replace(b"\r\n", b"\n")
+    ).hexdigest()
+    dataset_version = manifest["dataset_version"]
+    if sidecar["dataset_version"] != dataset_version:
+        raise ValueError(
+            f"sidecar names {sidecar['dataset_version']}, manifest is {dataset_version}"
+        )
+
+    representation_bytes = representation_path.read_bytes().replace(b"\r\n", b"\n")
+    representation = json.loads(representation_bytes)["representation"]
+    representation_digest = hashlib.sha256(representation_bytes).hexdigest()
+    if representation["id"] != manifest.get("representation_id"):
+        raise ValueError("manifest and representation name different representations")
+    if sidecar.get("representation_id") != representation["id"]:
+        raise ValueError("sidecar names a different representation than the dataset")
+
+    entries = _expected_player_entries(manifest)
+    if declared["member_count"] != len(entries):
+        raise ValueError(
+            f"sidecar counts {declared['member_count']} members, manifest declares {len(entries)}"
+        )
+
+    filename = proposed_archive_name("scoutlens-showcase", dataset_version, digest)
+    if declared["proposed_filename"] != filename:
+        raise ValueError(
+            f"sidecar proposes {declared['proposed_filename']}, content addressing gives {filename}"
+        )
+    if not url.startswith("https://"):
+        raise ValueError("the pinned URL must be HTTPS")
+    if not url.endswith(f"/{filename}"):
+        raise ValueError(f"the pinned URL must end with /{filename}")
+    if archive_bytes > MAX_ARCHIVE_BYTES:
+        raise ValueError(f"payload archive exceeds the budget: {archive_bytes} bytes")
+
+    return {
+        "archive": {
+            "bytes": archive_bytes,
+            "filename": filename,
+            "format": PAYLOAD_FORMAT,
+            "sha256": digest,
+            "url": url,
+        },
+        "contract": PAYLOAD_CONTRACT,
+        "dataset_version": dataset_version,
+        "manifest_sha256": manifest_digest,
+        "path_count": len(entries),
+        "representation": {"id": representation["id"], "sha256": representation_digest},
+        "schema_version": PAYLOAD_SCHEMA_VERSION_V2,
+        "showcase_schema_version": "2.0.0",
+    }
+
+
+def write_pin(document: dict[str, Any], output_path: Path, *, replace: bool = False) -> Path:
+    """Write a pin candidate atomically, refusing to clobber one by default.
+
+    Replacing a pin retargets every clean clone's hydration, so it takes an
+    explicit flag rather than an overwrite nobody had to ask for.
+    """
+    output_path = output_path.resolve()
+    if output_path.exists() and not replace:
+        raise ValueError(f"refusing to replace an existing pin without --replace: {output_path}")
+    payload = canonical_json_bytes(document)
+    # Round-trip through the loader before publishing: a pin that this module
+    # cannot read is not a pin.
+    temporary = output_path.with_name(f".{output_path.name}.{uuid.uuid4().hex}.tmp")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        temporary.write_bytes(payload)
+        load_payload_metadata(temporary)
+        temporary.replace(output_path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return output_path
 
 
 if __name__ == "__main__":
