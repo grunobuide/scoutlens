@@ -48,6 +48,10 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v6
+        with:
+          # The visual-baseline pair guard diffs against the pull request
+          # base, so a shallow single-commit checkout is not enough.
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v9.0.0
         with:
           python-version: "3.14"
@@ -66,6 +70,37 @@ jobs:
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - name: Visual baseline pair guard
+        # A baseline updated on one platform is stale on the other, and the
+        # stale side stays green locally, so nothing tells the author until CI
+        # runs. Pull requests only: a push build has no base ref to diff and no
+        # label to read, and must never silently take the override path.
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" HEAD > changed-paths.txt
+
+          override=""
+          if printf '%s' "$LABELS" | tr ',' '\n' | grep -Fxq 'visual-platform-specific'; then
+            # The label alone is not sufficient. A reviewer must also say why, in
+            # the pull request body, so the exception stays reviewable after the
+            # fact instead of being a checkbox.
+            if printf '%s' "$PR_BODY" | grep -qi 'platform-specific'; then
+              echo 'Platform-specific override: label applied and a reason is documented in the body.'
+              override='--allow-platform-specific'
+            else
+              echo '::error::The visual-platform-specific label is applied but the pull request body'
+              echo '::error::does not explain why the difference is platform-specific. State the reason.'
+              exit 1
+            fi
+          fi
+
+          node web/scripts/check-visual-baseline-pairs.mjs --paths-from changed-paths.txt $override
       - run: pnpm contracts:check
       - run: pnpm lint
       - run: pnpm typecheck
@@ -75,3 +110,16 @@ jobs:
       - run: pnpm budget:check
       - run: pnpm test:e2e
       - run: pnpm lighthouse
+      - name: Upload Playwright diagnostics
+        # if: failure() so this runs precisely when it is needed. Without it a
+        # red visual check reports a pixel ratio and nothing else, and the only
+        # way to see the actual render is to reproduce the runner locally.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            web/playwright-report
+            web/test-results
+          retention-days: 14
+          if-no-files-found: ignore

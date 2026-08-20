@@ -10,6 +10,7 @@
   "scripts": {
     "assets:sync": "node scripts/sync-showcase.mjs",
     "budget:check": "node scripts/check-budgets.mjs",
+    "check:baseline-pairs": "node scripts/check-visual-baseline-pairs.mjs",
     "build": "pnpm assets:sync && next build && pnpm static:check",
     "build:fixtures": "node scripts/build-all-fixtures.mjs",
     "contracts:check": "node scripts/generate-contracts.mjs --check",
