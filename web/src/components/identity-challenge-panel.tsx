@@ -25,6 +25,8 @@
 
 import Link from "next/link";
 
+import { IdentityChallengeStates } from "@/components/identity-challenge-states";
+
 import type { IdentityChallengeData } from "@/content/load-identity-challenge";
 import type { IdentityChallengeView } from "@/content/identity-challenge";
 import type { Caveat } from "@/contracts/generated/showcase-v2";
@@ -132,7 +134,6 @@ export function IdentityChallengePanel({ data }: IdentityChallengePanelProps) {
   }
 
   const { view } = data;
-  const orientationCaveats = caveatsFor(view, ["fingerprint_not_style_proof"]);
 
   return (
     <section
@@ -140,29 +141,21 @@ export function IdentityChallengePanel({ data }: IdentityChallengePanelProps) {
       aria-labelledby="challenge-heading"
       data-challenge-panel="orientation"
     >
-      <p className="eyebrow">{view.copy.orientationQuestion}</p>
-      <h2 id="challenge-heading">{view.copy.orientationHeading}</h2>
-      <p className="challenge-panel__body">{view.copy.orientationBody}</p>
-
       {/*
-        §2's editorial disclosure invariant: this reason is always rendered
-        verbatim, never hidden or paraphrased. The featured profile is an
-        editorial choice, and a reader is entitled to know that before they see
-        a rank - otherwise the selection reads as a result.
+        The question is the artifact's own `research.narrative_steps[0].title`
+        and frames every state, so it stays outside the swapped content.
       */}
-      <p className="challenge-panel__editorial" data-challenge-editorial>
-        {view.copy.orientationEditorial}
+      <p className="eyebrow" id="challenge-heading">
+        {view.copy.orientationQuestion}
       </p>
 
-      <CaveatList caveats={orientationCaveats} />
-
-      <Link
-        className="button button--primary challenge-panel__cta"
-        href={`${profileHref(view.profileKey)}&challenge=query`}
-        data-challenge-cta="query"
-      >
-        {view.copy.orientationCta}
-      </Link>
+      {/*
+        The interactive states are a client component (`D052`). The degraded and
+        problem cards below are deliberately not: keeping them in this server
+        component means neither ships in the client bundle, and a reader without
+        JavaScript never downloads the state machine they cannot run.
+      */}
+      <IdentityChallengeStates view={view} rows={data.fingerprintRows} />
 
       <noscript>
         <DegradedCard view={view} />

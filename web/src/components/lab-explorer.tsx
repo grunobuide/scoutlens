@@ -216,7 +216,11 @@ export function LabExplorer({
 
   return (
     <>
-      <section className="lab-selector" aria-labelledby="player-selector-heading">
+      <section
+        id="lab-explorer"
+        className="lab-selector"
+        aria-labelledby="player-selector-heading"
+      >
         <header className="lab-section-heading">
           <div>
             <p className="eyebrow">Complete eligible catalog</p>

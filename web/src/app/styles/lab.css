@@ -1556,3 +1556,186 @@
     width: 100%;
   }
 }
+
+/* Identity challenge interactive states (scoutlens-9a3.6.3).
+   The state machine swaps content inside .challenge-panel; these rules cover
+   the query, reveal and evidence states. Section 6.5 forbids transition
+   animation, so nothing here animates and there is nothing for
+   prefers-reduced-motion to suppress. */
+
+.challenge-states {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+  width: 100%;
+}
+
+.challenge-panel__heading {
+  max-width: 24ch;
+  margin: 0;
+}
+
+/* The heading receives focus on every state entry (section 6.2). It is not
+   interactive, so it carries no persistent ring - only the shared
+   :focus-visible treatment when focus arrives by keyboard. */
+.challenge-panel__heading:focus {
+  outline: none;
+}
+
+.challenge-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.challenge-result {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0;
+}
+
+.challenge-result > div {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.challenge-result dt {
+  color: var(--ink-600);
+  font-size: 0.85rem;
+}
+
+.challenge-result dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.challenge-result__interval {
+  color: var(--ink-600);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.challenge-fingerprint {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 42rem;
+}
+
+.challenge-fingerprint__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 9rem) 1fr minmax(5rem, auto);
+  gap: 0.75rem;
+  align-items: center;
+  /* Section 6.4: at least 44 px of touch target per row. */
+  min-height: 44px;
+}
+
+.challenge-fingerprint__label {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.challenge-fingerprint__track {
+  position: relative;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-950) 8%, transparent);
+}
+
+.challenge-fingerprint__mark {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  color: var(--white);
+  font-size: 0.62rem;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+}
+
+.challenge-fingerprint__mark--a {
+  left: var(--period-a-position);
+  background: var(--teal);
+}
+
+.challenge-fingerprint__mark--b {
+  left: var(--period-b-position);
+  background: var(--ink-950);
+}
+
+.challenge-fingerprint__value {
+  color: var(--ink-600);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.challenge-contributions {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.challenge-contribution {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+
+.challenge-contribution__family,
+.challenge-contribution__interpretation,
+.challenge-contribution__weight {
+  color: var(--ink-600);
+  font-size: 0.78rem;
+}
+
+.challenge-contribution__value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  text-align: right;
+}
+
+.challenge-families {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.challenge-families li {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-800);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 30rem) {
+  .challenge-result > div,
+  .challenge-fingerprint__row {
+    grid-template-columns: 1fr;
+  }
+
+  .challenge-fingerprint__value {
+    text-align: left;
+  }
+}
