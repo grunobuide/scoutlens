@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
+import { IdentityChallengePanel } from "@/components/identity-challenge-panel";
 import { LabExplorer, LabProblemPanel } from "@/components/lab-explorer";
+import { loadIdentityChallenge } from "@/content/load-identity-challenge";
 import { loadShowcaseLab } from "@/content/load-showcase-lab";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
 
@@ -14,6 +16,7 @@ export const metadata: Metadata = {
 export default async function LabPage() {
   const lab = await loadShowcaseLab();
   const story = await loadShowcaseStory();
+  const challenge = await loadIdentityChallenge();
 
   return (
     <main id="main-content" className="shell page-shell lab-page">
@@ -30,6 +33,8 @@ export default async function LabPage() {
           or automated verdict.
         </p>
       </header>
+
+      <IdentityChallengePanel data={challenge} />
 
       <noscript>
         <section className="lab-state lab-state--unavailable">
