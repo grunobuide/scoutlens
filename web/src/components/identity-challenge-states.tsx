@@ -29,6 +29,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+// D046: resampled rank bounds are legitimately fractional, and interpolating
+// one straight into a template prints its full binary expansion - the published
+// upper bound here renders as "43.524999999999998" without this.
+import { formatRank } from "@/components/rank-format";
+
 import type { IdentityChallengeView } from "@/content/identity-challenge";
 import {
   formatPercentile,
@@ -117,7 +122,13 @@ function ChallengeFingerprintRow({
     : `${row.definition.label}: period A ${formatPercentile(periodA)}, within-role percentile`;
 
   return (
-    <div className="challenge-fingerprint__row" data-fingerprint-row={row.definition.feature_id}>
+    <div
+      className="challenge-fingerprint__row"
+      // Not `data-fingerprint-row`: the Lab explorer below owns that name for its
+      // own 32 rows, and sharing it makes any page-level query for "the
+      // fingerprint rows" resolve to 64 elements from two different surfaces.
+      data-challenge-fingerprint-row={row.definition.feature_id}
+    >
       <span className="challenge-fingerprint__label">{row.definition.short_label}</span>
       <span
         className="challenge-fingerprint__track"
@@ -423,7 +434,8 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
                 {uncertainty.rankCi95 === null ? null : (
                   <span className="challenge-result__interval" data-challenge-interval>
                     {" "}
-                    (95% resampling interval {uncertainty.rankCi95[0]}–{uncertainty.rankCi95[1]})
+                    (95% resampling interval {formatRank(uncertainty.rankCi95[0])}–
+                    {formatRank(uncertainty.rankCi95[1])})
                   </span>
                 )}
               </dd>
