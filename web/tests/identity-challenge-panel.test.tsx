@@ -18,8 +18,10 @@ import { describe, expect, it } from "vitest";
 
 import { IdentityChallengePanel } from "@/components/identity-challenge-panel";
 import { buildIdentityChallenge, type IdentityChallengeView } from "@/content/identity-challenge";
+import { buildFingerprintRows } from "@/content/showcase-lab";
 import type { IdentityChallengeData } from "@/content/load-identity-challenge";
 
+import catalog from "../e2e/fixtures/lab-max-content-v2/feature-catalog.json";
 import manifest from "../e2e/fixtures/lab-max-content-v2/manifest.json";
 import profile from "../e2e/fixtures/lab-max-content-v2/players/wy-900001-c-901.json";
 import representation from "../e2e/fixtures/lab-max-content-v2/representation.json";
@@ -43,7 +45,12 @@ function markup(data: IdentityChallengeData): string {
 }
 
 function readyMarkup(): string {
-  return markup({ status: "ready", datasetVersion: manifest.dataset_version, view: view() });
+  return markup({
+    status: "ready",
+    datasetVersion: manifest.dataset_version,
+    view: view(),
+    fingerprintRows: buildFingerprintRows(catalog as never, profile as never),
+  });
 }
 
 /** Everything inside `<noscript>` - the whole no-JavaScript experience. */
@@ -61,21 +68,6 @@ function text(html: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ");
-}
-
-/**
- * Query parameters only, deliberately.
- *
- * `next/link` applies `trailingSlash: true` from `next.config.ts` at build
- * time, not in a bare `renderToStaticMarkup` call, so this render emits
- * `/lab?player=` where the export emits `/lab/?player=`. Asserting the exact
- * prefix here would pin the wrong one. The built form was verified directly in
- * `out/lab/index.html`, and the navigable URL is slice 4's E2E surface; what
- * this file owns is that the panel points at the right profile and state.
- */
-function hrefQuery(html: string, marker: string): string {
-  const match = new RegExp(`href="[^"]*${marker}[^"]*"`).exec(html);
-  return match === null ? "" : match[0];
 }
 
 describe("the orientation state", () => {
@@ -112,13 +104,15 @@ describe("the orientation state", () => {
     expect(outside).not.toContain("role-and-minutes baseline");
   });
 
-  it("links to the URL the contract documents for the query state", () => {
-    // §1's URL table. Slice 3 gives this parameter its behaviour; the link
-    // points at the documented place from the start rather than at a button
-    // that does nothing.
-    const href = hrefQuery(readyMarkup(), "challenge=query");
-    expect(href).toContain(`player=${profile.profile_key}`);
-    expect(href).toContain("challenge=query");
+  it("offers the query transition as a button, per section 5", () => {
+    // §5 makes every state-transition CTA a `<button>`; only "Explore every
+    // fingerprint" is a link. Slice 2 shipped a placeholder anchor to the
+    // documented URL because there was no state machine to click into yet;
+    // scoutlens-9a3.6.3 replaced it with the button the contract specifies, and
+    // the URL is now written by the transition rather than by the href.
+    const html = readyMarkup();
+    expect(html).toContain('data-challenge-cta="query"');
+    expect(html).toMatch(/<button[^>]*data-challenge-cta="query"/);
   });
 });
 

@@ -19,7 +19,12 @@
  */
 
 import { buildIdentityChallenge, type IdentityChallengeView } from "@/content/identity-challenge";
-import { describeLabError, type LabProblem } from "@/content/showcase-lab";
+import {
+  buildFingerprintRows,
+  describeLabError,
+  type FingerprintRow,
+  type LabProblem,
+} from "@/content/showcase-lab";
 import { createServerShowcaseRepository } from "@/content/showcase-server";
 import type {
   Manifest,
@@ -32,6 +37,16 @@ export interface ReadyIdentityChallengeData {
   status: "ready";
   datasetVersion: string;
   view: IdentityChallengeView;
+  /**
+   * The 32 fingerprint rows, from the Lab's own shared reader.
+   *
+   * Built here rather than inside `buildIdentityChallenge` because the rows
+   * need the feature catalog, and slice 1's selector is a pure function over
+   * the four artifacts §11 allows. Using `buildFingerprintRows` keeps a single
+   * source for the pairing of catalog definitions to period values, so the
+   * challenge and the Lab cannot disagree about what a measurement is.
+   */
+  fingerprintRows: readonly FingerprintRow[];
 }
 
 export interface FailedIdentityChallengeData {
@@ -83,10 +98,11 @@ export async function loadIdentityChallenge(): Promise<IdentityChallengeData> {
     const manifest = (await repository.getManifest()) as Manifest;
     datasetVersion = manifest.dataset_version;
 
-    const [profile, representation, research] = await Promise.all([
+    const [profile, representation, research, catalog] = await Promise.all([
       repository.getProfile(manifest.featured_profile.profile_key),
       repository.getRepresentation(),
       repository.getResearchSummary(),
+      repository.getFeatureCatalog(),
     ]);
 
     if (representation === null) {
@@ -104,7 +120,16 @@ export async function loadIdentityChallenge(): Promise<IdentityChallengeData> {
       return { status: "error", datasetVersion, problem: describeRefusal() };
     }
 
-    return { status: "ready", datasetVersion, view: challenge };
+    return {
+      status: "ready",
+      datasetVersion,
+      view: challenge,
+      // Throws if the catalog and the profile disagree on the 32 features,
+      // which the surrounding catch turns into a problem panel. Failing here is
+      // correct: a fingerprint plot missing a measurement is not a smaller
+      // plot, it is a different one.
+      fingerprintRows: buildFingerprintRows(catalog, profile),
+    };
   } catch (error) {
     return {
       status: "error",

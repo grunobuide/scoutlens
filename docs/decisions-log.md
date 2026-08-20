@@ -2102,3 +2102,56 @@ contract binds already exists, so no schema or artifact change is required.
 **How to apply:** `scoutlens-9a3.6` implements this contract. It contains no
 product-design decisions and may not reintroduce browser-side sorting,
 recomputation or a cosine-primary label.
+
+## D052 — 2026-08-20 — The challenge's client code is statically imported, not lazy-loaded
+
+**Decision:** the identity challenge's interactive states are implemented as a
+new client component **statically imported** by the Lab page, sharing the
+existing page chunk. It is not lazy-loaded, and it is not folded into
+`lab-explorer.tsx`. The `204,800`-byte initial-JavaScript cap remains the
+binding invariant and is measured on every change.
+
+**Why this needed a decision.** §10 of the identity-challenge contract
+contradicts itself once a new client component is required. Its *Lazy chunks*
+row states "the challenge does not introduce lazy-loaded components", while the
+budget invariant beneath the table states "if the challenge implementation
+requires a new client component, it must be lazy-loaded outside the initial
+route transfer". Read together, one clause forbids what the other mandates.
+
+**The premise that failed.** Both clauses rest on the table's assumption that
+the challenge "reuses the existing Lab page chunk and `lab-explorer.tsx` client
+bundle". That holds for the fingerprint plot, and `scoutlens-9a3.6.2` confirmed
+it holds for orientation and degraded, which are server-rendered and add no
+JavaScript at all. It does not hold for the state machine. `LabExplorer` has no
+challenge states, does not read the `challenge` URL parameter, and implements
+none of §6.2's focus movement or §6.3's announcements. The contract assumed no
+new client component would be needed; `scoutlens-9a3.6.3` establishes that one
+is.
+
+**Why static import rather than the alternatives.** A small statically-imported
+client component is merged into the existing page chunk by the bundler rather
+than emitted separately, so "adds zero new chunks" and "no new lazy chunks" both
+hold literally. Lazy-loading would satisfy the invariant's second sentence but
+violate the *Lazy chunks* row, and would put a network round trip on the primary
+CTA of the flagship interaction on an otherwise fully static site. Hosting the
+states inside `lab-explorer.tsx` would satisfy both clauses literally, at the
+cost of adding a second responsibility to a 1,012-line component and coupling
+the challenge to the explorer while its orientation and degraded states remain a
+separate server component.
+
+**What stays binding.** The cap. §10's purpose is that `/lab` initial JavaScript
+does not exceed `204,800` gzip bytes (`D038`), and that number is unchanged.
+Measured headroom before this work was `45,877` bytes. If the challenge's client
+code ever consumes a disproportionate share of it, lazy-loading becomes the
+remedy the invariant intends — the decision here is which mechanism is default,
+not that the budget is negotiable.
+
+**Impact:** `scoutlens-9a3.6.3` and `scoutlens-9a3.6.4`. No artifact, schema,
+config or scientific change. §10's wording remains as frozen; this entry records
+how the contradiction is resolved in implementation rather than editing a frozen
+contract mid-build.
+
+**How to apply:** every pull request touching the challenge's client code
+records `pnpm budget:check` before and after. A change that reduces headroom
+materially is a signal to split the component, not to raise the cap — `D038` and
+§5.5 of the frontend agent contract both forbid raising it.
