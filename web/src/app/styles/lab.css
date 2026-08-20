@@ -1468,3 +1468,91 @@
 
   }
 }
+
+/* Identity challenge panel (scoutlens-9a3.6.2).
+   Orientation and degraded states only; both are server-rendered and add no
+   client JavaScript. The interactive states arrive with scoutlens-9a3.6.3. */
+
+.challenge-panel {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+  max-width: 48rem;
+  margin-bottom: clamp(2.5rem, 6vw, 5rem);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.challenge-panel h2 {
+  max-width: 18ch;
+  margin: 0;
+}
+
+.challenge-panel__body {
+  max-width: 52ch;
+  margin: 0;
+}
+
+/* The editorial selection reason (section 2). Set apart from the body copy so a
+   reader can see it is a disclosure about how this player was chosen, not a
+   finding about the player. */
+.challenge-panel__editorial {
+  max-width: 52ch;
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--teal);
+  color: var(--ink-600);
+  font-size: 0.9rem;
+}
+
+.challenge-panel__caveats {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 52ch;
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink-600);
+  font-size: 0.88rem;
+}
+
+.challenge-panel__degraded {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.challenge-panel__degraded h3 {
+  margin: 0;
+}
+
+.challenge-panel__identity,
+.challenge-panel__periods,
+.challenge-panel__result,
+.challenge-panel__pin {
+  max-width: 52ch;
+  margin: 0;
+}
+
+.challenge-panel__identity {
+  font-weight: 650;
+}
+
+.challenge-panel__periods {
+  color: var(--ink-600);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 30rem) {
+  .challenge-panel {
+    justify-items: stretch;
+  }
+
+  .challenge-panel .button {
+    width: 100%;
+  }
+}
