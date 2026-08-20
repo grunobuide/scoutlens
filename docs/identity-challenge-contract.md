@@ -142,7 +142,7 @@ language.
 **Hidden:**
 - Player name, team, competition, role
 - Period-B fingerprint
-- Self-rank, cosine similarity, baseline rank
+- Self-rank, similarity score, baseline rank
 - Neighbor list
 - Any metric value (MRR, percentile)
 
