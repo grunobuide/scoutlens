@@ -7,16 +7,9 @@
  * the real export, and asserting them from a resizable context is cheaper than
  * adding two projects to `playwright.config.ts` for one spec.
  *
- * **There is deliberately no screenshot assertion here yet.** Baselines are
- * platform-scoped (`{projectName}-{platform}`) and both platforms must move
- * together (`scoutlens-uze.11`); generating the Linux pair needs the
- * `playwright:v1.62.0-noble` container, which was unavailable when this landed.
- * Committing win32 baselines alone would have shipped exactly the half-paired
- * state that guard exists to prevent. `scoutlens-9a3.6.5` adds them.
- *
- * Everything above is geometry, accessibility and motion policy, none of which
- * needs a reference image - so the coverage that does not depend on a container
- * is not held hostage to one.
+ * Baselines are platform-scoped (`{projectName}-{platform}`) and both platforms
+ * must move together — `pnpm check:baseline-pairs` fails a pull request that
+ * updates one and not the other (`scoutlens-uze.11`).
  */
 
 import { expect, test, type Page } from "@playwright/test";
@@ -156,4 +149,18 @@ test("no transition animates the challenge panel", async ({ page }, testInfo) =>
       .map((node) => (node as Element).className.toString()),
   );
   expect(animated).toEqual([]);
+});
+
+test("the challenge panel matches its responsive baselines", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Baselines are captured once per platform");
+
+  // The reveal state is the richest: identity, five result rows, the A/B plot,
+  // family chips and every mandatory caveat. A regression in any of them shows
+  // here.
+  for (const width of WIDTHS) {
+    await openChallenge(page, "reveal", width);
+    await expect(page.locator(PANEL)).toHaveScreenshot(`challenge-reveal-${width}.png`, {
+      caret: "hide",
+    });
+  }
 });
