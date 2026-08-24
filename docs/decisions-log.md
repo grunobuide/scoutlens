@@ -2155,3 +2155,57 @@ contract mid-build.
 records `pnpm budget:check` before and after. A change that reduces headroom
 materially is a signal to split the component, not to raise the cap — `D038` and
 §5.5 of the frontend agent contract both forbid raising it.
+
+## D053 — 2026-08-24 — Focus order is for controls; informational rows live in reading order
+
+**Decision:** the identity challenge's 32 fingerprint rows and its contribution
+rows are informational graphics with complete accessible names, reached in
+reading order. They are **not** Tab stops. The state's CTA remains the first
+focusable element. `docs/identity-challenge-contract.md` advances to
+specification **2.1.0**; §6.1 is rewritten to separate focus order from reading
+order. No product code changes — this corrects the document to match what
+already ships.
+
+**The contradiction.** §6.1 required, in the same paragraph, that the CTA be
+"the first focusable element" and that "Tab moves between feature rows". The
+rows precede the CTA in the DOM, which §6.6 fixes as the reading order. If the
+rows are focusable the CTA cannot be first; if the CTA is first the rows cannot
+be Tab stops. `scoutlens-9a3.6.4` surfaced this and declined to resolve it in
+code, because choosing between two frozen requirements is a product decision.
+
+**Why the rows stay out of focus order.** A Tab stop is a promise that
+something can be activated. Thirty-two stops that do nothing put the primary
+action of the query state behind thirty-two dead ends, and a keyboard user
+without a screen reader gets the cost with none of the benefit. Screen-reader
+users lose nothing: browse and virtual-cursor navigation reach every row in DOM
+order, which is the artifact's published order, and each row carries a complete
+accessible name. The shipped implementation exposes them as non-interactive
+`role="img"`, and `scoutlens-9a3.6.4` proved it axe-clean in all four states at
+320, 360, 768 and 1280.
+
+**One correction the amendment forced.** The original §6.1 said each query row
+"announces its feature label and period-A percentile" — correct, and it
+survives. But an accessibility rule phrased as "every row announces both period
+values" would be wrong here: §3.2 hides the period-B fingerprint in the query
+state, so a row announcing period B would hand the answer to precisely the
+readers who depend on announcements while hiding it from everyone else. The
+contract now states the per-state rule explicitly in a table: query carries
+period A, reveal and evidence carry both.
+
+**The same defect appeared twice more**, and both are fixed in the same pass.
+§6.1 also used *Tab* for the reveal's rank and baseline block and for the
+evidence contribution list; neither is focusable either. Rewriting the section
+around the focus/reading distinction fixes all three consistently rather than
+patching the one that was noticed.
+
+**Impact:** documentation only. No web, source, schema, artifact, snapshot or
+config file changes; no metric, score, row order or accessible-name content
+moves. The 2.0.0 artifact bindings from `D051` are untouched, which is why this
+is a minor version rather than a major.
+
+**How to apply:** treat any future "Tab moves to …" phrasing about
+non-interactive content as a defect in the sentence, not a requirement on the
+implementation. This is the third self-conflict found in this contract during
+`scoutlens-9a3.6` — after §10's lazy-chunk contradiction (`D052`) and §8's
+uncertainty-design reading — all three from the document specifying behaviour it
+had not yet watched anything perform.
