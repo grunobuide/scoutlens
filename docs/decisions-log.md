@@ -2209,3 +2209,56 @@ implementation. This is the third self-conflict found in this contract during
 `scoutlens-9a3.6` — after §10's lazy-chunk contradiction (`D052`) and §8's
 uncertainty-design reading — all three from the document specifying behaviour it
 had not yet watched anything perform.
+
+## D054 — 2026-08-24 — Images assert layout; assertions assert claims
+
+**Decision:** keep `maxDiffPixelRatio` at `0.03`, and treat visual baselines as
+evidence about **layout** rather than about **content**. Every claim a page
+makes — a metric name, a method name, a displayed precision, a served dataset
+major — is asserted by reading rendered text, in
+`web/e2e/rendered-values.spec.ts`. The two gates answer different questions and
+neither substitutes for the other.
+
+**Why not simply lower the threshold.** Because a ratio cannot express the
+distinction that matters. `maxDiffPixelRatio` measures *how many* pixels differ,
+not *which*. A metric label changing from "Cosine" to "Similarity score" and a
+font rasterising a hair differently across platforms are both small-pixel-count
+differences; no threshold separates them. Lowering the number trades one failure
+mode for a worse one — cross-platform flake, which teaches people to regenerate
+baselines without reading them, which is how `scoutlens-uze.12` happened.
+
+**The evidence this rests on, gathered rather than argued.** At 3 %, the visual
+gate failed to detect all of:
+
+1. a metric rename, `Cosine` → `Similarity score` (`D047`);
+2. a method rename, `combined_scaler_cosine_v1` → `combined_scaler_diagonal_v1`
+   (`D049`);
+3. unrounded rank bounds, `1–111.09999999999991` (`D046`);
+4. a complete change of published rank values, `Rank 20` → `Rank 1`;
+5. `scoutlens-uze.13`'s **correction** of (1) — the gate did not notice the
+   defect appearing *or* being fixed.
+
+One committed reference image asserted three superseded decisions as correct and
+stayed green for six days. The tolerance also blocked its own repair:
+`--update-snapshots` rewrites only what fails, so a passing stale baseline is
+not refreshed by the routine command, and CI writes an `-actual.png` only on
+failure. The baselines had to be deleted to be regenerated.
+
+**What each gate is for, stated so the next person does not re-litigate it.**
+A screenshot catches what no text assertion can: overlap, clipping, spacing,
+truncation, a control that has collapsed to zero height. A text assertion
+catches what no screenshot can at any tolerance: a page that is laid out
+perfectly and says the wrong thing. `scoutlens-9a3.6.4` found a display bug by a
+human reading a baseline image; that remains the third instrument and is why
+§5.9 of the frontend agent contract requires reading the image before accepting
+it.
+
+**Impact:** no threshold changes. `playwright.config.ts` is untouched.
+`web/e2e/rendered-values.spec.ts` (added by `scoutlens-uze.13`) becomes the
+place claim-level assertions live.
+
+**How to apply:** when a decision fixes what the product may say — a label, a
+method name, a precision, a claim boundary — add an assertion that reads the
+rendered text in the same pull request. Do not rely on a baseline to hold it.
+§5.5 still forbids raising any threshold; this entry declines to lower one, and
+gives the reason.
