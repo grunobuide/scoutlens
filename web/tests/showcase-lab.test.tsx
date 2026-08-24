@@ -13,13 +13,15 @@ import type {
 } from "@/contracts/generated/showcase";
 import { loadShowcaseLab } from "@/content/load-showcase-lab";
 import {
+  SCORE_LABEL,
+  neighborScoreLabel,
   EMPTY_PROFILE_FILTERS,
   buildFingerprintRows,
   buildProfileEvidence,
   describeLabError,
   filterProfiles,
   formatRawValue,
-  formatCosine,
+  formatScore,
   formatSupport,
   neighborScore,
   retrievalScore,
@@ -165,7 +167,7 @@ describe("searchable period fingerprint Lab", () => {
       expect(html).toContain(outcome.reciprocal_rank.toFixed(4));
       const score = retrievalScore(outcome);
       if (score !== null) {
-        expect(html).toContain(formatCosine(score));
+        expect(html).toContain(formatScore(score));
       }
     }
     expect(html.match(/data-retrieval-scope=/g)).toHaveLength(3);
@@ -276,5 +278,33 @@ describe("searchable period fingerprint Lab", () => {
     ]) {
       expect(source).not.toContain(forbidden);
     }
+  });
+});
+
+describe("the score label follows the major that published the score", () => {
+  // scoutlens-uze.13: the retrieval cards read a major-aware label while the
+  // neighbour card and the comparison drawer hard-coded "Stored cosine", so the
+  // v2 migration moved one and left the other calling a weighted metric a
+  // cosine. The label is now derived from the same discriminant as the value,
+  // so the two cannot drift apart again.
+  it("names the v2 score a similarity score, not a cosine", () => {
+    const v2Neighbor = { similarity_score: 0.9069 } as never;
+    expect(neighborScoreLabel(v2Neighbor)).toBe("Similarity score");
+    expect(neighborScoreLabel(v2Neighbor).toLowerCase()).not.toContain("cosine");
+  });
+
+  it("still names the v1 score a cosine", () => {
+    // The fix must follow the major, not hard-code the other direction: under
+    // major 1 the published value really is a plain cosine and calling it
+    // anything else would be the same error in reverse.
+    const v1Neighbor = { cosine_similarity: 0.6927 } as never;
+    expect(neighborScoreLabel(v1Neighbor)).toBe("Cosine");
+  });
+
+  it("uses one label source for both surfaces", () => {
+    expect(SCORE_LABEL[1]).toBe("Cosine");
+    expect(SCORE_LABEL[2]).toBe("Similarity score");
+    expect(neighborScoreLabel({ similarity_score: 0 } as never)).toBe(SCORE_LABEL[2]);
+    expect(neighborScoreLabel({ cosine_similarity: 0 } as never)).toBe(SCORE_LABEL[1]);
   });
 });

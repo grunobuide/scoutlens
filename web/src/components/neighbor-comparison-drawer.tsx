@@ -10,10 +10,11 @@ import type {
 import {
   familyLabel,
   formatContribution,
-  formatCosine,
+  formatScore,
   formatZScore,
   type ContributionEvidence,
   neighborScore,
+  neighborScoreLabel,
   type AnyStatisticalNeighbor,
 } from "@/content/showcase-lab";
 
@@ -144,7 +145,7 @@ export function NeighborComparisonDrawer({
 
         <section className="neighbor-drawer__score" aria-label="Stored comparison context">
           <dl>
-            <div><dt>Stored cosine</dt><dd>{formatCosine(neighborScore(neighbor))}</dd></div>
+            <div><dt>{neighborScoreLabel(neighbor)}</dt><dd>{formatScore(neighborScore(neighbor))}</dd></div>
             <div><dt>Neighbor rank</dt><dd>{neighbor.rank} of five shown</dd></div>
             <div><dt>Candidate period</dt><dd>Period B</dd></div>
             <div>
@@ -175,7 +176,7 @@ export function NeighborComparisonDrawer({
             ))}
           </ol>
           <p className="neighbor-drawer__reconstruction">
-            Family sum {formatContribution(evidence.familySum)} · stored cosine {formatCosine(neighborScore(neighbor))}
+            Family sum {formatContribution(evidence.familySum)} · stored cosine {formatScore(neighborScore(neighbor))}
           </p>
         </section>
 
@@ -214,7 +215,7 @@ export function NeighborComparisonDrawer({
             </table>
           </div>
           <p className="neighbor-drawer__reconstruction">
-            Feature sum {formatContribution(evidence.featureSum)} · stored cosine {formatCosine(neighborScore(neighbor))}
+            Feature sum {formatContribution(evidence.featureSum)} · stored cosine {formatScore(neighborScore(neighbor))}
           </p>
         </section>
 
