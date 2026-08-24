@@ -645,6 +645,22 @@
   font-weight: 700;
 }
 
+/*
+  Standalone links inside Lab callouts, brought to the 44 px target.
+
+  Both are their own control on their own line rather than a link inside a
+  sentence, so WCAG 2.5.8's in-sentence exception does not cover them. Only the
+  box grows; the text is untouched.
+*/
+.uncertainty-pending > a,
+.lab-evidence-rail > a,
+.method-disclosure details > p > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+
 .uncertainty-pending {
   padding: 1rem;
   border-left: 3px solid #c78e2d;
@@ -834,7 +850,11 @@
 }
 
 .retrieval-boundary a {
+  display: inline-flex;
   flex: 0 0 auto;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
   color: var(--teal);
   font-size: 0.74rem;
   font-weight: 750;
@@ -1264,8 +1284,36 @@
 }
 
 .fingerprint-value-table tbody > tr:not(.fingerprint-table-family) > th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
   width: 17rem;
+  /* Opaque on purpose. The cells passing beneath must not show through, or the
+     header becomes less readable the further the table is scrolled - which is
+     the defect, not the fix. */
+  background: var(--white);
   font-size: 0.78rem;
+}
+
+/* The column header for that same first column, so the table's own "Feature"
+   label does not scroll away from the names beneath it. Already opaque. */
+.fingerprint-value-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+/* A hairline separating the frozen column from the scrolled cells, so the
+   boundary is visible rather than inferred from where the numbers start. */
+.fingerprint-value-table tbody > tr:not(.fingerprint-table-family) > th::after,
+.fingerprint-value-table thead th:first-child::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+  content: "";
 }
 
 .fingerprint-value-table tbody > tr:not(.fingerprint-table-family) > th small {
