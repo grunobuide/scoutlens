@@ -1,14 +1,15 @@
 # Identity Challenge Contract
 
-**Specification:** 2.0.0
+**Specification:** 2.1.0
 
 **Status:** frozen for implementation (product-decision record)
 
-**Decision date:** 2026-08-09 (1.0.0), 2026-08-18 (2.0.0)
+**Decision date:** 2026-08-09 (1.0.0), 2026-08-18 (2.0.0), 2026-08-24 (2.1.0)
 
 **Tracking:** Bead `scoutlens-9a3.5` (1.0.0 decision, D039);
-`scoutlens-9a3.8` (2.0.0 artifact rebinding, D051); identity-challenge scope of
-epic `scoutlens-9a3`.
+`scoutlens-9a3.8` (2.0.0 artifact rebinding, D051); `scoutlens-9a3.6.7`
+(2.1.0 keyboard-order correction, D053); identity-challenge scope of epic
+`scoutlens-9a3`.
 
 ## What 2.0.0 changes, and what it does not
 
@@ -344,19 +345,51 @@ No CTA uses the words "play," "quiz," "game," "score," or "test."
 
 ### 6.1 Keyboard order
 
-**Orientation:** CTA button is the first focusable element in the challenge
-panel. Tab moves to the next section (Lab explorer).
+**Two orders, and they are not the same thing** (`D053`, 2.1.0). Specification
+1.0.0 described both with the word *Tab*, which made this section contradict
+itself: it required the CTA to be the first focusable element *and* required Tab
+to visit 32 informational rows that precede the CTA in the DOM. Both cannot
+hold.
 
-**Query:** CTA button is the first focusable element. The fingerprint plot is
-keyboard-navigable: Tab moves between feature rows, each row announces its
-feature label and period-A percentile.
+- **Focus order** is the sequence of *interactive controls* a Tab press moves
+  through. Only elements that do something belong in it.
+- **Reading order** is the sequence in which *all* content, interactive or not,
+  is reached by a screen reader's browse or virtual-cursor navigation. It is the
+  DOM order (§6.6).
 
-**Reveal:** Identity block is announced first (name, role, competition). Tab
-moves to the rank/baseline comparison, then to the caveats, then to the CTA.
+Informational content is guaranteed in reading order. Putting it in focus order
+would add stops that offer a keyboard user nothing to activate, and would push
+the primary action of each state behind them.
 
-**Evidence:** Tab moves from the reveal content to the contribution list.
-Each contribution row announces: feature label, family, alignment or
-disagreement, contribution value.
+**Orientation:** the CTA is the first focusable element in the challenge panel.
+Tab then moves to the next section (Lab explorer).
+
+**Query:** the CTA is the first focusable element. The 32 fingerprint rows are
+informational graphics, not controls: each is exposed with a complete accessible
+name and is reached in reading order, in the artifact's published row order.
+They are not Tab stops.
+
+**Reveal:** the identity block is read first (name, role, competition), then the
+rank and baseline comparison, then the caveats — all in reading order. The CTAs
+are the focusable elements.
+
+**Evidence:** the contribution list is read after the reveal content, in
+published order. Each contribution row is read as: feature label, family,
+alignment or disagreement, contribution value. The rows are informational; the
+CTAs are the focusable elements.
+
+**Accessible names on fingerprint rows.** Every row names its feature and the
+percentile scale, plus the period values *that its state shows*:
+
+| State | Row accessible name carries |
+|---|---|
+| query | feature label, period-A percentile, scale |
+| reveal, evidence | feature label, period-A percentile, period-B percentile, scale |
+
+The query state names period A only, and that is a requirement rather than an
+omission: §3.2 hides the period-B fingerprint, and a row that announced period B
+would hand the answer to exactly the readers who depend on announcements while
+hiding it from everyone else.
 
 ### 6.2 Focus movement
 
