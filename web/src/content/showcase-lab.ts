@@ -42,6 +42,32 @@ export function neighborScore(neighbor: AnyStatisticalNeighbor): number {
 }
 
 /**
+ * The label for the score each major publishes.
+ *
+ * One definition, imported by every surface that shows a score. It used to be
+ * duplicated: the retrieval cards read a major-aware map while the neighbour
+ * card and the comparison drawer hard-coded "Stored cosine", so the v2
+ * migration moved one and left the other naming a weighted metric a cosine -
+ * exactly what `D047` forbids.
+ */
+export const SCORE_LABEL: Readonly<Record<1 | 2, string>> = {
+  1: "Cosine",
+  2: "Similarity score",
+};
+
+/**
+ * The label for the value `neighborScore` returns, read from the same
+ * discriminant.
+ *
+ * Deriving both from `"similarity_score" in neighbor` is the point: a label and
+ * a value that come from one check cannot drift apart, which is how this defect
+ * happened in the first place.
+ */
+export function neighborScoreLabel(neighbor: AnyStatisticalNeighbor): string {
+  return "similarity_score" in neighbor ? SCORE_LABEL[2] : SCORE_LABEL[1];
+}
+
+/**
  * The contribution a subject's evidence is ordered and summed by.
  *
  * The rule is unchanged between majors - descending magnitude, ties broken by
@@ -417,7 +443,7 @@ export function buildProfileEvidence(
   return { self, neighbors };
 }
 
-export function formatCosine(value: number): string {
+export function formatScore(value: number): string {
   return value.toFixed(4);
 }
 

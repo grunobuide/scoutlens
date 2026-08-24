@@ -28,7 +28,7 @@ import {
   filterProfiles,
   formatPercentile,
   formatContribution,
-  formatCosine,
+  formatScore,
   formatRawValue,
   formatSupport,
   formatZScore,
@@ -43,7 +43,9 @@ import {
   type PercentileScope,
   type ProfileFilters,
   methodDisclosure,
+  SCORE_LABEL,
   neighborScore,
+  neighborScoreLabel,
   retrievalScore,
   type AnyRetrievalOutcome,
 } from "@/content/showcase-lab";
@@ -77,11 +79,6 @@ const requiredCaveats = new Set([
  * from which field happens to be present on a payload, so a mislabelled score
  * is impossible rather than merely unlikely.
  */
-const SCORE_LABEL_BY_MAJOR: Record<ShowcaseMajor, string> = {
-  1: "Cosine",
-  2: "Similarity score",
-};
-
 type ProfileLoadState =
   | { status: "ready"; profile: AnyPlayerProfileArtifact }
   | { status: "loading"; profileKey: string }
@@ -572,7 +569,7 @@ function RetrievalOutcomeCard({
         <div><dt>Reciprocal rank</dt><dd>{outcome.reciprocal_rank.toFixed(4)}</dd></div>
         <div>
           <dt>{scoreLabel}</dt>
-          <dd>{score === null ? "Not used" : formatCosine(score)}</dd>
+          <dd>{score === null ? "Not used" : formatScore(score)}</dd>
         </div>
       </dl>
       <p className="retrieval-outcome__stability">{rankStabilityText(outcome)}</p>
@@ -739,7 +736,7 @@ function StatisticalNeighbors({
                   </div>
                 </header>
                 <dl className="neighbor-card__context">
-                  <div><dt>Stored cosine</dt><dd>{formatCosine(neighborScore(neighbor))}</dd></div>
+                  <div><dt>{neighborScoreLabel(neighbor)}</dt><dd>{formatScore(neighborScore(neighbor))}</dd></div>
                   <div>
                     <dt>Period-B minutes</dt>
                     <dd>{indexItem?.period_contexts.b.minutes.toLocaleString("en-US") ?? "Unavailable"}</dd>
@@ -805,7 +802,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
   profiles: ReadonlyArray<AnyPlayerIndexItem>;
   profile: AnyPlayerProfileArtifact;
 }) {
-  const scoreLabel = SCORE_LABEL_BY_MAJOR[major];
+  const scoreLabel = SCORE_LABEL[major];
   const [scope, setScope] = useState<PercentileScope>("within_role");
   const fingerprint = useMemo(() => {
     try {
