@@ -123,6 +123,21 @@ test("the reveal states the method, provenance and the weighted label", async ({
   await expect(page.locator(PANEL)).not.toContainText("Cosine similarity");
 });
 
+test("the resampling interval is rounded for display, not interpolated raw", async ({ page }) => {
+  await gotoLab(page, "?challenge=reveal");
+  const interval = page.locator("[data-challenge-interval]");
+  await expect(interval).toBeVisible();
+
+  // D046: resampled rank bounds are legitimately fractional, and interpolating
+  // one straight into a template prints its full binary expansion. The
+  // published upper bound rendered as "43.524999999999998" until this was
+  // routed through formatRank - caught by looking at a baseline image, not by a
+  // failing assertion, which is why the assertion now exists.
+  const text = (await interval.textContent()) ?? "";
+  expect(text).not.toMatch(/\d\.\d{3,}/);
+  expect(text).toMatch(/95% resampling interval/);
+});
+
 test("every mandatory caveat stays visible in the result states", async ({ page }) => {
   for (const state of ["reveal", "evidence"]) {
     await gotoLab(page, `?challenge=${state}`);
