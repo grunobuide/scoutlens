@@ -874,6 +874,22 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         />
       </div>
 
+      {/*
+        Result before chart (`scoutlens-uze.5.2`, docs/lab-mobile-order.md).
+
+        The retrieval outcome states the finding; the fingerprint plot is the
+        evidence behind it. At 320 px the plot is 4,156 px tall, so with the
+        plot first a reader had to travel 10,047 px down a 19,646 px page to
+        learn the rank of the profile they had just selected. The method
+        disclosure follows the result immediately, because it names what
+        produced the number a reader has just been given.
+
+        This is DOM order, and it is also the reading and visual order at every
+        width - no CSS `order` is used anywhere in the Lab.
+      */}
+      <RetrievalReplay profile={profile} scoreLabel={scoreLabel} />
+      <MethodDisclosurePanel major={major} weightedFeatureCount={weightedFeatureCount ?? null} />
+
       <div className="lab-analysis-grid">
         <section className="fingerprint-lab-card" aria-labelledby="fingerprint-map-heading">
           <header className="fingerprint-lab-card__header">
@@ -945,8 +961,6 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         </aside>
       </div>
 
-      <MethodDisclosurePanel major={major} weightedFeatureCount={weightedFeatureCount ?? null} />
-      <RetrievalReplay profile={profile} scoreLabel={scoreLabel} />
       <StatisticalNeighbors
         catalog={catalog}
         profile={profile}
