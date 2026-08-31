@@ -1698,26 +1698,52 @@
   background: color-mix(in srgb, var(--ink-950) 8%, transparent);
 }
 
+/*
+  Fixed vertical lanes for the two period glyphs (`scoutlens-9a3.10`).
+
+  Both marks used to sit at `top: 50%`, so a feature whose period-A and period-B
+  percentiles nearly coincide drew one glyph on top of the other - visible on
+  "Box entries" and "Mean y" in the published profile. The accessible name still
+  carried both values, so nothing was lost to a screen reader; it was lost to
+  everyone reading the plot.
+
+  The Lab explorer already solves this with fixed A/B lanes and this mirrors
+  that treatment in challenge-only selectors.
+
+  The lanes are symmetric about the track centre and their centres are 1.2rem
+  apart, which exceeds the 1.15rem glyph height - so the two can never overlap
+  at any horizontal position, without measuring whether they would. There is no
+  collision detection here and there is nothing to tune: the separation is a
+  constant of the layout.
+
+  `left` is untouched and `translate` keeps only its horizontal half, so every
+  glyph's horizontal centre is exactly where it was. The lanes move the marks in
+  y only; no scientific value is read, derived or displaced.
+*/
 .challenge-fingerprint__mark {
   position: absolute;
-  top: 50%;
   display: grid;
   place-items: center;
   width: 1.15rem;
   height: 1.15rem;
+  /* Mirrors the Lab's mark: the ring separates adjacent glyphs and lifts them
+     off the track without changing either centre. */
+  border: 2px solid var(--white);
   border-radius: 999px;
   color: var(--white);
   font-size: 0.62rem;
   font-weight: 700;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
 }
 
 .challenge-fingerprint__mark--a {
+  top: -0.925rem;
   left: var(--period-a-position);
   background: var(--teal);
 }
 
 .challenge-fingerprint__mark--b {
+  top: 0.275rem;
   left: var(--period-b-position);
   background: var(--ink-950);
 }

@@ -151,6 +151,94 @@ test("no transition animates the challenge panel", async ({ page }, testInfo) =>
   expect(animated).toEqual([]);
 });
 
+test("both period marks stay independently visible on every row", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Geometry is asserted once from a resizable context");
+
+  // `scoutlens-9a3.10`. Both marks used to sit at `top: 50%`, so a feature whose
+  // period-A and period-B percentiles nearly coincide drew one glyph over the
+  // other - "Box entries" and "Mean y" in the published profile. Fixed lanes
+  // 1.2rem apart, against a 1.15rem glyph, make that impossible by construction
+  // rather than by detection.
+  for (const width of WIDTHS) {
+    await openChallenge(page, "reveal", width);
+
+    const result = await page.evaluate(() => {
+      const overlapping: string[] = [];
+      const escaping: string[] = [];
+      for (const row of document.querySelectorAll("[data-challenge-fingerprint-row]")) {
+        const a = row.querySelector(".challenge-fingerprint__mark--a");
+        const b = row.querySelector(".challenge-fingerprint__mark--b");
+        if (a === null || b === null) {
+          continue;
+        }
+        const id = row.getAttribute("data-challenge-fingerprint-row") ?? "?";
+        const ra = a.getBoundingClientRect();
+        const rb = b.getBoundingClientRect();
+        // Any vertical intersection means one glyph can cover the other once
+        // their horizontal positions converge.
+        if (ra.bottom > rb.top && rb.bottom > ra.top) {
+          overlapping.push(id);
+        }
+        const rr = row.getBoundingClientRect();
+        if (ra.top < rr.top - 0.5 || rb.bottom > rr.bottom + 0.5) {
+          escaping.push(id);
+        }
+      }
+      return { overlapping, escaping };
+    });
+
+    expect(result.overlapping, `marks overlap at ${width}`).toEqual([]);
+    expect(result.escaping, `marks escape their row at ${width}`).toEqual([]);
+  }
+});
+
+test("the lanes move marks vertically and never horizontally", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Geometry is asserted once from a resizable context");
+
+  // The horizontal centre is the scientific part of a mark's position: it is
+  // the feature's percentile. `scoutlens-9a3.10` may move a glyph in y and must
+  // not move one in x, so this recomputes each centre from the track box and
+  // the row's own custom property rather than trusting that `left` was left
+  // alone.
+  for (const width of WIDTHS) {
+    await openChallenge(page, "reveal", width);
+
+    const drift = await page.evaluate(() => {
+      const wrong: string[] = [];
+      for (const row of document.querySelectorAll("[data-challenge-fingerprint-row]")) {
+        const track = row.querySelector(".challenge-fingerprint__track");
+        if (track === null) {
+          continue;
+        }
+        const box = track.getBoundingClientRect();
+        const style = getComputedStyle(track);
+        const id = row.getAttribute("data-challenge-fingerprint-row") ?? "?";
+        for (const [selector, property] of [
+          [".challenge-fingerprint__mark--a", "--period-a-position"],
+          [".challenge-fingerprint__mark--b", "--period-b-position"],
+        ] as const) {
+          const mark = row.querySelector(selector);
+          const percent = Number.parseFloat(style.getPropertyValue(property));
+          if (mark === null || Number.isNaN(percent)) {
+            continue;
+          }
+          const rect = mark.getBoundingClientRect();
+          const expected = box.left + (percent / 100) * box.width;
+          const actual = rect.left + rect.width / 2;
+          if (Math.abs(expected - actual) > 1) {
+            wrong.push(`${id} ${property}`);
+          }
+        }
+      }
+      return wrong;
+    });
+
+    expect(drift, `a mark centre drifted from its percentile at ${width}`).toEqual([]);
+  }
+});
+
 test("the challenge panel matches its responsive baselines", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "Baselines are captured once per platform");
 
