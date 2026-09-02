@@ -1,6 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { expectNoPageOverflow } from "./helpers";
+import {
+  expectNoPageOverflow,
+  expectNoSeriousOrCriticalViolations,
+  expectNoTextCollision,
+  type TextPair,
+} from "./helpers";
 
 // scoutlens-uze.4 responsive regression gates for the shared shell, landing,
 // and /science surfaces. These encode the audit findings from
@@ -85,6 +90,25 @@ async function probeFocusRings(page: Page, stops: number): Promise<Array<boolean
   }, stops);
 }
 
+/**
+ * Text pairs guarded on the routes this spec walks (`scoutlens-uze.6.2`).
+ *
+ * The frozen-question marker/heading pair is not here: `frozen-question.spec.ts`
+ * owns it across thirteen widths with a stronger claim. These are the remaining
+ * shared-shell and stage pairs.
+ */
+const TEXT_PAIRS: Record<string, TextPair[]> = {
+  "/": [{ name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" }],
+  "/science/": [
+    { name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" },
+    {
+      name: "stage marker vs stage heading",
+      a: ".research-stage > header > .research-step__marker",
+      b: ".research-stage > header h2",
+    },
+  ],
+};
+
 async function auditRoute(page: Page, route: string): Promise<void> {
   await page.goto(route);
   await page.waitForLoadState("networkidle");
@@ -113,6 +137,18 @@ async function auditRoute(page: Page, route: string): Promise<void> {
 
   const rings = await probeFocusRings(page, width <= 400 ? 6 : 4);
   expect(rings, `${route} visible focus rings`).toEqual(rings.map(() => true));
+
+  // `scoutlens-uze.6.2`. This function already walked 320, 640x512 and 768, but
+  // axe only ever ran at the project viewports (1280 and 360) in
+  // quality-contract.spec.ts - so a violation that appears only when the layout
+  // reflows had nothing looking for it. Reflow is exactly where they appear:
+  // a heading order that changes with a wrapped grid, a control that loses its
+  // accessible name when its label wraps away.
+  await expectNoSeriousOrCriticalViolations(page);
+
+  // And the line-box collision gate from `scoutlens-uze.6.1`, at the same
+  // widths, for the pairs these two routes own.
+  await expectNoTextCollision(page, TEXT_PAIRS[route] ?? [], `${route} at ${width}`);
 }
 
 for (const route of ["/", "/science/"]) {
