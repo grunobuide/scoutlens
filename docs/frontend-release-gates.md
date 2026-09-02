@@ -49,9 +49,9 @@ exercises, not what the audit swept.
 | lab selected | same, with `?player=` | 320, 360, 1280 | D1–D6, D8 |
 | lab filters empty | `core-flow` (search flow) | 360, 1280 | D1, D4 |
 | lab filters active | `core-flow` | 360, 1280 | D1, D4 |
-| lab unknown profile | `failure-states` | 1280 only — **gap, §3.1** | D1 |
-| lab missing artifact | `failure-states` | 1280 only — **gap, §3.1** | D1 |
-| lab incompatible artifact | `failure-states` | 1280 only — **gap, §3.1** | D1 |
+| lab unknown profile | `failure-states` | 320, 360, 1280 | D1, D2, D8 |
+| lab missing artifact | `failure-states` | 320, 360, 1280 | D1, D2, D8 |
+| lab incompatible artifact | `failure-states` | 320, 360, 1280 | D1, D2, D8 |
 | lab neighbor drawer open | **`dialog-geometry`** (`scoutlens-uze.6.2`), `quality-contract`, `core-flow` | 320, 360, 768, 1280 | D1, D2, D3, D4, D8 |
 | lab max content, stored | `lab-fixtures` | 320, 360, 768, 1280 | D1, D2 |
 | lab max content, fixture `wy-900001-c-901` | `lab-fixtures`, `lab-v2-diagonal` | 320, 360, 768, 1280 | D1, D7, D8 |
@@ -67,17 +67,21 @@ checks what the page *claims* (`scoutlens-uze.13`), and
 
 ## 3. Gaps
 
-### 3.1 Failure states are asserted at 1280 only
+### 3.1 Failure states at mobile widths — closed
 
-`failure-states.spec.ts` carries
-`test.skip(testInfo.project.name !== "desktop")`, so the four failure fixtures —
-unknown profile, missing artifact, checksum mismatch, schema-invalid — never run
-at a mobile width. The audit swept them at 320/360/768/zoom200 by hand and they
-passed, but nothing holds that.
+`scoutlens-uze.6.4` closed this. `failure-states.spec.ts` now walks all four
+fixtures — unknown profile, missing artifact, checksum mismatch, schema-invalid
+— at 320 and 360 as well as 1280, asserting the recovery panel's copy, no page
+overflow, panel containment, no serious or critical axe violation, and that the
+selector is reachable and operable.
 
-These are the states a reader reaches when something has already gone wrong, and
-the recovery action has to be reachable on a phone. **Bead:
-`scoutlens-uze.6.4`.**
+**Reachable, not above the fold.** Measured at 320, the selector sits at
+1,693 px and the alert at 3,863 px on a 5,699 px page, because the challenge
+panel and the page intro come first. Asserting either were on-screen at load
+would assert a different design rather than guard a regression. Whether a
+failure panel *should* sit that far down on a phone is a live question and
+belongs with the mobile order in
+[`lab-mobile-order.md`](lab-mobile-order.md), not in a gate.
 
 ### 3.2 Three `ProviderBoundary` links are under 44×44
 
