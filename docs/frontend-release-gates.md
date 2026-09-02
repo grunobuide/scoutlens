@@ -137,7 +137,11 @@ Unchanged by `scoutlens-uze.6`. Measured on `main` at `29f184f`:
 | Budget | Measured | Cap | Headroom |
 |---|---|---|---|
 | Initial `/lab` JavaScript (gzip) | 161,454 | 204,800 | **43,346** |
-| Initial `/lab` transfer, excl. fonts | 285,807 | 768,000 | 482,193 |
+| Initial `/lab` transfer, excl. fonts | ~285,810 | 768,000 | ~482,190 |
+
+The transfer figure moves by a byte or two between builds, as a content hash
+lands differently; it is written approximately for that reason. The
+JavaScript total is stable, and it is the one the cap is written against.
 
 `scoutlens-uze.6` AC6 requires at least **20 KiB** (20,480 bytes) of initial-JS
 headroom before closure. The measured 43,346 is **2.1×** that. Lighthouse
