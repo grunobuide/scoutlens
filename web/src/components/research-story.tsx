@@ -62,7 +62,7 @@ export function ExperimentCard({
           return (
             <div key={metric.metric_id}>
               <dt>{metric.label}</dt>
-              <dd>{formatMetric(metric)}</dd>
+              <dd className="experiment-metric__value">{formatMetric(metric)}</dd>
               {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
               {explanation === null ? null : (
                 <dd className="experiment-metric__explanation">

@@ -184,7 +184,12 @@
 }
 
 .experiment-metric__explanation {
-  margin-top: 0.4rem;
+  /* `scoutlens-r0`: this `dd` relied on the old `.experiment-metrics dd`
+     catch-all (removed - see research-story.css) to zero its inline-start
+     margin. A `<dd>` carries a 40px UA-default margin-inline-start; once the
+     catch-all no longer matches it, that default resurfaces unless reset
+     here explicitly. */
+  margin: 0.4rem 0 0;
 }
 
 .experiment-card--signal .experiment-metric__explanation summary {
