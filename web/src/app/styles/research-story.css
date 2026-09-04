@@ -321,7 +321,16 @@
   color: rgb(255 255 255 / 58%);
 }
 
-.experiment-metrics dd {
+/* `scoutlens-r0`: this was a bare `dd` descendant selector, so it also
+   matched `.experiment-metric__explanation` - the second `dd` in the same
+   `dl`, holding the "What this means" disclosure. Its -0.06em tracking
+   computes to -2.4px at this rule's own 40px font size, and that absolute
+   px value is what letter-spacing (an inherited property) hands down to the
+   explanation's summary and prose, which set their own smaller font-size
+   but never reset tracking. Scoping this to the dedicated value class is
+   the fix: the explanation's own rules in science.css now own its type
+   completely, with nothing left to inherit. */
+.experiment-metrics .experiment-metric__value {
   margin: 0.35rem 0 0;
   color: var(--teal);
   font-size: clamp(1.6rem, 4vw, 2.5rem);
@@ -330,7 +339,7 @@
   letter-spacing: -0.06em;
 }
 
-.experiment-card--signal .experiment-metrics dd {
+.experiment-card--signal .experiment-metrics .experiment-metric__value {
   color: var(--signal);
 }
 
