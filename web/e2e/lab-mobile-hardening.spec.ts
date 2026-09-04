@@ -96,8 +96,8 @@ test("every Lab-owned control meets the 44 px target", async ({ page }, testInfo
         .filter((element) => {
           // The provider boundary is rendered on more than one route and its
           // rules live in research-story.css, a different layer file. Its three
-          // undersized links are tracked separately; scoping here keeps this
-          // assertion about what this bead owns.
+          // links are asserted separately below (`scoutlens-uze.6.5`); scoping
+          // here keeps this assertion about what this bead owns.
           if (element.closest(".provider-boundary") !== null) {
             return false;
           }
@@ -111,6 +111,43 @@ test("every Lab-owned control meets the 44 px target", async ({ page }, testInfo
     );
 
     expect(undersized, `undersized Lab controls at ${width}`).toEqual([]);
+  }
+});
+
+test("the provider-boundary links it excludes meet the 44 px target too (scoutlens-uze.6.5)", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Geometry is asserted once from a resizable context");
+
+  // `scoutlens-uze.5.1` measured these three links at 17-20 px tall and left
+  // them unresolved because their rules live in research-story.css, not
+  // lab.css - the previous test excludes them for exactly that reason. The
+  // fix is a shared, mobile-only rule, so it does not touch the desktop
+  // (1280) rendering these links keep here.
+  for (const width of WIDTHS) {
+    await openLab(page, width);
+
+    const measured = await page.evaluate(() =>
+      [...document.querySelectorAll(".provider-boundary a")].map((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          w: Math.round(box.width),
+          h: Math.round(box.height),
+          text: (element.textContent ?? "").trim().slice(0, 40),
+        };
+      }),
+    );
+
+    expect(measured.length, `no provider-boundary links found at ${width}`).toBeGreaterThan(0);
+
+    if (width <= 768) {
+      for (const target of measured) {
+        expect(
+          target.h,
+          `provider-boundary target "${target.text}" hit area at ${width}`,
+        ).toBeGreaterThanOrEqual(44);
+      }
+    }
   }
 });
 
