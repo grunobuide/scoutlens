@@ -73,6 +73,15 @@ async function probeNavTargets(page: Page): Promise<Array<{ text: string; w: num
   );
 }
 
+async function probeProviderBoundaryTargets(page: Page): Promise<Array<{ text: string; w: number; h: number }>> {
+  return page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>(".provider-boundary__card a")].map((el) => {
+      const rect = el.getBoundingClientRect();
+      return { text: el.textContent?.trim() ?? "", w: rect.width, h: rect.height };
+    }),
+  );
+}
+
 async function probeFocusRings(page: Page, stops: number): Promise<Array<boolean>> {
   return page.evaluate((count) => {
     const results: boolean[] = [];
@@ -132,6 +141,18 @@ async function auditRoute(page: Page, route: string): Promise<void> {
     const targets = await probeNavTargets(page);
     for (const target of targets) {
       expect(target.h, `${route} nav target "${target.text}" hit area`).toBeGreaterThanOrEqual(44);
+    }
+
+    // `scoutlens-uze.6.5`: the three provider-boundary links measured
+    // 17-20 px tall (`scoutlens-uze.5.1`) and were excluded from the Lab's own
+    // 44 px sweep because the component and its rules are shared across
+    // routes, not Lab-owned. This is where they are actually held.
+    const providerTargets = await probeProviderBoundaryTargets(page);
+    for (const target of providerTargets) {
+      expect(
+        target.h,
+        `${route} provider-boundary target "${target.text}" hit area`,
+      ).toBeGreaterThanOrEqual(44);
     }
   }
 

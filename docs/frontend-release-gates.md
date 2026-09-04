@@ -25,7 +25,7 @@ listed runs inside `pnpm release:check`; there is no separate command.
 | D2 | Essential element bounding boxes | `probeEdgeCrossings` in `responsive-baseline`; panel containment in `identity-challenge-responsive`; **dialog containment in `dialog-geometry`** |
 | D3 | Text-on-text collision | `expectNoTextCollision` (`scoutlens-uze.6.1`), used by `text-collision`, `responsive-baseline` and `dialog-geometry`; plus `frozen-question` for F-1 at thirteen widths |
 | D4 | Focus visibility and order | `probeFocusRings` in `responsive-baseline`; keyboard walk in `core-flow`; focus movement in `identity-challenge`; focus return in `dialog-geometry` |
-| D5 | Touch-target size | `probeNavTargets` in `responsive-baseline`; the enumerating check in `lab-mobile-hardening`; CTA and row checks in `identity-challenge-responsive` |
+| D5 | Touch-target size | `probeNavTargets` in `responsive-baseline`; the enumerating check in `lab-mobile-hardening`; CTA and row checks in `identity-challenge-responsive`; `probeProviderBoundaryTargets` (`responsive-baseline`) and the dedicated `lab-mobile-hardening` check (`scoutlens-uze.6.5`) for the three shared provider-boundary links |
 | D6 | Internal scroll labelling | `lab-mobile-hardening` asserts the 32-value scroller keeps `role`, accessible name and `tabindex`, and that its row header stays readable while scrolled |
 | D7 | 200% reflow | 640×512 in `responsive-baseline` (landing, science) and `lab-v2-diagonal` (Lab) |
 | D8 | Automated accessibility | `expectNoSeriousOrCriticalViolations` — `quality-contract` (three routes + open dialog), and since `scoutlens-uze.6.2` also `responsive-baseline` at **every reflow width**, plus `lab-mobile-hardening`, `lab-v2-diagonal`, `404-page`, `identity-challenge-responsive` |
@@ -79,12 +79,23 @@ These are the states a reader reaches when something has already gone wrong, and
 the recovery action has to be reachable on a phone. **Bead:
 `scoutlens-uze.6.4`.**
 
-### 3.2 Three `ProviderBoundary` links are under 44×44
+### 3.2 `ProviderBoundary` links now hold their 44×44 target
 
-Recorded in `scoutlens-uze.5.1` and unresolved: "Canonical source", "CC BY 4.0
-licence" and "See the replication and its limitations" are 17–20 px tall. They
-are styled by `research-story.css` and the component renders on more than one
-route, so a Lab-scoped bead could not own them. **Bead: `scoutlens-uze.6.5`.**
+Recorded in `scoutlens-uze.5.1` and closed by `scoutlens-uze.6.5`: "Canonical
+source", "CC BY 4.0 licence" and "See the replication and its limitations"
+measured 17–20 px tall. They are styled by `research-story.css` and the
+component renders on `/`, `/science/` and `/lab/`, so a Lab-scoped bead could
+not own the fix.
+
+The rule lives in the same mobile-only breakpoint as `.site-nav a`
+(`scoutlens-uze.4`): `display: inline-flex`, `align-items: center`,
+`min-height: 2.75rem`, with `padding-inline`/negative `margin-inline` holding
+the visual position. Desktop (1280) is unchanged — 17–20 px there still passes
+WCAG 2.5.8 via the inline-text exception; this closes the touch-target gap,
+not a conformance failure. Asserted by `responsive-baseline` at 320 for `/`
+and `/science/`, and by `lab-mobile-hardening` at 320/360 for `/lab/` — the
+same test that excludes this component from its own Lab-owned sweep now
+points at where it is actually held.
 
 ## 4. Baselines and their review protocol
 

@@ -604,4 +604,18 @@
       grid-template-columns: 1fr;
 
   }
+
+  /* `scoutlens-uze.6.5`: the three provider-boundary links measure 17-20 px
+     tall, well under the 44 px touch-target bar `scoutlens-uze.5.1` recorded
+     and left unresolved. Same technique as `.site-nav a` (`scoutlens-uze.4`):
+     grow the hit area with flex layout and padding: the visual type scale is
+     unchanged. */
+  .provider-boundary__card a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+      padding-inline: 0.35rem;
+      margin-inline: -0.35rem;
+
+  }
 }
