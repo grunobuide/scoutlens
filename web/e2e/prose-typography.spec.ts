@@ -19,12 +19,26 @@
  * reset on the explanation's own rules - matching R0's "fix root causes"
  * requirement.
  *
- * This gate does not just re-assert that one fix. It generalises: open
- * every disclosure on a route and assert none of its prose (`summary`, `p`)
- * carries the three properties that are legitimate on a numeric/heading/badge
- * figure in this codebase and illegitimate on prose - heavy negative
- * letter-spacing, an oversized value-scale font-size, or tabular-nums - so a
- * future rule of the same shape, anywhere, is caught the same way.
+ * This gate does not just re-assert that one fix. It generalises across R0's
+ * four named computed-style dimensions - letter spacing, line height,
+ * overflow, and inherited numeric typography - and opens every disclosure on
+ * a route so a rule of the same shape, anywhere, is caught the same way:
+ *
+ *   - letter spacing: heavy negative tracking (< -1px) on prose.
+ *   - inherited numeric typography: `tabular-nums`, or a value-scale
+ *     font-size (> 24px), on prose.
+ *   - line height: below 1.2x the element's own font-size - loose enough
+ *     that no legitimate prose rule in this codebase (1.35-1.6x) is close,
+ *     tight enough to catch a heading's 1.06x leaking in.
+ *   - overflow: `scrollHeight`/`scrollWidth` exceeding the element's own box,
+ *     which is what "clipped or overprinted" looks like from computed
+ *     geometry - the acceptance criterion's own words.
+ *
+ * Swept at the widths R0's acceptance gate names - 320, 360, 768, 1280, and
+ * the 640x512 200%-reflow viewport - following `responsive-baseline`'s
+ * pattern of resizing within a test rather than relying on project defaults
+ * alone, run across both the desktop and mobile-360 projects so every width
+ * is covered by at least one.
  */
 
 import { expect, test, type Page } from "@playwright/test";
@@ -37,6 +51,8 @@ interface ProseLeak {
   fontSizePx: number;
   letterSpacingPx: number;
   fontVariantNumeric: string;
+  lineHeightRatio: number;
+  overflowsBox: boolean;
 }
 
 async function openEveryDisclosure(page: Page): Promise<void> {
@@ -45,16 +61,20 @@ async function openEveryDisclosure(page: Page): Promise<void> {
   // the three places `<details>` appears in source. Setting `open` directly
   // is the "all disclosures open" state the audit scope names, and is exact
   // regardless of count - no click-convergence loop to get wrong.
-  const opened = await page.evaluate(() => {
-    const closed = [...document.querySelectorAll<HTMLDetailsElement>("details:not([open])")];
-    for (const details of closed) {
+  await page.evaluate(() => {
+    for (const details of document.querySelectorAll<HTMLDetailsElement>("details:not([open])")) {
       details.open = true;
     }
-    return closed.length;
   });
-  expect(opened, "at least one disclosure exists to open").toBeGreaterThan(0);
 }
 
+/**
+ * `summary` is always rendered, open or closed - the disclosure's "closed"
+ * state is exactly its (visible) summary alone, so summaries are probed
+ * unconditionally. `p` content is hidden by the UA stylesheet while its
+ * `<details>` is closed, so only open ones are probed - `openEveryDisclosure`
+ * is expected to have run first for the "all-open" state this gate targets.
+ */
 async function probeProseLeaks(page: Page): Promise<ProseLeak[]> {
   return page.evaluate(() => {
     const leaks: Array<{
@@ -63,23 +83,42 @@ async function probeProseLeaks(page: Page): Promise<ProseLeak[]> {
       fontSizePx: number;
       letterSpacingPx: number;
       fontVariantNumeric: string;
+      lineHeightRatio: number;
+      overflowsBox: boolean;
     }> = [];
-    const openDetails = [...document.querySelectorAll<HTMLDetailsElement>("details[open]")];
-    for (const details of openDetails) {
-      for (const el of details.querySelectorAll<HTMLElement>("summary, p")) {
-        const style = getComputedStyle(el);
-        const fontSizePx = Number.parseFloat(style.fontSize);
-        const letterSpacingPx = style.letterSpacing === "normal" ? 0 : Number.parseFloat(style.letterSpacing);
-        const leaked = letterSpacingPx < -1 || fontSizePx > 24 || style.fontVariantNumeric === "tabular-nums";
-        if (leaked) {
-          leaks.push({
-            selector: `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).replace(/\s+/g, ".")}` : ""}`,
-            text: (el.textContent ?? "").trim().slice(0, 60),
-            fontSizePx,
-            letterSpacingPx,
-            fontVariantNumeric: style.fontVariantNumeric,
-          });
-        }
+    const prose = new Set<HTMLElement>();
+    for (const summary of document.querySelectorAll<HTMLElement>("details > summary")) {
+      prose.add(summary);
+    }
+    for (const details of document.querySelectorAll<HTMLDetailsElement>("details[open]")) {
+      for (const p of details.querySelectorAll<HTMLElement>("p")) {
+        prose.add(p);
+      }
+    }
+    for (const el of prose) {
+      const style = getComputedStyle(el);
+      const fontSizePx = Number.parseFloat(style.fontSize);
+      const letterSpacingPx = style.letterSpacing === "normal" ? 0 : Number.parseFloat(style.letterSpacing);
+      const lineHeightPx =
+        style.lineHeight === "normal" ? fontSizePx * 1.2 : Number.parseFloat(style.lineHeight);
+      const lineHeightRatio = lineHeightPx / fontSizePx;
+      const overflowsBox = el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
+      const leaked =
+        letterSpacingPx < -1 ||
+        fontSizePx > 24 ||
+        style.fontVariantNumeric === "tabular-nums" ||
+        lineHeightRatio < 1.2 ||
+        overflowsBox;
+      if (leaked) {
+        leaks.push({
+          selector: `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).replace(/\s+/g, ".")}` : ""}`,
+          text: (el.textContent ?? "").trim().slice(0, 60),
+          fontSizePx,
+          letterSpacingPx,
+          fontVariantNumeric: style.fontVariantNumeric,
+          lineHeightRatio,
+          overflowsBox,
+        });
       }
     }
     return leaks;
@@ -92,16 +131,38 @@ async function probeProseLeaks(page: Page): Promise<ProseLeak[]> {
 // neither currently sits inside a numeric-value container.
 const ROUTES = ["/", "/science/", "/lab/"];
 
-for (const route of ROUTES) {
-  test(`${route} disclosures stay legible fully expanded`, async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Geometry and computed style are asserted once per route");
+// R0's acceptance gate names these five widths explicitly. `320`/`640x512`/
+// `768` are swept within each test via explicit resize, matching
+// `responsive-baseline`; `1280` and `360` come from running on both the
+// `desktop` and `mobile-360` projects, each at its own default viewport.
+const SWEPT_WIDTHS = [
+  { width: 320, height: 800 },
+  { width: 640, height: 512 },
+  { width: 768, height: 900 },
+] as const;
 
+async function assertNoLeaksAt(page: Page, route: string, width: number): Promise<void> {
+  await openEveryDisclosure(page);
+  const leaks = await probeProseLeaks(page);
+  expect(leaks, `${route} at ${width} prose typography leaks`).toEqual([]);
+}
+
+for (const route of ROUTES) {
+  test(`${route} disclosures stay legible fully expanded, swept widths`, async ({ page }) => {
     await page.goto(route);
     await waitForStablePage(page);
-    await openEveryDisclosure(page);
 
-    const leaks = await probeProseLeaks(page);
-    expect(leaks, `${route} prose typography leaks`).toEqual([]);
+    for (const viewport of SWEPT_WIDTHS) {
+      await page.setViewportSize(viewport);
+      await assertNoLeaksAt(page, route, viewport.width);
+    }
+  });
+
+  test(`${route} disclosures stay legible fully expanded, project viewport`, async ({ page }) => {
+    await page.goto(route);
+    await waitForStablePage(page);
+    const width = page.viewportSize()?.width ?? 0;
+    await assertNoLeaksAt(page, route, width);
   });
 }
 
