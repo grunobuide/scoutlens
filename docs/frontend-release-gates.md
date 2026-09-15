@@ -127,6 +127,37 @@ anchor still fails, and a companion test fails if a waived entry stops being
 published, so the waiver cannot outlive the defect. The verified replacement
 anchors are recorded on `jtt.17`.
 
+### 3.4 Forbidden-copy and currentness assertions
+
+`scoutlens-9a3.7` AC5, in `scripts/check-static-output.mjs` — beside the
+recommendation-wording check that was already there, not in a second mechanism
+under `e2e/`. Three additions, over all three public routes:
+
+| Check | What it holds |
+|---|---|
+| `forbiddenClaims` | assertive phrasings of what the project may never claim — "proves playing style", "should sign", "predicts transfer success" |
+| `forbiddenCurrentness` | wording that would tell a reader the data is live — "real-time", "current season", "updated daily" |
+| `currentnessDisclaimers` | the positive half: every route must carry "not current scouting information" |
+
+**The trap this had to avoid.** The site states each forbidden claim *verbatim*
+in order to disclaim it — `ClaimsMatrix` renders "Statistical similarity proves
+playing style." under "Where the evidence stops". A substring ban on the
+assertive phrasing fires on the disclaimer that exists to prevent it. So each
+route is scanned with the published claim boundaries removed first, and that
+exception list is read from the shipped artifact's `unsupported_claims` rather
+than hardcoded — reword a boundary and the exception follows it in the same
+build, instead of leaving a stale waiver behind.
+
+Matching is on a trailing word boundary. The first run failed `/science/` on
+"live data" inside "no live **data**base" — the site correctly saying it has no
+live database. A ban whose cheapest fix is deleting the reassurance is worse
+than no ban.
+
+Tamper-rehearsed four ways: injected claim copy, injected currentness wording,
+a removed disclaimer, and — for the exception mechanism itself — dropping one
+entry from `unsupported_claims`, which correctly turns the still-rendered
+sentence into a violation.
+
 ## 4. Baselines and their review protocol
 
 ### 4.1 The set

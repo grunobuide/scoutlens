@@ -2262,3 +2262,62 @@ method name, a precision, a claim boundary — add an assertion that reads the
 rendered text in the same pull request. Do not rely on a baseline to hold it.
 §5.5 still forbids raising any threshold; this entry declines to lower one, and
 gives the reason.
+
+---
+
+## D055 — 2026-09-15 — Conditional file ownership is pinned to epics, not to leaf beads
+
+**Decision:** the frontend agent contract's Conditional rows for
+`web/quality-budgets.json`, `lighthouserc.json` and `web/scripts/**`, and §8's
+"gate change" escalation path, name **`scoutlens-uze`** — the epic — as the
+reviewing workstream, replacing `scoutlens-uze.6`. More generally: a Conditional
+row names an epic or a standing workstream, never a leaf bead, because a leaf
+bead is designed to close and a review authority is not.
+
+**Why.** `scoutlens-uze.6` closed on 2026-09-15. §1 of the contract defines
+Conditional as "edit only when the bead names the exact file and the named
+reviewer has approved", and closes with "anything not listed is Denied by
+default". A row whose reviewer no longer exists therefore does not degrade to
+Allowed — it hardens to Denied, silently, for three paths that release tooling
+has to touch.
+
+This was not hypothetical for even one bead. `scoutlens-9a3.7`'s AC5
+(forbidden-copy and currentness assertions over all public text) has its natural
+home beside the existing forbidden recommendation-wording check in
+`web/scripts/check-static-output.mjs`. With the row orphaned, the options were to
+wait or to build a parallel audit under `web/e2e/**` — which is Allowed by file
+level and would have duplicated a mechanism that already exists. That is exactly
+the error `scoutlens-uze.6.1` made, building a line-box helper before finding
+`frozen-question.spec.ts` already measured the same thing, and that `uze.6.2`
+corrected. The ownership table was quietly pushing the next executor toward
+repeating it.
+
+**Why the epic and not `scoutlens-jtt.7.1`.** `jtt.7.1` (freeze and audit the v1
+release candidate) is the live gate-owning bead today and was the tempting
+answer. It is also going to close — at which point this entry gets written
+again under a different D-number. The epic outlives its children by
+construction. Precision about *which* bead currently cares is what the bead's own
+Design section is for; the contract table is about who may approve, and that
+should be a standing address.
+
+**Impact:** three edits to `docs/frontend-agent-contract.md` (two table rows
+covering three paths, and one escalation line). No threshold, budget or script
+behaviour changes. `D033`'s freeze on that document is otherwise intact — this
+is an ownership repair, not a policy change, and Conditional still means
+Conditional for all three paths.
+
+**Those edits are not in version control, and that is not this entry's doing.**
+`docs/frontend-agent-contract.md` is ignored by `.gitignore:65`, added by
+`3ef206c` (2026-08-06) which classified it as AI scaffolding alongside
+`CLAUDE.md`. So this entry is the only reviewable record of the change: the
+contract edit exists on whichever machine applied it. `docs/modeling-agent-contract.md`
+— described by `D040` as mirroring this contract — is tracked, so two documents
+of the same kind sit on opposite policies. That inconsistency is `scoutlens-iex.8`
+and is deliberately *not* settled here; this entry repairs ownership, not
+tracking.
+
+**How to apply:** when writing or reviewing a Conditional row, name an epic or a
+standing workstream. If you find yourself naming a bead with a dotted suffix,
+that bead will close and the row will orphan — name its parent instead. When
+closing an epic, check `docs/frontend-agent-contract.md` and
+`docs/modeling-agent-contract.md` for rows that name it before closing.

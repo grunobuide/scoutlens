@@ -287,13 +287,14 @@ They check that the site is internally consistent and cites what it displays.
 This document checks something no assertion can: whether a person reading it
 arrives at the right understanding.
 
-**AC5 is not yet implemented.** The forbidden-copy and currentness assertions
-belong beside the existing forbidden recommendation-wording check in
-`web/scripts/check-static-output.mjs`, and `web/scripts/**` is Conditional with
-`scoutlens-uze.6` as its named reviewer — a bead that has closed. Tracked as
-`scoutlens-uze.15`. Building a parallel audit under `web/e2e/` to route around
-that would duplicate a mechanism that already exists, which is the mistake
-`scoutlens-uze.6.1` made and `uze.6.2` corrected.
+**AC5** lives in `web/scripts/check-static-output.mjs`, beside the
+recommendation-wording check that was already there. It bans assertive
+phrasings of the unsupported claims, bans wording that would imply the data is
+live, and requires every route to carry "not current scouting information" —
+the machine-checkable half of Q1's blocking condition. The claim boundaries the
+site states in order to disclaim them are excepted, and that exception is read
+from the shipped artifact rather than hardcoded. See
+[`frontend-release-gates.md`](frontend-release-gates.md) §3.4.
 
 Keeping them separate matters. If the automated audit and the human checklist
 disagree, that is a finding — the site is self-consistent but not
