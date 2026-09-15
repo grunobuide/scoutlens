@@ -87,16 +87,30 @@ describe("evidence-first research story", () => {
     expect(html).toContain(experiment!.conclusion);
   });
 
-  it("keeps supported and unsupported claims visible without an interactive disclosure", () => {
+  it("keeps every unsupported claim visible without an interactive disclosure", () => {
     const experiment = experimentWith(0.4321);
     const research = researchWith(experiment);
     const html = renderToStaticMarkup(<ClaimsMatrix research={research} />);
 
-    expect(html).toContain(research.supported_claim);
     for (const claim of research.unsupported_claims) {
       expect(html).toContain(claim);
     }
     expect(html).not.toContain("<details");
+  });
+
+  it("does not restate the supported claim (scoutlens-9a3.12)", () => {
+    // The landing hero states the claim four blocks above this section, under
+    // the same "Supported claim" label. Run 1 of the comprehension check read
+    // the repeat as "you have been here already", skimmed, and could not name a
+    // single unsupported claim — which is what sits immediately after it.
+    //
+    // This asserts the absence, because the defect was a duplicate rather than
+    // a missing string: a test that only checks the boundary renders would stay
+    // green if the restatement came back.
+    const research = researchWith(experimentWith(0.4321));
+    const html = renderToStaticMarkup(<ClaimsMatrix research={research} />);
+
+    expect(html).not.toContain(research.supported_claim);
   });
 
   it("does not duplicate frozen production metric literals in page source", async () => {

@@ -96,15 +96,17 @@ export function ExperimentCard({
 
 export function ClaimsMatrix({ research }: { research: AnyResearchSummaryArtifact }) {
   return (
+    // `scoutlens-9a3.12`: this section used to restate `supported_claim` verbatim,
+    // under the same "Supported claim" label the hero aside had used four blocks
+    // earlier. A reader who has just re-read the same sentence under the same
+    // heading has been told, structurally, that this region is repetition — and
+    // what sits immediately after it is the boundary. Run 1 skimmed straight past
+    // and could not name a single unsupported claim. The hero still carries the
+    // claim and its confound; this section now does one job.
     <section className="claims-matrix" aria-labelledby="claims-heading">
-      <div className="claims-matrix__supported">
-        <p className="eyebrow">Supported claim</p>
-        <h2 id="claims-heading">What the evidence supports</h2>
-        <p>{research.supported_claim}</p>
-      </div>
       <div className="claims-matrix__unsupported">
         <p className="eyebrow">Not supported</p>
-        <h3>Where the evidence stops</h3>
+        <h2 id="claims-heading">Where the evidence stops</h2>
         <ul>
           {research.unsupported_claims.map((claim) => (
             <li key={claim}>{claim}</li>
