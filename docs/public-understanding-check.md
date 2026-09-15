@@ -272,12 +272,87 @@ Verdict: PASS / BLOCK
 
 ## 6. Runs
 
-*No runs recorded. AC1 and AC2 of `scoutlens-9a3.7` are open pending two
-eligible reviewers — see §2.2.*
-
 | Run | Date | Build | Reviewer | Timed | Verdict |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| 1 | 2026-09-15 | `b943b44` | R1 | yes, 2:53 | **BLOCK** |
+
+AC1 and AC2 remain open: the gate needs two eligible reviewers, and run 1
+blocked.
+
+### Run 1 — 2026-09-15
+
+```
+Reviewer:        R1
+Eligible:        1st subject
+Timed:           yes
+Build:           b943b44
+Total elapsed:   2:53
+```
+
+| Q | Answer (verbatim) | Elapsed | Delivery | Recorded | Re-graded |
+|---|---|---|---|---|---|
+| 1 | data from european season of 17/18 and then data from a different year | 0:50 | volunteered | pass | pass |
+| 2 | it is an experiment showing how a player can be identified by their actions in the game | 1:18 | volunteered | partial | partial |
+| 3 | it could be biased, too much data to check individual records | 1:56 | volunteered | partial | **block** |
+| 4 | i would like to see more recent data, or be able to use ai on it | 2:20 | volunteered | partial | **block** |
+| 5 | identifying players | 2:39 | volunteered | partial | **pass** |
+| 6 | describing player types | 2:53 | volunteered | block | block |
+
+Ambiguities raised unprompted: none. Element-read column not captured — see
+"what run 1 exposed about the instrument" below.
+
+**Verdict: BLOCK.** Unchanged by the re-grade; §4 rule 1 fires on Q6 alone, and
+the run is 2:53 against a 90-second target.
+
+#### Why three grades moved
+
+The live grading used a "partial" on Q4 and Q5, and §3 defines a partial only
+for **Q2** and **Q3**. The other four are scored pass or block. The facilitator
+tool offered a Partial button on all six, so this is an instrument defect that
+produced a softer record than the protocol allows, not a grader error — it has
+been corrected.
+
+- **Q3 → block.** "It could be biased, too much data to check individual
+  records" is not one of the weaker limitations §3's partial contemplates (the
+  26-player transfer sample, the lower-magnitude replication). It is a generic
+  doubt. §3 blocks when a reviewer "cannot identify any limitation, or names one
+  the site does not make", and *too much data to check individual records* is
+  not a limitation this site makes.
+- **Q4 → block.** The answer is a wish ("more recent data, or be able to use ai
+  on it"), not a claim the site disclaims. §3: blocks if they cannot name one.
+- **Q5 → pass.** "Identifying players" is terse but it is finding the right
+  player, and it is not read as a quality score. §3 asks for exactly that and
+  offers no partial. Marking it down was harsher than the protocol.
+
+#### What run 1 says about the site
+
+Four findings, each filed rather than fixed — §3 of the ownership boundary keeps
+this bead out of copy.
+
+1. **Q6 is the serious one.** "Describing player types" inverts two claims at
+   once: that no AI produces what is rendered, and that the fingerprint is not
+   proof of playing style. The second is the site's most-repeated caveat.
+2. **Q4 produced nothing at all.** The landing page carries a hero boundary
+   line *and* a dedicated "Not supported / Where the evidence stops" matrix, and
+   the reviewer could not recall a single item from either. Three disclaimers,
+   zero recall.
+3. **Q3 never reached the team confound** — the critical-severity caveat that
+   sits in the landing hero next to the supported claim.
+4. **Q2 lost the temporal structure.** "Identified by their actions" drops
+   *across two chronological halves*, which is what makes the result a result
+   rather than a description.
+
+#### What run 1 exposed about the instrument
+
+- The **element-read** column is empty for all six. It is the field that tells a
+  defect bead *which* surface failed, and under live time pressure it was the
+  first thing to go. Capture it for run 2 even if the answer is "did not look at
+  anything".
+- The partial-button defect above.
+- 2:53 against a 90-second target, with a reviewer who answered promptly and
+  never stalled. The target may be measuring the facilitator's typing speed as
+  much as the reader's comprehension. Worth watching in run 2 before treating
+  rule 5 as a property of the site.
 
 ## 7. What this document does not cover
 
