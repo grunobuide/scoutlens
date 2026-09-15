@@ -38,6 +38,35 @@ export default async function SciencePage() {
         </div>
       </header>
 
+      <section className="science-engineering" aria-labelledby="engineering-heading">
+        <div className="section-heading">
+          <p className="eyebrow">Engineering and AI boundary</p>
+          <h2 id="engineering-heading">What the system is — and what it is not</h2>
+        </div>
+        <div className="science-engineering__grid">
+          <article>
+            <h3>Engineering</h3>
+            <p>
+              ScoutLens is a static website. Every number is computed in Python from frozen
+              event data, exported as immutable JSON, and consumed by a typed TypeScript
+              client. There is no backend, no live database, and no client-side computation
+              of retrieval, ranks, or similarities. Quality gates enforce the build, the
+              static export, and the performance budget on every change.
+            </p>
+          </article>
+          <article>
+            <h3>Governed AI</h3>
+            <p>
+              AI may narrate deterministic evidence in the future, but only under a fail-closed
+              evidence-bundle contract: every factual sentence must cite evidence IDs, unknown
+              entities are rejected, and invalid output falls back to deterministic content.
+              AI never recomputes a value, invents a metric, softens a caveat, or makes a
+              recommendation. No live LLM is required for any current page.
+            </p>
+          </article>
+        </div>
+      </section>
+
       <section className="frozen-question" aria-labelledby="frozen-question-heading">
         <p className="research-step__marker">01 · {narrative[0]?.kind}</p>
         <div>
@@ -134,35 +163,6 @@ export default async function SciencePage() {
       <div className="science-claims">
         <ClaimsMatrix research={research} />
       </div>
-
-      <section className="science-engineering" aria-labelledby="engineering-heading">
-        <div className="section-heading">
-          <p className="eyebrow">Engineering and AI boundary</p>
-          <h2 id="engineering-heading">What the system is — and what it is not</h2>
-        </div>
-        <div className="science-engineering__grid">
-          <article>
-            <h3>Engineering</h3>
-            <p>
-              ScoutLens is a static website. Every number is computed in Python from frozen
-              event data, exported as immutable JSON, and consumed by a typed TypeScript
-              client. There is no backend, no live database, and no client-side computation
-              of retrieval, ranks, or similarities. Quality gates enforce the build, the
-              static export, and the performance budget on every change.
-            </p>
-          </article>
-          <article>
-            <h3>Governed AI</h3>
-            <p>
-              AI may narrate deterministic evidence in the future, but only under a fail-closed
-              evidence-bundle contract: every factual sentence must cite evidence IDs, unknown
-              entities are rejected, and invalid output falls back to deterministic content.
-              AI never recomputes a value, invents a metric, softens a caveat, or makes a
-              recommendation. No live LLM is required for any current page.
-            </p>
-          </article>
-        </div>
-      </section>
 
       <ProviderBoundary manifest={story.manifest} research={research} />
       <ProvenanceDrawer story={story} />
