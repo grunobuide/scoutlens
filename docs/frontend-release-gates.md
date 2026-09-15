@@ -101,6 +101,32 @@ and `/science/`, and by `lab-mobile-hardening` at 320/360 for `/lab/` — the
 same test that excludes this component from its own Lab-owned sweep now
 points at where it is actually held.
 
+### 3.3 Four `report_url` anchors are dead — waived to the RC repin
+
+Found by `scoutlens-9a3.7`'s link audit on its first run. All four `report_url`
+values that carry a `#fragment` point at headings that do not exist; the four
+without a fragment are correct. The "Read method" link lands at the top of the
+right document instead of the cited section.
+
+Filed as `scoutlens-jtt.17`, which `scoutlens-jtt.7.1` depends on — the v1
+release candidate cannot be frozen with these still dead.
+
+**Why it is waived rather than fixed.** `report_url` is published content.
+`builder.py` derives `dataset_version` from a content digest over every artifact
+and stamps the result into all of them, so correcting four strings repins the
+bundle. Measured with a real export at the published `--generated-at`:
+`dc398ff5661c` → `332766e3a822`, with **1,262 of 1,262 files changed and none
+byte-identical**. That drags the payload pack, its release tag and asset URL,
+the v2 e2e fixtures and two contract documents. `jtt.7.1` repins once; fixing it
+here would repin twice.
+
+The four are enumerated in `KNOWN_DEAD_ANCHORS` in
+`e2e/claims-consistency.spec.ts` — the evidence-linked, explicitly enumerated
+form AC5 of `scoutlens-9a3.7` permits, not a disabled assertion. A fifth dead
+anchor still fails, and a companion test fails if a waived entry stops being
+published, so the waiver cannot outlive the defect. The verified replacement
+anchors are recorded on `jtt.17`.
+
 ## 4. Baselines and their review protocol
 
 ### 4.1 The set
@@ -147,12 +173,14 @@ it independently. Do not reach for a screenshot to hold a sentence.
 
 ## 5. Budgets
 
-Unchanged by `scoutlens-uze.6`. Measured on `main` at `29f184f`:
+Unchanged by `scoutlens-uze.6`. First measured on `main` at `29f184f` and
+re-measured at closure on `bc51cec`, after `uze.6.4`, `uze.6.5` and the two
+prose-typography merges landed — the JavaScript total is byte-identical:
 
 | Budget | Measured | Cap | Headroom |
 |---|---|---|---|
 | Initial `/lab` JavaScript (gzip) | 161,454 | 204,800 | **43,346** |
-| Initial `/lab` transfer, excl. fonts | ~285,810 | 768,000 | ~482,190 |
+| Initial `/lab` transfer, excl. fonts | ~285,830 | 768,000 | ~482,170 |
 
 The transfer figure moves by a byte or two between builds, as a content hash
 lands differently; it is written approximately for that reason. The
