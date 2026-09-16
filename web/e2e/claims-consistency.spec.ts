@@ -537,3 +537,75 @@ test.describe("the team-continuity confound", () => {
     }
   });
 });
+
+/**
+ * The hero's temporal framing (`scoutlens-9a3.14`).
+ *
+ * Run 1's reader answered "in one sentence, what does this site say it has
+ * shown?" with "an experiment showing how a player can be identified by their
+ * actions in the game" — graded PARTIAL, because the two chronological periods
+ * dropped out. That is close to a paraphrase of the old `h1`, which ended at
+ * "in the shape of their actions" and contained no time at all. The lede has
+ * always carried the periods; the headline is what gets repeated back.
+ *
+ * So this guards the property, not the sentence: the headline must locate the
+ * claim in time, and the lede must still name the same-player question and the
+ * two halves. A future editor may rewrite either, but not back into a
+ * time-free claim.
+ */
+test.describe("the hero's temporal framing", () => {
+  test("the headline locates the claim in time", async ({ page }) => {
+    await page.goto("/");
+    await waitForStablePage(page);
+
+    const heading = (await page.locator("main h1").innerText()).replace(/\s+/g, " ").trim();
+
+    // Pattern, not the exact sentence. The regression is a headline with no
+    // temporal relation in it, which is what run 1 read back.
+    expect(
+      /half a season|second half|later|two chronological halves|across two/i.test(heading),
+      `the headline states no temporal relation: "${heading}"`,
+    ).toBe(true);
+  });
+
+  test("the lede still names the same-player question and both periods", async ({ page }) => {
+    await page.goto("/");
+    await waitForStablePage(page);
+
+    const lede = page.locator("main .lede");
+    await expect(lede).toContainText("the same player");
+    await expect(lede).toContainText("two chronological halves");
+  });
+
+  test("the headline precedes the lede, and the claim is still rendered once", async ({
+    page,
+    request,
+  }) => {
+    const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
+
+    await page.goto("/");
+    await waitForStablePage(page);
+
+    const order = await page.evaluate(() => {
+      const all = [...document.querySelectorAll("main *")];
+      const indexOf = (selector: string) => {
+        const element = document.querySelector(`main ${selector}`);
+        return element === null ? -1 : all.indexOf(element);
+      };
+      return { heading: indexOf("h1"), lede: indexOf(".lede"), boundary: indexOf(".hero__boundary") };
+    });
+    expect(order.heading, "no h1 in main").toBeGreaterThan(-1);
+    expect(order.heading, "the lede precedes the headline").toBeLessThan(order.lede);
+    expect(order.lede, "the claim boundary precedes the lede").toBeLessThan(order.boundary);
+
+    // `scoutlens-9a3.12` removed the second rendering of the supported claim.
+    // Editing the hero is exactly when it could come back, so the count is
+    // asserted here rather than left to the earlier verbatim check, which only
+    // proves the claim appears at least once.
+    const occurrences = await page.evaluate((claim) => {
+      const text = (document.querySelector("main")?.textContent ?? "").replace(/\s+/g, " ");
+      return text.split(claim).length - 1;
+    }, research.supported_claim.replace(/\s+/g, " "));
+    expect(occurrences, "the supported claim is rendered more than once again").toBe(1);
+  });
+});
