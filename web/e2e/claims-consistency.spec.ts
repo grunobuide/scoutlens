@@ -444,3 +444,96 @@ test.describe("without JavaScript", () => {
     await expect(main).toContainText("AI never recomputes a value");
   });
 });
+
+/**
+ * The hero's team-continuity confound (`scoutlens-9a3.13`).
+ *
+ * Run 1's reader answered "what is the strongest reason to doubt that result?"
+ * with "it could be biased, too much data to check individual records" — they
+ * took that *a* limit exists without reaching *which* one, though the hero
+ * named a critical-severity confound and its number. The old sentence asked the
+ * reader to already know what MRR is and what the fingerprint scores, then
+ * assemble the comparison themselves.
+ *
+ * These assertions hold the shape of the repair, not the reader's understanding
+ * of it. No element-read trace was captured in run 1, so which surface failed is
+ * inference; under `D056` this lands without a fresh reviewer and claims no
+ * comprehension improvement.
+ */
+test.describe("the team-continuity confound", () => {
+  test("names the shortcut in plain language before any number", async ({ page }) => {
+    await page.goto("/");
+    await waitForStablePage(page);
+
+    const caveat = page.locator(".signal-confound .signal-caveat");
+    await expect(caveat).toContainText("most players stayed at the same club");
+    await expect(caveat).toContainText("identifies them better than the fingerprint does");
+    // The stop condition: the confound narrows the result, it does not retract it.
+    await expect(caveat).toContainText("does not retract it");
+  });
+
+  test("states both sides of the comparison, from the artifact", async ({ page, request }) => {
+    const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
+    const value = (experimentId: string, metricId: string) => {
+      const experiment = research.experiments.find((item) => item.experiment_id === experimentId);
+      const metric = experiment?.metrics.find((item) => item.metric_id === metricId);
+      if (metric === undefined) {
+        throw new Error(`artifact is missing ${experimentId}.${metricId}`);
+      }
+      return formatMetric(metric);
+    };
+
+    // Prose, not a metric tile, so the cross-route metric assertions above do not
+    // reach it. The confound is only legible next to the number it beats, and a
+    // hand-typed literal here would be the one place on the page a value could
+    // drift from the artifact unnoticed.
+    await page.goto("/");
+    await waitForStablePage(page);
+
+    const caveat = page.locator(".signal-confound .signal-caveat");
+    await expect(caveat).toContainText(value("wyscout_role_team_minutes", "baseline_c_mrr"));
+    await expect(caveat).toContainText(value("wyscout_global_gate2", "fingerprint_mrr"));
+  });
+
+  test("follows the supported claim and links to the control that produced it", async ({ page }) => {
+    await page.goto("/");
+    await waitForStablePage(page);
+
+    const order = await page.evaluate(() => {
+      const all = [...document.querySelectorAll("main *")];
+      const indexOf = (selector: string) => {
+        const element = document.querySelector(`main ${selector}`);
+        return element === null ? -1 : all.indexOf(element);
+      };
+      return { claim: indexOf(".signal-copy"), caveat: indexOf(".signal-confound") };
+    });
+    expect(order.claim, "no supported claim in the hero").toBeGreaterThan(-1);
+    expect(
+      order.claim,
+      "the confound precedes the claim it is supposed to narrow",
+    ).toBeLessThan(order.caveat);
+
+    const link = page.locator(".signal-confound a.signal-evidence");
+    await expect(link).toHaveAttribute("href", "/science/#stage-03");
+
+    // A link to an anchor that does not exist lands the reader at the top of a
+    // 290-block page, which is how `scoutlens-jtt.17` went unnoticed.
+    await page.goto("/science/");
+    await expect(page.locator("#stage-03")).toHaveCount(1);
+  });
+
+  test("the evidence link meets the 44 px touch target", async ({ page }) => {
+    // `scoutlens-uze.4` and `uze.6.5` each fixed this defect class after it
+    // shipped. A new standalone link at 0.8rem is exactly that class, so it is
+    // asserted here rather than found by the next audit.
+    for (const width of [320, 360]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      await waitForStablePage(page);
+
+      const box = await page.locator(".signal-confound a.signal-evidence").boundingBox();
+      expect(box, `no evidence link at ${width}`).not.toBeNull();
+      expect(box?.height ?? 0, `evidence link hit area at ${width}`).toBeGreaterThanOrEqual(44);
+    }
+  });
+});

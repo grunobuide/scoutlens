@@ -14,6 +14,10 @@ export default async function HomePage() {
   const story = await loadShowcaseStory();
   const { experiments, research } = story;
   const teamControlMrr = formatMetric(requireMetric(experiments.teamControl, "baseline_c_mrr"));
+  // `scoutlens-9a3.13`: the confound is only legible next to the number it beats.
+  // Both come from the same 1,257-unit Wyscout population, so the comparison is
+  // like for like — the bead's stop condition forbids comparing unlike ones.
+  const fingerprintMrr = formatMetric(requireMetric(experiments.global, "fingerprint_mrr"));
 
   return (
     <main id="main-content">
@@ -38,14 +42,48 @@ export default async function HomePage() {
           </div>
         </div>
         <aside className="hero__signal" aria-label="Supported result">
-          <span className="signal-orbit signal-orbit--outer" aria-hidden="true" />
-          <span className="signal-orbit signal-orbit--inner" aria-hidden="true" />
-          <div>
-            <p className="signal-label">Supported claim</p>
-            <p className="signal-copy">{research.supported_claim}</p>
+          {/*
+            The dial is a circle with `overflow: hidden`, holding text at 68% of
+            its width — about thirty characters a line. The old one-sentence
+            confound already nearly filled it, so `scoutlens-9a3.13`'s plain-
+            language rewrite clipped "Supported claim" to "…ED CLAIM" and cut the
+            evidence link off at both ends. Every automated gate stayed green;
+            §4.2's "read the image" is what caught it.
+
+            So the confound moved out of the dial rather than being squeezed back
+            into one line. The circle keeps the claim it was designed around, and
+            the caveat gets room directly beneath it.
+          */}
+          <div className="signal-dial">
+            <span className="signal-orbit signal-orbit--outer" aria-hidden="true" />
+            <span className="signal-orbit signal-orbit--inner" aria-hidden="true" />
+            <div>
+              <p className="signal-label">Supported claim</p>
+              <p className="signal-copy">{research.supported_claim}</p>
+            </div>
+          </div>
+          {/*
+            This previously read "a role + team + minutes control reaches
+            {teamControlMrr} MRR, so same-season context can make identity
+            retrieval easier" — true, and unreadable without already knowing what
+            MRR is and what the fingerprint scores. Run 1's reader came away with
+            "it could be biased": they took that a limit exists, but not which
+            one. The shortcut is now named in plain language before any number,
+            the comparison it loses is stated rather than left for the reader to
+            assemble, and the evidence is one link away.
+          */}
+          <div className="signal-confound">
             <p className="signal-caveat">
-              Critical confound: a role + team + minutes control reaches {teamControlMrr} MRR, so same-season context can make identity retrieval easier.
+              <strong>Critical confound:</strong> most players stayed at the same club across both
+              halves, so who they played alongside is itself a clue to who they are. A control
+              given only role, team and minutes—nothing about how a player acts—identifies them
+              better than the fingerprint does: {teamControlMrr} against {fingerprintMrr} MRR,
+              measured the same way on the same players. That narrows what the result means; it
+              does not retract it.
             </p>
+            <Link className="signal-evidence" href="/science/#stage-03">
+              See the team-continuity control
+            </Link>
           </div>
         </aside>
       </section>

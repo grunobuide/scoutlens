@@ -13,9 +13,20 @@
   padding-block: 4rem;
 }
 
+/* `scoutlens-9a3.13` split the panel in two. The circle stays the circle and
+   keeps the claim it was designed around; the confound moved out from under its
+   `overflow: hidden`, which was clipping the plain-language rewrite. */
 .hero__signal {
+  display: grid;
+  gap: 1.5rem;
+  align-content: center;
+  justify-items: center;
+}
+
+.signal-dial {
   position: relative;
   display: grid;
+  width: 100%;
   min-height: 24rem;
   place-items: center;
   overflow: hidden;
@@ -26,7 +37,7 @@
   isolation: isolate;
 }
 
-.hero__signal > div {
+.signal-dial > div {
   z-index: 1;
   width: 68%;
 }
@@ -63,13 +74,30 @@
   line-height: 1.4;
 }
 
+/* `scoutlens-9a3.13`: the rule that divided the claim from its confound moved
+   to the wrapper, so the caveat and its evidence link read as one block. */
+.signal-confound {
+  max-width: 34ch;
+}
+
 .signal-caveat {
-  margin: 1rem 0 0;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
+  /* Was 0.76rem, which made the project's one critical-severity caveat the
+     smallest text in the panel — set below the claim it is supposed to narrow. */
+  margin: 0;
   color: var(--ink-600);
-  font-size: 0.76rem;
-  line-height: 1.45;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.signal-caveat strong {
+  color: var(--ink-950);
+}
+
+.signal-evidence {
+  display: inline-block;
+  margin-top: 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 650;
 }
 
 .proof-band {
@@ -129,13 +157,27 @@
 
   }
 
-  .hero__signal {
+  .signal-dial {
       min-height: 20rem;
 
   }
 
   .initial-boundaries {
       padding-top: 0;
+
+  }
+
+  /* Same technique as `.site-nav a` (`scoutlens-uze.4`) and the provider-boundary
+     links (`scoutlens-uze.6.5`): grow the hit area to the 44 px touch target with
+     padding plus a negative margin, so the visual position does not move. Added
+     here rather than discovered later, because a new standalone link at 0.8rem is
+     exactly the defect class those two beads already fixed twice. */
+  .signal-evidence {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+      padding-inline: 0.35rem;
+      margin-inline: -0.35rem;
 
   }
 }
