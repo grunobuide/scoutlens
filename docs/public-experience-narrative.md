@@ -6,6 +6,12 @@
 
 **Decision date:** 2026-08-06
 
+**Review-policy amendment (2026-09-15, D056):** the 90-second understanding goal
+remains a design target. The current review and release rules are in
+[`public-understanding-check.md`](public-understanding-check.md), which permits
+progress with one human review, preserves its failed findings, and requires
+remediation plus explicit disclosure of limited comprehension evidence.
+
 **Tracking:** Beads `scoutlens-9a3.1` (decision); public-understanding scope of epic `scoutlens-9a3`; recorded in the decision log as D034.
 
 ## Change-control boundary
@@ -129,9 +135,11 @@ progressive disclosure, matching the 90-second primary job.
 | 5 | 60 s | Was the claim reproduced independently? | Yes — an independent provider reproduced the core signal at a lower magnitude; the positive result adds confidence, the smaller size is reported, and its transfer subset is inconclusive. | `narrative_steps[5]`; experiment `statsbomb_global_replication`; caveat `provider_replication_lower_magnitude` |
 | 6 | 90 s | What is a statistical neighbor, and what must it never be called? | A neighbor is the profile most similar to the selected player within a defined candidate pool — an analytical comparison, never a recommendation, replacement, or "best match". | `narrative_steps[2]` + within-role scope; caveat `fingerprint_not_style_proof`; `unsupported_claims[1]` |
 
-The six questions double as the acceptance quiz for any redesigned landing: the
-redesign is wrong if a first-time reader cannot answer all six from the landing
-alone (with in-page disclosure) within 90 seconds.
+These six questions express the landing's design goals. The operational review
+instrument, its question set and release disposition are maintained in
+[`public-understanding-check.md`](public-understanding-check.md). D056 makes
+90 seconds a measured UX target rather than an unconditional release cutoff;
+neither document may claim that a target has been met without evidence.
 
 ## 5. Vocabulary progression (glossary)
 

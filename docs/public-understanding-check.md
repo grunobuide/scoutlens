@@ -8,6 +8,14 @@ This is **portfolio communication QA, not scientific validation**. It does not
 test whether the science is right. It tests whether a reader who has never seen
 this repository arrives at the same understanding the artifacts support.
 
+**Current policy (2026-09-15, D056):** one eligible human review is available.
+The owner directed work to continue without waiting for a second reviewer.
+Run 1 remains **BLOCK**. Implementation may proceed; release requires the
+recorded defects to be remediated, the automated gates to pass, and the case
+study to disclose the limited comprehension evidence. This is not a claim of
+validated public comprehension. Section 6 preserves the original protocol's
+assessment and is not retroactively re-scored.
+
 ## 1. Why the answers live here and not in the reviewer's head
 
 Every canonical answer in §3 is derived from a versioned artifact field or a
@@ -41,7 +49,10 @@ published experience.
 
 ### 2.2 Who is eligible
 
-Two reviewers. Both must be people who have **never used this repository**.
+One eligible first-time human reviewer is sufficient to collect formative
+feedback under D056. They must have **never used this repository**. A second
+independent reviewer remains desirable but is not a dependency for v1 work or
+release.
 
 **The project owner is not eligible.** Neither is any agent that has worked a
 ScoutLens bead, and neither is an agent given this file. Knowing the canonical
@@ -49,13 +60,16 @@ answer makes you unable to measure whether the site conveys it — you will read
 your own knowledge into ambiguous copy, which is exactly the failure mode this
 gate exists to catch.
 
-At least one reviewer must complete all six questions **within 90 seconds**.
-The second reviewer is untimed; their value is depth, not speed. Record the
-elapsed time for both regardless.
+The **90-second** first-understanding goal remains a UX target. Record elapsed
+time and distinguish reading/answering from facilitator recording time when
+measurable. Do not subtract an invented typing allowance from run 1's 2:53 or
+claim that the target was met. Reviewer count or timing alone no longer freezes
+implementation. One reader cannot establish general comprehensibility.
 
-If only one eligible reviewer can be found, the gate does not pass. Record the
-attempt and leave `scoutlens-9a3.7` open. One reviewer cannot distinguish "the
-site communicates this" from "this particular person inferred it".
+An optional follow-up with R1 may assess whether corrections address their
+confusion. Label it **non-blind follow-up, same participant**; do not count it
+as a second reader or independent evidence. Automated or agent review is also
+not a substitute human participant.
 
 ### 2.3 The script, read verbatim
 
@@ -199,19 +213,21 @@ for this identity task—not a player rating."
 
 > **What role does AI play in what you are looking at?**
 
-**Canonical:** none, in what is rendered. Every number is computed in Python
-from frozen event data and exported as static JSON; there is no backend and no
-client-side recomputation. AI *may* narrate deterministic evidence in future
-under a fail-closed contract, but no live LLM is required for any current page,
-and AI never recomputes a value, invents a metric, softens a caveat, or makes a
-recommendation.
+**Canonical (clarified by D056):** no live generative model produces the public
+pages. The v2 rankings do use a learned diagonal metric, fitted offline and
+evaluated as ML; Python computes and exports the stored evidence. The browser
+does not recompute it. The planned local explanation toolkit may narrate that
+evidence under a fail-closed contract, with a configurable model, but cannot
+invent values, soften caveats or make recommendations. Saying that the project
+uses no ML at all would also be wrong.
 
-**Passes if** the reviewer says AI is not producing the numbers, or that it is
-constrained to describing evidence it is given.
+**Passes if** the reviewer distinguishes the frozen numerical/ML pipeline from
+generative explanation, or correctly identifies that no live LLM produces the
+current pages and any generative explanation is constrained to stored evidence.
 
-**Blocks if** they believe an AI model generated the results, the rankings, or
-the similarity scores. That inverts the project's central claim about where the
-numbers come from.
+**Blocks if** they attribute the numerical results or rankings to live LLM
+invention, or infer that an AI proves playing style or recommends players.
+Correctly identifying the offline learned diagonal metric is not a failure.
 
 **Evidence:** `/science/` "Engineering and AI boundary" section, both the
 Engineering and Governed AI articles.
@@ -220,28 +236,36 @@ Engineering and Governed AI articles.
 
 ## 4. Verdict rules
 
-**There is no comprehension override.** Approved as human release policy on
-2026-08-11 and recorded in `scoutlens-9a3.7`.
-
-The gate **blocks**, and a narrowly scoped defect bead is filed against the
-owning narrative or frontend bead, on any of:
+**D056 supersedes the reviewer-count, mandatory fresh-retest and hard timing
+requirements of the 2026-08-11 release policy.** It does not turn wrong answers
+into correct ones. A narrowly scoped defect bead is still required on any of:
 
 1. A fixed-answer miss on any of the six.
 2. An answer that requires repository knowledge to produce.
 3. Any inference that the data is current or the site makes a recruitment
    recommendation.
 4. Failure to identify the strongest limitation (Q3 blocking condition).
-5. Neither reviewer finishing within 90 seconds.
-6. Fewer than two eligible reviewers.
+
+These findings block communication-gate closure until their remedies are
+integrated and verified. They do not block the independent AI evidence-contract
+work. A remedy can be accepted technically using deterministic assertions,
+artifact agreement and review of the rendered surface; that does not prove
+the reader now understands it.
 
 A defect bead names the question, the answer given, the element the reviewer
 was reading, and the copy surface that owns the fix. **It does not propose the
 new wording** — that is the narrative bead's judgement, and an auditor who
 drafts the fix has stopped auditing.
 
-Re-running the checklist after a copy fix requires **new reviewers**. A reviewer
-who has seen the site once is no longer public-only. This is the expensive part
-of the gate and it is not negotiable; budget for it before changing copy late.
+A new blind run requires a new eligible reader. A repeat with R1 is allowed as
+the explicitly labelled follow-up in section 2.2 and is optional. Waiting for a
+fresh reader is not a v1 dependency under D056.
+
+`scoutlens-9a3.7` can close as **remediation complete; comprehension evidence
+limited (n=1)** after all four recorded findings have a documented technical
+disposition, automated criteria AC3–AC6 pass, and the case-study handoff states
+the residual risk. It cannot close as "comprehension PASS" based on this
+exception. Run 1, its 2:53 timing and its BLOCK verdict remain unchanged.
 
 ## 5. Result template
 
@@ -271,6 +295,10 @@ Verdict: PASS / BLOCK
 ```
 
 ## 6. Runs
+
+**Historical record:** the count/retest statements below describe the policy
+under which run 1 was conducted. D056 replaces those requirements prospectively;
+it does not change any recorded answer, grade, timing or verdict below.
 
 | Run | Date | Build | Reviewer | Timed | Verdict |
 |---|---|---|---|---|---|
