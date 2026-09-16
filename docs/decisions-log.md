@@ -2321,3 +2321,53 @@ standing workstream. If you find yourself naming a bead with a dotted suffix,
 that bead will close and the row will orphan — name its parent instead. When
 closing an epic, check `docs/frontend-agent-contract.md` and
 `docs/modeling-agent-contract.md` for rows that name it before closing.
+
+## D056 — 2026-09-15 — Continue with one human review and disclose the evidence limit
+
+**Context:** the owner has obtained one evaluator and does not expect another
+now, and directed planning to advance. Run 1 on `b943b44` took 2:53 and remains
+BLOCK: Q2 was partial; Q3, Q4 and Q6 failed. The run exposed real communication
+problems. Its timing also included facilitation, and no element-read trace was
+captured. Those gaps cannot be repaired by guessing.
+
+**Decision:** use the available review as formative evidence for v1. Supersede
+the two-reviewer, mandatory-new-reviewer retest and hard 90-second release
+requirements in `docs/public-understanding-check.md` and the corresponding
+Beads criteria. Preserve every original answer, grade, elapsed time and verdict.
+Ninety seconds remains a UX target, not a result now claimed as achieved.
+
+An optional repeat with R1 is explicitly non-blind and still n=1. It may help
+assess corrections, but cannot count as independent validation. No model or
+project insider is silently substituted as a second human reviewer. Additional
+independent review is future validation, not a v1 dependency.
+
+The four findings remain actionable. `9a3.11` and `9a3.12` have implementation
+evidence and merge #102; their technical completion must be distinguished from
+unmeasured comprehension improvement. `9a3.13` (team continuity) and `9a3.14`
+(temporal structure) still need bounded remedies. The communication gate may
+close only as **remediation complete; comprehension evidence limited (n=1)**,
+with green automated gates and an explicit case-study handoff. It must not
+report a successful comprehension study or a retrospective PASS for run 1.
+
+**Sequence:** the local AI evidence contract `jtt.6.1` depends on the completed
+scientific and frontend foundations, not on obtaining another reader. Keep
+WIP=1; prioritize the two bounded narrative corrections, then proceed through
+the evidence contract, adapter, evals and CLI. The RC gate explicitly depends
+on communication remediation, so making AI work ready does not bypass release
+quality. No scientific claim, checksum/schema validation, accessibility gate,
+performance budget or model-evaluation threshold is relaxed.
+
+**Instrument clarification:** "AI" must distinguish the offline learned
+diagonal metric from a live generative model. The project already uses ML to
+fit its ranking representation. The public site consumes frozen outputs; the
+planned local model adapter explains evidence and does not calculate rankings.
+The Q6 answer key now makes that distinction; run 1 is not re-graded.
+
+**Trade-off:** this removes an indefinite recruiting dependency and enables the
+portfolio's AI deliverable. It leaves real uncertainty about whether the
+communication fixes help first-time readers. The case study and release notes
+must disclose n=1, the failed initial run, the corrections and the absence of a
+fresh independent retest. Automated consistency is not human comprehension.
+
+**Tracking:** `scoutlens-9a3.15`; communication gate `scoutlens-9a3.7`; local AI
+toolkit `scoutlens-jtt.6`; RC gate `scoutlens-jtt.7.1`.
