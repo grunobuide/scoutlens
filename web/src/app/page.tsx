@@ -25,7 +25,24 @@ export default async function HomePage() {
         <div className="hero__copy">
           <DataVintageBadge manifest={story.manifest} />
           <p className="eyebrow">Player Fingerprint Lab</p>
-          <h1>A player leaves a reproducible fingerprint in the shape of their actions.</h1>
+          {/*
+            `scoutlens-9a3.14`. The h1 is the sentence a reader repeats back, and
+            it used to end at "in the shape of their actions" — no time in it at
+            all. Run 1's reader gave exactly that back: "an experiment showing how
+            a player can be identified by their actions in the game", graded
+            PARTIAL for dropping the two periods. The lede below has always
+            carried them; the headline did not, and the headline is what was
+            recalled.
+
+            The opening clause is unchanged on purpose: `check-static-output.mjs`
+            asserts "A player leaves a reproducible fingerprint" and that file is
+            outside this bead's ownership boundary. Extending the sentence rather
+            than rewriting it keeps the change inside the boundary.
+          */}
+          <h1>
+            A player leaves a reproducible fingerprint—and it still identifies them half a
+            season later.
+          </h1>
           <p className="lede">
             ScoutLens tests whether event-derived profiles can retrieve the same player across two chronological halves—then exposes the controls that narrow what that result means.
           </p>

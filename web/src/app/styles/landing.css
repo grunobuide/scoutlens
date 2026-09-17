@@ -152,8 +152,12 @@
 
   }
 
+  /* `scoutlens-9a3.14` lengthened the headline to carry the two periods. At the
+     old scale that pushed the claim boundary and both calls to action off the
+     first mobile screen — the wrong direction, since `9a3.12` found the boundary
+     was already going unread. Easing the scale buys the lines back. */
   .hero h1 {
-      font-size: clamp(2.8rem, 13vw, 3.4rem);
+      font-size: clamp(2.4rem, 11vw, 3.1rem);
 
   }
 
