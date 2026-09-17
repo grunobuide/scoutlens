@@ -43,6 +43,8 @@ line stops the task.
 | `config/showcase-payload-pack.json` | **Conditional**, regeneration only | `scoutlens-jtt` | The content-addressed pin. Writable only as the recorded output of a republished pack under §4.4, never by hand. |
 | `public/showcase/**` | **Conditional**, regeneration only | `scoutlens-jtt` | Published artifacts. Writable **only** as the deterministic output of a named command in §4.2, never by hand. |
 | `artifacts/uncertainty/**`, `artifacts/showcase-payload/**`, `artifacts/recruitment_study/**` | **Conditional**, regeneration only | `scoutlens-jtt` | Same rule as `public/showcase/**`. |
+| `artifacts/ai-evals/grounded-explanations-v1.json` | **Conditional**, regeneration only | `scoutlens-jtt` | `D057`. The single named AI eval report. Writable **only** as the deterministic output of the §4.2 command, never by hand. Offline by default: the replay path uses stored adapter responses and makes no network call. Live-model telemetry is a separate file and never overwrites this one. |
+| `artifacts/ai-evals/**` other paths | **Denied** | `scoutlens-jtt` | `D057` permits one path, not a directory. A second report is a second contract amendment. |
 | `artifacts/*.json` result files | **Denied** | `scoutlens-jtt` | `chance_control_results.json`, `gate2_results.json`, `robustness_results.json`, `shrinkage_experiment_results.json` are recorded results. A new run writes a **new** file; it never overwrites a recorded one. |
 | `pyproject.toml`, `uv.lock` | **Conditional** | Bead author | Only for a dependency the bead explicitly justifies, stating weight and the rejected alternative. Never to relax `requires-python`, lint or type settings. |
 | `data/**` | **Denied** | `scoutlens-jtt` | Provider inputs and derived Parquet. Read-only to every modeling bead. Regenerating ingestion output is its own bead with its own review. |
@@ -54,7 +56,8 @@ line stops the task.
 | `bd_orchestrator.py`, `bd_recover.py`, `personas/**` | **Denied** | `scoutlens-iex` | Delegation machinery. |
 | `.github/**`, `.claude/**`, `.codex/**`, `.agents/**`, `.continue/**`, `.orchestrator/**` | **Denied** | — | CI and agent scaffolding. |
 | `AGENTS.md`, `CLAUDE.md` | **Denied** | `scoutlens-iex` | The instruction files this contract defers to. An executor never edits the rules it is bound by. Both are untracked by design (`.gitignore`), so an edit is invisible to review — a second reason to stop. |
-| `README.md`, `LICENSE`, `DATA_LICENSES.md` | **Denied** | — | Project-level statements, including data licensing. |
+| `README.md` — AI setup, CLI usage, adapter configuration and AI status sections only | **Conditional** | `scoutlens-jtt.7.3` | `D057`, for `scoutlens-jtt.6.4`. Those four sections only. Every numerical result, scientific claim, licensing statement and provenance line in the same file stays **Denied**, and the CLI sections may not restate a result. |
+| `README.md` — everything else, `LICENSE`, `DATA_LICENSES.md` | **Denied** | — | Project-level statements, including data licensing. |
 | `.gitignore`, `.gitattributes` | **Denied** | — | Changing what is tracked or how it is normalized is never part of a modeling bead. |
 | `dist/**`, `.venv/**`, `__pycache__/**`, `.pytest_cache/**`, `.mypy_cache/**`, `.ruff_cache/**` | **Denied** | — | Build output and local caches. Ignored by Git; never edited, and never "cleaned" as part of a bead. |
 | `schemas/**` | **Denied** (reserved) | `scoutlens-jtt` | Does not exist as of 2026-08-10. Reserved so that creating it does not silently land in an unlisted, and therefore Denied, path. Creating it requires a contract bead. |
@@ -201,6 +204,7 @@ run through `uv run --frozen`.
 | `artifacts/uncertainty/**` | `python -m scoutlens.uncertainty.run` |
 | `data/processed/**` (own bead; Denied here) | `python -m scoutlens.data.ingestion`, `.minutes`, `.eligibility`, `.validation` |
 | `artifacts/*_results.json` (new file only) | `python -m scoutlens.evaluation.run_report`, `.run_robustness`, `.run_chance_control`, `.run_shrinkage_experiment`, `.run_transfer_analysis` |
+| `artifacts/ai-evals/grounded-explanations-v1.json` | `python -m scoutlens.explanations.evals.run_report` |
 | `artifacts/recruitment_study/**` | `python -m scoutlens.study.shortlists` |
 | StatsBomb replication outputs | `python -m scoutlens.statsbomb.ingestion`, `.replication` |
 
@@ -248,6 +252,33 @@ an asset that does not yet exist.
 `web/public/showcase/**` is produced by `pnpm assets:sync` and is Denied to the
 modeling track. After a republished pack, the web sync and its budget check are
 a frontend concern; note the dependency and hand off.
+
+### 4.6 The AI eval report (`D057`)
+
+`artifacts/ai-evals/grounded-explanations-v1.json` is the one generated AI
+artifact this contract permits. §4.1's four conditions apply unchanged, and
+three more apply only to it, because a model is the one input to this repository
+that is not reproducible by re-running it.
+
+1. **The recorded report is a replay, and the replay is offline.** It is
+   produced from stored adapter responses, and generating it makes no network
+   call. `uv run --frozen python -m scoutlens.explanations.evals.run_report`
+   must succeed with no credential present; the default CI path stays fully
+   offline, as `flagship-ai-delivery` requires.
+2. **It is bound to its inputs.** The report records the bundle digests, the
+   prompt-contract version, the adapter identifier and the stored-response
+   digest it replayed. Two runs over the same stored responses are
+   byte-identical — that is §4.1's condition 2, and for this artifact it is the
+   *only* thing byte-equality can mean.
+3. **Live-model output is telemetry, not a result.** Calling a real model
+   produces a separate, clearly named file. It never overwrites the replay
+   report, and a number from a live run never reaches a document without being
+   recorded as a replay first. Otherwise an unreproducible number acquires the
+   authority of a recorded one.
+
+A live run is also the one place in this repository where an input can be
+non-deterministic by nature. That is why the boundary is drawn at the file and
+not at the reviewer's attention.
 
 ---
 
