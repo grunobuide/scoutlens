@@ -114,7 +114,7 @@ def build_research_summary(
             "The 32-feature fingerprint retrieves the same player far better than the role-and-minutes baseline.",
             ["fingerprint_not_style_proof", "same_season_team_confound"],
             SOURCE_FILES["gate2"],
-            "docs/gate-2-decision.md#wyscout-global-retrieval",
+            "docs/gate-2-decision.md#evidence-against-the-briefs-gate-2-criteria",
         ),
         _experiment(
             "wyscout_within_role_gate2",
@@ -143,7 +143,7 @@ def build_research_summary(
             "Team continuity is a stronger shortcut than the fingerprint in this same-season design.",
             ["same_season_team_confound"],
             SOURCE_FILES["robustness"],
-            "docs/robustness-checks.md#team-aware-baseline",
+            "docs/robustness-checks.md#check-3--baseline-c-role--team--minutes-the-important-result",
         ),
         _experiment(
             "wyscout_transferred_players",
@@ -193,7 +193,7 @@ def build_research_summary(
             "The cross-provider signal is not explained only by nominal role.",
             ["provider_replication_lower_magnitude", "same_season_team_confound"],
             SOURCE_FILES["statsbomb"],
-            "docs/statsbomb-replication.md#within-role-retrieval",
+            "docs/statsbomb-replication.md#headline-the-signal-replicates",
         ),
         _experiment(
             "statsbomb_transferred_players",
@@ -214,7 +214,7 @@ def build_research_summary(
             "The transferred-player effect is inconclusive in the smaller StatsBomb sample.",
             ["small_transfer_sample", "provider_replication_lower_magnitude"],
             SOURCE_FILES["statsbomb"],
-            "docs/statsbomb-replication.md#transferred-players",
+            "docs/statsbomb-replication.md#transferred-players-positive-but-inconclusive-again-weaker-here",
         ),
         _experiment(
             "wyscout_ratio_shrinkage",
