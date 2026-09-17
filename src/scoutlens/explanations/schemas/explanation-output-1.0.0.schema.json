@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scoutlens.dev/schemas/explanation-output-1.0.0.schema.json",
+  "title": "ScoutLens explanation output 1.0.0",
+  "description": "The only shape a model may return. Structure is necessary but never sufficient: validator.py enforces the grounding rules a schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "schema_version", "profile_key", "bundle_digest", "claims"],
+  "properties": {
+    "contract": { "const": "scoutlens.explanation" },
+    "schema_version": { "const": "1.0.0" },
+    "profile_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Must equal the bundle's profile_key."
+    },
+    "bundle_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The digest of the bundle this answers. Pairs an output with its evidence instead of trusting call order."
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["surface", "text", "evidence_ids"],
+        "properties": {
+          "surface": {
+            "enum": [
+              "similarity",
+              "feature_contribution",
+              "retrieval_outcome",
+              "provenance",
+              "limitation"
+            ],
+            "description": "The kind of statement. feature_contribution may rest only on weighted evidence."
+          },
+          "text": { "type": "string", "minLength": 1 },
+          "evidence_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "description": "Every claim is grounded. An uncited sentence has nothing to check."
+          },
+          "values": {
+            "type": "array",
+            "description": "Numbers asserted in the text, each tied to the field it came from.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["field", "value"],
+              "properties": {
+                "field": { "type": "string", "minLength": 1 },
+                "value": { "type": "number" },
+                "evidence_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Omit for retrieval-level fields the bundle publishes at its root."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "caveat_codes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Caveats carried. Mandatory set applies whenever any claim cites neighbour evidence."
+    }
+  }
+}

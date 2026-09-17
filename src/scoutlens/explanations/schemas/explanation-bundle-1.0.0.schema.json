@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scoutlens.dev/schemas/explanation-bundle-1.0.0.schema.json",
+  "title": "ScoutLens explanation bundle 1.0.0",
+  "description": "The complete, deterministic evidence a model may see for one profile. Anything absent here cannot be cited.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "schema_version",
+    "dataset_version",
+    "profile_key",
+    "subject",
+    "provenance",
+    "retrieval",
+    "neighbours",
+    "evidence",
+    "caveats",
+    "allowed_evidence_ids",
+    "bundle_digest"
+  ],
+  "properties": {
+    "contract": {
+      "const": "scoutlens.explanation"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "dataset_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "profile_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "display_name",
+        "role",
+        "season",
+        "competition"
+      ],
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "season": {
+          "type": "string",
+          "minLength": 1
+        },
+        "competition": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Which representation produced the numbers. Required so an explanation can never describe a score without saying what computed it.",
+      "required": [
+        "representation_id",
+        "ranking_method",
+        "feature_count",
+        "is_audit_baseline_bundle"
+      ],
+      "properties": {
+        "representation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Null only on the v1 audit path, which has no representation artifact."
+        },
+        "ranking_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "feature_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "feature_order_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prohibited_claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audit_baseline_method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "is_audit_baseline_bundle": {
+          "type": "boolean"
+        }
+      }
+    },
+    "retrieval": {
+      "type": "object",
+      "required": [
+        "method",
+        "self_rank",
+        "candidate_count",
+        "representation_id"
+      ],
+      "properties": {
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "query_period": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidate_period": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "self_rank": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "candidate_count": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "similarity_score": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "representation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uncertainty_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "neighbours": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "profile_key",
+          "display_name",
+          "rank",
+          "evidence_refs"
+        ],
+        "properties": {
+          "profile_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "similarity_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "representation_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stability_status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "median_rank": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "rank_ci_95": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "kind",
+          "subject",
+          "status"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "feature_contribution",
+              "family_contribution"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "family": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "feature_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "weighted",
+              "learned_zero",
+              "excluded",
+              "unmeasured"
+            ],
+            "description": "weighted is the only status that may support a feature-contribution claim. excluded means the representation never saw the feature; learned_zero means it did and assigned no weight."
+          },
+          "cosine_contribution": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "weighted_contribution": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "feature_weight": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "query_global_z": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "candidate_global_z": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "interpretation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "representation_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "caveats": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "minLength": 1
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "allowed_evidence_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The closed set of citable ids, in artifact order."
+    },
+    "bundle_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over the canonical bundle without this field. An accepted output must cite it."
+    }
+  }
+}
