@@ -2371,3 +2371,66 @@ fresh independent retest. Automated consistency is not human comprehension.
 
 **Tracking:** `scoutlens-9a3.15`; communication gate `scoutlens-9a3.7`; local AI
 toolkit `scoutlens-jtt.6`; RC gate `scoutlens-jtt.7.1`.
+
+---
+
+## D057 — 2026-09-17 — Two named exceptions for the local AI deliverables
+
+**Decision:** amend `docs/modeling-agent-contract.md` in three places so the
+already-planned local AI work is executable without an agent crossing a line:
+
+1. `artifacts/ai-evals/grounded-explanations-v1.json` becomes **Conditional,
+   regeneration only** — one path, not a directory. Other paths under
+   `artifacts/ai-evals/` stay Denied, so a second report needs a second
+   amendment rather than arriving by precedent.
+2. `python -m scoutlens.explanations.evals.run_report` is added to §4.2, the
+   sole authority on what may write an artifact.
+3. `README.md` splits: its **AI setup, CLI usage, adapter configuration and AI
+   status** sections become Conditional with `scoutlens-jtt.7.3` as reviewer;
+   every numerical result, scientific claim, licensing statement and provenance
+   line in the same file stays Denied.
+
+New §4.6 records what "deterministic" means for a generated artifact whose input
+is a model.
+
+**Why this is needed now.** Two planned beads contradicted the contract, and a
+bead never wins that argument — `CLAUDE.md` is explicit that if a contract and a
+bead disagree, the bead loses and the executor stops. `scoutlens-jtt.6.3` names
+an eval report under `artifacts/ai-evals/`, which is unlisted and therefore
+Denied by default, and which no §4.2 command produces. `scoutlens-jtt.6.4` names
+`README.md`, which is Denied outright. Left alone, both would have stopped their
+executor at the first write, or — worse — been worked around by someone reading
+the denial as an oversight.
+
+Fixing this in the eval bead itself was the tempting shortcut and is exactly what
+§1 forbids: *a contract is changed by its own bead, never in passing.*
+
+**Why the exceptions are this narrow.** A directory-wide permission would let any
+future AI artifact land without review, and `artifacts/*.json` result files are
+Denied for a reason the AI work does not change — a new run writes a new file and
+never overwrites a recorded one. The README split matters more than it looks: the
+denial exists to stop a modeling bead restating a scientific result or a licence
+in the project's front door, and permitting setup and CLI prose does not weaken
+that. The CLI sections explicitly may not restate a result.
+
+**What §4.6 adds, and why §4.1 was not enough.** A model is the one input here
+that is not reproducible by re-running it, so "run it twice and compare" needs a
+referent. The recorded report is therefore a **replay** of stored adapter
+responses, generated with no network call and no credential; it is bound to the
+bundle digests, prompt-contract version, adapter identifier and stored-response
+digest it replayed; and a live model run is separate, differently named telemetry
+that never overwrites it. Without that last rule an unreproducible number would
+eventually acquire the authority of a recorded one, which is the failure mode the
+whole artifact discipline exists to prevent.
+
+**What this does not authorize.** No provider SDK in the base runtime, no hosted
+runtime, no online-by-default path, no new dependency, no scientific artifact,
+threshold, metric or validation change, and no deployment. The default CI path
+stays fully offline. `flagship-ai-delivery` is unchanged: a person cloning the
+repository must still be able to configure their own adapter and run the same
+workflow.
+
+**How to apply:** `scoutlens-jtt.6.3` may write the one named report through the
+named command, under §4.1 plus §4.6. `scoutlens-jtt.6.4` may write the four named
+README sections and nothing else in that file. Anything wider is a new amendment,
+not an interpretation of this one.
