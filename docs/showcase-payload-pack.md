@@ -10,14 +10,22 @@ data.
 
 | Property | Value |
 |---|---|
-| Dataset | `wyscout-2017-18-v2-dc398ff5661c` |
+| Dataset | `wyscout-2017-18-v2-332766e3a822` |
 | Representation | `rep-f018e6041ccbad10` |
 | Manifest-declared paths | 1,257 |
 | Archive format | deterministic `tar+gzip` |
-| Archive bytes | 23,453,297 |
-| SHA-256 | `4a5c092d8d6fcee2a5f7a226fe79e7e89079ffb668c43f863da6259df5d29635` |
-| Immutable tag | `showcase-wyscout-2017-18-v2-dc398ff5661c-rep-f018e6041ccbad10` |
-| Asset | [`scoutlens-showcase-wyscout-2017-18-v2-dc398ff5661c-4a5c092d8d6fcee2a5f7a226fe79e7e89079ffb668c43f863da6259df5d29635.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v2-dc398ff5661c-rep-f018e6041ccbad10/scoutlens-showcase-wyscout-2017-18-v2-dc398ff5661c-4a5c092d8d6fcee2a5f7a226fe79e7e89079ffb668c43f863da6259df5d29635.tar.gz) |
+| Archive bytes | 23,451,200 |
+| SHA-256 | `d357540984e054748a06181620ba591af6a1190e5da4adce5800d49628d5ffec` |
+| Immutable tag | `showcase-wyscout-2017-18-v2-332766e3a822-rep-f018e6041ccbad10` |
+| Asset | [`scoutlens-showcase-wyscout-2017-18-v2-332766e3a822-d357540984e054748a06181620ba591af6a1190e5da4adce5800d49628d5ffec.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v2-332766e3a822-rep-f018e6041ccbad10/scoutlens-showcase-wyscout-2017-18-v2-332766e3a822-d357540984e054748a06181620ba591af6a1190e5da4adce5800d49628d5ffec.tar.gz) |
+
+**Repinned 2026-09-17 by `scoutlens-jtt.17`**, from `wyscout-2017-18-v2-dc398ff5661c`. The
+only source change was four `report_url` fragments in
+`src/scoutlens/showcase/research.py`, each of which had named a heading that did
+not exist. Because `dataset_version` is a content digest over every published
+artifact, correcting four strings necessarily repins the bundle — no metric,
+rank, ordering, caveat or interval moved. The previous release remains published
+and is never replaced (§4.4 item 3); a clone still pinned to it keeps working.
 
 The machine-readable authority is
 [`config/showcase-payload-pack.json`](../config/showcase-payload-pack.json).
@@ -78,6 +86,13 @@ the payload URL enters `config/showcase-payload-pack.json`.
 | SHA-256 | `99c273f50ac7c31507ed83dd8ad6b8350a60324f216ce41116760af0d7c5cea2` |
 | Members | `CHECKSUMS.json`, `README.md`, `run.json`, and the three `match_bootstrap_diagonal_v1` parquet summaries |
 | Asset | [`scoutlens-showcase-evidence-wyscout-2017-18-v2-dc398ff5661c-99c273f50ac7c31507ed83dd8ad6b8350a60324f216ce41116760af0d7c5cea2.tar.gz`](https://github.com/grunobuide/scoutlens/releases/download/showcase-wyscout-2017-18-v2-dc398ff5661c-rep-f018e6041ccbad10/scoutlens-showcase-evidence-wyscout-2017-18-v2-dc398ff5661c-99c273f50ac7c31507ed83dd8ad6b8350a60324f216ce41116760af0d7c5cea2.tar.gz) |
+
+This archive still sits on the `wyscout-2017-18-v2-dc398ff5661c` release tag and is
+correct there. It packs the `match_bootstrap_diagonal_v1` run outputs, which
+`scoutlens-jtt.17` did not touch, so republishing 1.6 MiB to change a label
+would create a second asset with identical contents. Its metadata therefore
+names the previous dataset version; hydration never reads it, and the payload
+pin above carries no reference to it.
 
 Verify it before use:
 
