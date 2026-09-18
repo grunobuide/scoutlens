@@ -598,6 +598,16 @@ representation `rep-f018e6041ccbad10`:
 | fingerprint features per period | 32 |
 | representation `feature_count` | 28; four catalog features carry no weight entry, and three fitted weights are exactly zero |
 
+**Dataset repinned 2026-09-17** to `wyscout-2017-18-v2-332766e3a822`
+(`scoutlens-jtt.17`, correcting four dead `report_url` fragments). The line above
+is left naming the dataset the audit actually ran against, because rewriting it
+would claim a check that did not happen. Every row in this table was re-verified
+against the new dataset and is unchanged — method, score fields,
+`representation_id`, uncertainty status and design version, the 40 evidence
+refs, all five caveat codes, 32 features per period and `feature_count` 28. Only
+`dataset_version` moved, which is what a content digest does when any published
+byte changes.
+
 No schema change, no artifact change and no new scientific field is required.
 The one correction the audit forced is delta 6: the 1.0.0 mandatory-caveat list
 named a code the published dataset does not carry.
