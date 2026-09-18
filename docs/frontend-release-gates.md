@@ -101,31 +101,30 @@ and `/science/`, and by `lab-mobile-hardening` at 320/360 for `/lab/` — the
 same test that excludes this component from its own Lab-owned sweep now
 points at where it is actually held.
 
-### 3.3 Four `report_url` anchors are dead — waived to the RC repin
+### 3.3 Four `report_url` anchors — fixed, and the waiver is gone
 
-Found by `scoutlens-9a3.7`'s link audit on its first run. All four `report_url`
-values that carry a `#fragment` point at headings that do not exist; the four
-without a fragment are correct. The "Read method" link lands at the top of the
-right document instead of the cited section.
+Found by `scoutlens-9a3.7`'s link audit on its first run: all four `report_url`
+values carrying a `#fragment` pointed at headings that did not exist, so the
+"Read method" link landed at the top of the right document instead of the cited
+section. The four without a fragment were always correct, so these were never
+rotted links — every anchor in the file was aspirational.
 
-Filed as `scoutlens-jtt.17`, which `scoutlens-jtt.7.1` depends on — the v1
-release candidate cannot be frozen with these still dead.
+**Closed 2026-09-18** by `scoutlens-jtt.17` (source) and `scoutlens-uze.16`
+(web). `KNOWN_DEAD_ANCHORS` and its companion staleness test are deleted;
+"every method link points at a document that exists" now runs unwaived.
 
-**Why it is waived rather than fixed.** `report_url` is published content.
-`builder.py` derives `dataset_version` from a content digest over every artifact
-and stamps the result into all of them, so correcting four strings repins the
-bundle. Measured with a real export at the published `--generated-at`:
-`dc398ff5661c` → `332766e3a822`, with **1,262 of 1,262 files changed and none
-byte-identical**. That drags the payload pack, its release tag and asset URL,
-the v2 e2e fixtures and two contract documents. `jtt.7.1` repins once; fixing it
-here would repin twice.
+**What the waiver cost, recorded because the shape recurs.** `report_url` is
+published content, and `builder.py` derives `dataset_version` from a content
+digest over every artifact, so correcting four strings repinned the whole
+bundle — measured at 1,262 of 1,262 files changed, none byte-identical. That
+required a new immutable release asset, which is outward-facing and outside a
+modeling agent's authority, so §4.4 of the modeling contract had it stop after
+building the pack and hand off. The waiver existed to keep the gate honest
+across that gap rather than to hide it.
 
-The four are enumerated in `KNOWN_DEAD_ANCHORS` in
-`e2e/claims-consistency.spec.ts` — the evidence-linked, explicitly enumerated
-form AC5 of `scoutlens-9a3.7` permits, not a disabled assertion. A fifth dead
-anchor still fails, and a companion test fails if a waived entry stops being
-published, so the waiver cannot outlive the defect. The verified replacement
-anchors are recorded on `jtt.17`.
+The companion test is what made the waiver safe to hold: it failed the moment
+the repin landed, naming the entries that no longer needed excusing. A waiver
+without one is indistinguishable from a permanent blind spot.
 
 ### 3.4 Forbidden-copy and currentness assertions
 

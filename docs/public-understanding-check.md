@@ -111,7 +111,7 @@ that the data is historical and roughly a decade old.
 continuously updated. Currentness inference is a named stop condition.
 
 **Evidence:** `manifest.source.season` (`"2017/18"`),
-`manifest.dataset_version` (`wyscout-2017-18-v2-dc398ff5661c`),
+`manifest.dataset_version` (`wyscout-2017-18-v2-332766e3a822`),
 `manifest.population.profile_count` (1257). Rendered by `DataVintageBadge` on
 `/` and `/science/`.
 
