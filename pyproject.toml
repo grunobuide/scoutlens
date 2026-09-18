@@ -11,7 +11,6 @@ dependencies = [
     "polars>=1.0",
     "requests>=2.32",
     "pyarrow>=17.0",
-    "fireworks-ai>=1.2.6",
 ]
 
 [dependency-groups]
