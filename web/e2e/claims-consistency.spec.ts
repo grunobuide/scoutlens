@@ -308,49 +308,6 @@ test("source and licence links point where the artifact says", async ({ page, re
   }
 });
 
-/**
- * The four dead anchors this gate found on its first run, awaiting the bundle
- * repin in `scoutlens-jtt.17`.
- *
- * **Why an enumerated exception rather than a weakened assertion.** `report_url`
- * is published content: `builder.py` derives `dataset_version` from a content
- * digest over every artifact and stamps it into all of them, so correcting these
- * four strings repins the whole bundle — measured at 1,262 of 1,262 files
- * changed, zero byte-identical — and requires a new immutable release asset.
- * `scoutlens-jtt.7.1` (freeze the v1 RC) repins once; doing it here would repin
- * twice. `jtt.7.1` depends on `jtt.17`, so the RC cannot be frozen with these
- * still dead.
- *
- * The form follows the rule AC5 of `scoutlens-9a3.7` states for exceptions —
- * "evidence-linked and explicitly enumerated rather than regex-disabled
- * globally" — applied here to an AC4 assertion, because the reasoning is the
- * same and the project should have one shape for a waiver, not two. A *fifth*
- * dead anchor still fails. The verified replacements are recorded on `jtt.17`;
- * when the repin lands, this constant goes to empty and the test tightens with
- * no other edit.
- */
-const KNOWN_DEAD_ANCHORS: readonly string[] = [
-  "docs/gate-2-decision.md#wyscout-global-retrieval",
-  "docs/robustness-checks.md#team-aware-baseline",
-  "docs/statsbomb-replication.md#within-role-retrieval",
-  "docs/statsbomb-replication.md#transferred-players",
-];
-
-test("the known dead anchors are still exactly the ones jtt.17 records", async ({ request }) => {
-  // Guards the exception itself. Without this, the repin could land, the four
-  // could be fixed, and KNOWN_DEAD_ANCHORS would silently go on excusing four
-  // report_urls that no longer need excusing - turning a temporary waiver into
-  // a permanent blind spot.
-  const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
-  const published = new Set(research.experiments.map((experiment) => experiment.report_url));
-
-  const stale = KNOWN_DEAD_ANCHORS.filter((entry) => !published.has(entry));
-  expect(
-    stale,
-    "a waived report_url is no longer published - remove it from KNOWN_DEAD_ANCHORS",
-  ).toEqual([]);
-});
-
 test("every method link points at a document that exists", async ({ request }) => {
   const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
 
@@ -361,9 +318,6 @@ test("every method link points at a document that exists", async ({ request }) =
   // deterministically.
   const broken: string[] = [];
   for (const experiment of research.experiments) {
-    if (KNOWN_DEAD_ANCHORS.includes(experiment.report_url)) {
-      continue;
-    }
     const [filePath, fragment] = experiment.report_url.split("#", 2);
     const absolute = join(REPOSITORY_ROOT, filePath ?? "");
 
