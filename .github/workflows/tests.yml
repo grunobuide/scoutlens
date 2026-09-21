@@ -31,7 +31,8 @@ jobs:
       # this step the explanation contract, the adapter boundary and the eval
       # gate reported nothing on a pull request while the job went green —
       # 54 tests on main, 384 after scoutlens-jtt.6.3. See scoutlens-iex.10.
-      - run: uv run --frozen python -m scoutlens.showcase.payload hydrate
+      - name: Hydrate the showcase payload
+        run: .github/scripts/hydrate-showcase.sh
       # And this is what keeps the step above from being dropped again: with it
       # set, an absent payload is a collection error naming the remedy, not a
       # silent skip.
@@ -69,7 +70,8 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen
         working-directory: .
-      - run: uv run --frozen python -m scoutlens.showcase.payload hydrate
+      - name: Hydrate the showcase payload
+        run: .github/scripts/hydrate-showcase.sh
         working-directory: .
       - uses: pnpm/action-setup@v6.0.8
         with:

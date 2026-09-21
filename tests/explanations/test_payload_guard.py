@@ -79,12 +79,17 @@ def test_the_ci_workflow_hydrates_before_pytest() -> None:
     someone removes it. The two together are the whole fix — the hydrate step
     makes the tests run, and the flag makes its removal loud.
     """
-    workflow = Path(explanations_conftest.REPO_ROOT) / ".github" / "workflows" / "tests.yml"
+    github = Path(explanations_conftest.REPO_ROOT) / ".github"
+    workflow = github / "workflows" / "tests.yml"
     if not workflow.exists():  # pragma: no cover - not every checkout ships CI config
         pytest.skip("no workflow file in this checkout")
 
     text = workflow.read_text(encoding="utf-8")
-    hydrate = text.index("scoutlens.showcase.payload hydrate")
+    hydrate = text.index("hydrate-showcase.sh")
     pytest_run = text.index("pytest -q")
     assert hydrate < pytest_run, "hydrate must come before the pytest run it feeds"
     assert 'SCOUTLENS_REQUIRE_SHOWCASE: "1"' in text
+
+    script = github / "scripts" / "hydrate-showcase.sh"
+    assert script.exists(), "the workflow calls a script that is not in the checkout"
+    assert "scoutlens.showcase.payload hydrate" in script.read_text(encoding="utf-8")
