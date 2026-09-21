@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from conftest import requires_showcase, requires_v1
+from conftest import requires_showcase
 
 from scoutlens.explanations import validate_output, validate_output_schema
 from scoutlens.explanations.evals import degrade
@@ -27,7 +27,6 @@ def artifacts() -> ShowcaseArtifacts:
     return ShowcaseArtifacts()
 
 
-@requires_v1
 @pytest.mark.parametrize("case", build_corpus(), ids=lambda case: case.case_id)
 def test_the_fallback_validates_against_every_bundle_in_the_corpus(
     case: Any, artifacts: ShowcaseArtifacts

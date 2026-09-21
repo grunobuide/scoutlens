@@ -20,11 +20,13 @@ from scoutlens.explanations.evals.corpus import (
     ALIGNMENT_BANDS,
     ALIGNMENT_SELECTION,
     DEGRADED_FAMILY,
+    REPRODUCIBLE_DIMENSIONS,
     SMALL_SAMPLE_SELECTION,
     Dimension,
     Expectation,
     ShowcaseArtifacts,
     alignment_matrix,
+    audit_cases,
     build_corpus,
     coverage_matrix,
     materialise,
@@ -52,12 +54,28 @@ def test_the_corpus_meets_its_declared_size() -> None:
     assert len({case.case_id for case in cases}) == len(cases)
 
 
-def test_every_declared_dimension_has_a_case() -> None:
+def test_every_reproducible_dimension_has_a_case() -> None:
     """A dimension nobody exercises is a coverage claim with nothing behind it."""
     matrix = coverage_matrix()
     uncovered = sorted(name for name, ids in matrix.items() if not ids)
-    assert not uncovered, f"declared but never exercised: {uncovered}"
+    assert uncovered == [str(Dimension.SEMANTICS_AUDIT_BASELINE)], (
+        f"exactly one dimension is out of reach of a clean clone; found {uncovered}"
+    )
+    for dimension in REPRODUCIBLE_DIMENSIONS:
+        assert matrix[str(dimension)], f"declared but never exercised: {dimension}"
     assert set(matrix) == {str(dimension) for dimension in Dimension}
+
+
+def test_no_case_in_the_corpus_needs_a_v1_payload() -> None:
+    """The regression that broke main, asserted rather than remembered.
+
+    A v1 case passes on any machine with a pre-repin payload lying around and
+    fails everywhere else, which is the worst possible failure mode: green for
+    the author, red for everyone. Worse, it would make the recorded report
+    underivable in CI, and an artifact CI cannot regenerate cannot be checked.
+    """
+    v1 = [case.case_id for case in build_corpus() if case.major != 2]
+    assert not v1, f"these cases need a payload no clean clone can hydrate: {v1}"
 
 
 def test_the_alignment_matrix_reports_its_one_empty_cell() -> None:
@@ -127,7 +145,6 @@ def test_mutations_needing_setup_are_given_it(artifacts: ShowcaseArtifacts) -> N
             assert material.expected_rule == MUTATIONS[case.mutation][1]
 
 
-@requires_v1
 @pytest.mark.parametrize("case", build_corpus(), ids=lambda case: case.case_id)
 def test_every_case_does_what_it_says(case: Any, artifacts: ShowcaseArtifacts) -> None:
     """The suite, case by case, so a failure names the one that broke."""
@@ -235,8 +252,6 @@ def test_every_synthesised_response_is_json_serialisable(
     case: Any, artifacts: ShowcaseArtifacts
 ) -> None:
     """The replay digest is taken over these; an unserialisable one would break it."""
-    if case.major == 1 and not (artifacts.root / "v1" / "players").exists():
-        pytest.skip("requires a hydrated v1 payload")
     material = materialise(case, artifacts)
     json.dumps(material.response, sort_keys=True)
 
@@ -251,6 +266,25 @@ def test_every_accepted_response_matches_the_output_schema(
 ) -> None:
     """Schema first, grounding second. A case that failed the schema would be
     rejected for a reason that says nothing about what it was written to test."""
-    if case.major == 1 and not (artifacts.root / "v1" / "players").exists():
-        pytest.skip("requires a hydrated v1 payload")
     validate_output_schema(materialise(case, artifacts).response)
+
+
+# --- the audit-baseline set, which no clean clone can reach -----------------
+
+
+@requires_v1
+@pytest.mark.parametrize("case", audit_cases(), ids=lambda case: case.case_id)
+def test_the_audit_cases_still_hold_where_v1_exists(
+    case: Any, artifacts: ShowcaseArtifacts
+) -> None:
+    """Kept out of the corpus, not abandoned.
+
+    These cover the one thing the v2 corpus cannot: that cosine legitimately
+    *is* the score under the frozen v1 baseline, and that saying so is correct
+    rather than the `cosine_as_primary` error. They contribute to no recorded
+    number, so they cannot make the report depend on a payload CI lacks.
+    """
+    result = run_case(case, artifacts)
+    assert result.as_expected, (
+        f"{case.case_id}: {result.diagnostic.summary if result.diagnostic else 'unexpected'}"
+    )

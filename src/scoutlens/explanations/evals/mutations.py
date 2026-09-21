@@ -249,16 +249,25 @@ def substituted_v1_field_name(
     return output
 
 
-def substituted_v1_retrieval(
+def substituted_baseline_retrieval(
     output: dict[str, Any], bundle: dict[str, Any], context: dict[str, Any]
 ) -> dict[str, Any]:
-    """States the rank the v1 baseline gave this player, in a v2 explanation.
+    """States the minutes-baseline rank where the global rank belongs.
 
-    Both numbers are real and both are published; only one belongs to the
-    representation that produced this bundle. Nothing in the sentence looks
-    invented, which is why it needs a numeric check and not a phrase list.
+    A v2 profile publishes two retrievals: the global one the representation
+    produced, and a `baseline_role_minutes` control. On the canonical profile
+    they are 1 and 249 — the same player, the same artifact, two numbers that
+    answer different questions.
+
+    Both are real and both are published, so nothing in the sentence looks
+    invented; only a numeric check against the field actually cited can catch
+    it. This replaced an earlier version that quoted the *v1* rank: that needed
+    a v1 payload, which a clean clone cannot obtain, and a case that cannot run
+    where the report is generated is not a case.
     """
-    _claim(output, "retrieval_outcome")["values"][0]["value"] = _require(context, "v1_self_rank")
+    _claim(output, "retrieval_outcome")["values"][0]["value"] = _require(
+        context, "baseline_self_rank"
+    )
     return output
 
 
@@ -382,7 +391,7 @@ MUTATIONS: dict[str, tuple[Mutation, str]] = {
     "cosine_as_primary": (cosine_as_primary, "claim.cosine_as_primary"),
     "similarity_named_cosine": (similarity_named_cosine, "claim.cosine_as_primary"),
     "substituted_v1_field_name": (substituted_v1_field_name, "claim.value_field"),
-    "substituted_v1_retrieval": (substituted_v1_retrieval, "claim.value_mismatch"),
+    "substituted_baseline_retrieval": (substituted_baseline_retrieval, "claim.value_mismatch"),
     "similarity_called_confidence": (similarity_called_confidence, "claim.value_field"),
     "recommendation": (recommendation, "claim.forbidden_intent.recommendation"),
     "quality_claim": (quality_claim, "claim.forbidden_intent.quality_judgement"),
@@ -403,7 +412,7 @@ REQUIRES_SETUP: frozenset[str] = frozenset(
     {
         "missing_evidence_citation",
         "stale_representation_provenance",
-        "substituted_v1_retrieval",
+        "substituted_baseline_retrieval",
         "unmeasured_as_weighted",
     }
 )

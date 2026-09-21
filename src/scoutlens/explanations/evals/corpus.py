@@ -14,6 +14,12 @@ keys are constants, and `tests/explanations` re-reads each pinned profile and
 asserts it still sits in the band it was pinned into. A repin that moves a
 profile fails loudly instead of quietly re-scoping the eval.
 
+**The corpus is what a clean clone plus `hydrate` can reproduce.** There is
+one payload pin and it hydrates v2, so no v1 case is in here — `audit_cases`
+explains what that cost and why the alternative was worse. A corpus that needed
+data CI cannot obtain would make the recorded report unverifiable in CI, which
+is the whole reason the report is committed.
+
 **One cell of the matrix is empty, and stays empty.** No goalkeeper in the
 published data aligns weakly: the lowest goalkeeper similarity is well inside
 the `lower_mid` band. The matrix reports that cell as absent rather than
@@ -103,6 +109,18 @@ class Dimension(StrEnum):
 
     PROVIDER_FAILURE = "provider:failure"
     OUTPUT_UNUSABLE = "provider:unusable_output"
+
+
+#: Dimensions a clean clone can actually exercise, and the corpus must cover.
+#:
+#: All of them but one. `SEMANTICS_AUDIT_BASELINE` needs a v1 payload, and the
+#: single pin `scoutlens-jtt.17` left behind hydrates v2 only, so no clean clone
+#: can reach it — see `audit_cases`. It stays a named member rather than being
+#: deleted, because the gap is a fact about the published data that a reader of
+#: the coverage matrix should see, exactly like the empty goalkeeper cell.
+REPRODUCIBLE_DIMENSIONS: frozenset[Dimension] = frozenset(Dimension) - {
+    Dimension.SEMANTICS_AUDIT_BASELINE
+}
 
 
 class Degradation(StrEnum):
@@ -214,7 +232,7 @@ _MUTATION_DIMENSIONS: dict[str, tuple[Dimension, ...]] = {
     "cosine_as_primary": (Dimension.SEMANTICS_V1_V2,),
     "similarity_named_cosine": (Dimension.SEMANTICS_V1_V2,),
     "substituted_v1_field_name": (Dimension.SEMANTICS_V1_V2,),
-    "substituted_v1_retrieval": (Dimension.SEMANTICS_V1_V2,),
+    "substituted_baseline_retrieval": (Dimension.SEMANTICS_V1_V2,),
     "similarity_called_confidence": (Dimension.SEMANTICS_V1_V2,),
     "recommendation": (Dimension.INTENT_RECRUITMENT,),
     "quality_claim": (Dimension.INTENT_FORBIDDEN_OTHER,),
@@ -451,9 +469,29 @@ def _degraded_cases() -> list[EvalCase]:
     ]
 
 
-def _audit_cases() -> list[EvalCase]:
-    """The v1 cosine baseline, reached only by asking for it."""
-    return [
+def audit_cases() -> tuple[EvalCase, ...]:
+    """The v1 cosine baseline, reached only by asking for it — and only locally.
+
+    **Not part of `build_corpus`, and that is a correctness requirement rather
+    than a preference.** There is one payload pin and `scoutlens-jtt.17`
+    repinned it to v2, so `python -m scoutlens.showcase.payload hydrate` yields
+    v2 and nothing else. A clean clone — CI included — cannot obtain a v1
+    payload at all.
+
+    The first version of this corpus included these cases anyway, because the
+    machine it was written on still had a v1 tree left over from before the
+    repin. Every whole-corpus test then passed locally and failed the moment CI
+    hydrated v2 only. The deeper problem was worse than the red build: the
+    recorded report would have been derived from data nobody else could obtain,
+    so `run_report --check` could never have run in CI, which is the entire
+    point of committing the artifact.
+
+    So the rule is now explicit: **the corpus is what a clean clone plus
+    `hydrate` can reproduce.** These cases still run, on a machine that happens
+    to have a v1 payload, guarded by `requires_v1`. They contribute to no
+    recorded number.
+    """
+    return tuple(
         _case(
             f"accept-audit-baseline-{profile_key}",
             profile_key,
@@ -463,7 +501,7 @@ def _audit_cases() -> list[EvalCase]:
             note="cosine is the score here, and saying so is correct",
         )
         for profile_key in AUDIT_PROFILES
-    ]
+    )
 
 
 def _mutation_cases() -> list[EvalCase]:
@@ -544,7 +582,6 @@ def build_corpus() -> tuple[EvalCase, ...]:
         *_small_sample_cases(),
         *_taxonomy_cases(),
         *_degraded_cases(),
-        *_audit_cases(),
         *_mutation_cases(),
         *_failure_cases(),
     ]
@@ -627,9 +664,11 @@ def _mutation_context(case: EvalCase, artifacts: ShowcaseArtifacts) -> dict[str,
         block = artifacts.representation()
         block = block.get("representation", block)
         return {"stale_representation_id": block["id"]}
-    if case.mutation == "substituted_v1_retrieval":
-        v1 = artifacts.profile(case.profile_key, major=1)
-        return {"v1_self_rank": v1["retrieval"]["global"]["self_rank"]}
+    if case.mutation == "substituted_baseline_retrieval":
+        # Both retrievals live in the same v2 profile, so this needs no second
+        # artifact and no payload a clean clone cannot obtain.
+        retrieval = artifacts.profile(case.profile_key)["retrieval"]
+        return {"baseline_self_rank": retrieval["baseline_role_minutes"]["self_rank"]}
     return {}
 
 
@@ -672,6 +711,7 @@ __all__ = [
     "AUDIT_PROFILES",
     "CANONICAL_PROFILE",
     "CORPUS_VERSION",
+    "REPRODUCIBLE_DIMENSIONS",
     "DEGRADED_FAMILY",
     "SECONDARY_PROFILE",
     "SMALL_SAMPLE_SELECTION",
@@ -683,6 +723,7 @@ __all__ = [
     "MaterialisedCase",
     "ShowcaseArtifacts",
     "alignment_matrix",
+    "audit_cases",
     "build_corpus",
     "coverage_matrix",
     "materialise",
