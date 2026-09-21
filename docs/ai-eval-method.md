@@ -48,8 +48,35 @@ Asserting the *rule* rather than merely "rejected" is what keeps the suite
 honest. A case that failed for an unrelated reason would still be "rejected" and
 would report a guard as working when it never ran.
 
-The shipped corpus is **66 cases**: 29 `accept`, 29 `reject`, 8 `fallback`.
+The shipped corpus is **64 cases**: 27 `accept`, 29 `reject`, 8 `fallback`.
 Version `1.0.0`, pinned to dataset `wyscout-2017-18-v2-332766e3a822`.
+
+### 2.1 The corpus is what a clean clone can reproduce
+
+There is one payload pin and `scoutlens-jtt.17` repinned it to v2, so
+`python -m scoutlens.showcase.payload hydrate` produces v2 and nothing else. No
+clean clone — CI included — can obtain a v1 payload.
+
+The first version of this corpus included two v1 audit-baseline cases anyway,
+because the machine it was written on still had a v1 tree left over from before
+that repin. Every whole-corpus test passed locally and failed the moment CI
+hydrated v2 only. **The red build was the smaller problem.** The recorded report
+would have been derived from data nobody else could obtain, so
+`run_report --check` could never have run in CI — which is the entire reason the
+artifact is committed.
+
+So the rule is explicit: the corpus is what a clean clone plus `hydrate` can
+reproduce. The audit-baseline cases still exist, in
+`scoutlens.explanations.evals.corpus.audit_cases`, guarded by `requires_v1` and
+contributing to no recorded number. The cost is one empty dimension,
+`semantics:audit_baseline`, reported as empty rather than quietly dropped — the
+same treatment as the empty goalkeeper cell below.
+
+One mutation changed with it. `substituted_v1_retrieval` quoted the v1 rank;
+`substituted_baseline_retrieval` quotes the `baseline_role_minutes` rank
+instead. Both numbers live in the same v2 profile — 1 and 249 on the canonical
+one — so it is the same class of error, better grounded, and reachable
+everywhere.
 
 ### Derived, never authored
 
@@ -108,11 +135,11 @@ coverage claim with nothing behind it.
 | `role:defender` | 5 | | `uncertainty:insufficient` | 2 |
 | `role:midfielder` | 5 | | `representation:mismatch` | 2 |
 | `role:forward` | 5 | | `semantics:v1_v2_confusion` | 6 |
-| `alignment:strong` | 4 | | `semantics:audit_baseline` | 2 |
+| `alignment:strong` | 4 | | `semantics:audit_baseline` | **0** — see §2.1 |
 | `alignment:upper_mid` | 4 | | `sample:small` | 4 |
 | `alignment:lower_mid` | 4 | | `fabrication` | 9 |
 | `alignment:weak` | 3 | | `intent:forbidden_recruitment` | 4 |
-| `evidence:weighted` | 18 | | `intent:forbidden_other` | 4 |
+| `evidence:weighted` | 16 | | `intent:forbidden_other` | 4 |
 | `evidence:excluded` | 3 | | `attack:injection` | 2 |
 | `evidence:learned_zero` | 3 | | `provider:failure` | 6 |
 | `evidence:unmeasured` | 3 | | `provider:unusable_output` | 2 |
@@ -172,19 +199,19 @@ only supported ones was.
 
 | Metric | Population | Result |
 |---|---|---|
-| `supported_entity_rate` | accept cases + cases built to trip an entity rule | 1.0 (35/35) |
-| `supported_number_rate` | accept cases + cases built to trip a numeric rule | 1.0 (34/34) |
-| `critical_caveat_retention` | accept cases + cases built to drop a caveat | 1.0 (31/31) |
+| `supported_entity_rate` | accept cases + cases built to trip an entity rule | 1.0 (33/33) |
+| `supported_number_rate` | accept cases + cases built to trip a numeric rule | 1.0 (32/32) |
+| `critical_caveat_retention` | accept cases + cases built to drop a caveat | 1.0 (29/29) |
 | `forbidden_claim_rejection` | every safety-critical mutation | 1.0 (16/16) |
 | `degraded_fallback_correctness` | every case that produced a fallback | 1.0 (37/37) |
 | `expected_rule_precision` | every reject case | 1.0 (29/29) |
-| `structured_validity_rate` | every case where content arrived | 0.983 (59/60) |
+| `structured_validity_rate` | every case where content arrived | 0.983 (57/58) |
 
 Each rate's denominator is recorded beside it. A rate over an empty denominator
 reports 1.0 with a `count` of 0, and a test asserts no denominator in the shipped
 corpus is empty — that is how a vacuous pass would otherwise hide.
 
-`structured_validity_rate` is 59/60 by design: one case exists precisely because
+`structured_validity_rate` is 57/58 by design: one case exists precisely because
 a model can return valid JSON that is not an explanation, and it must fail the
 schema. It is reported, not gated, in the replay; it is the **headline in a live
 run**, where it is the only thing a model can be fairly asked for.
