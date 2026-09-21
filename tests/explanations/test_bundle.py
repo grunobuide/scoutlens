@@ -95,6 +95,7 @@ def test_a_profile_missing_a_required_field_is_refused_not_patched(
         build_bundle(broken, representation)
 
 
+@requires_v1
 def test_a_v1_profile_is_not_silently_upgraded(
     v1_profile: dict[str, Any], representation: dict[str, Any]
 ) -> None:
