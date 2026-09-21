@@ -3,3 +3,9 @@ public/showcase/v2/*.json text eol=lf
 config/showcase-payload-pack.json text eol=lf
 src/scoutlens/showcase/schemas/*.json text eol=lf
 web/src/contracts/generated/* text eol=lf
+
+# Shell scripts run on the Linux CI runner. CRLF would make the shebang
+# unreadable there ("bad interpreter: /usr/bin/env bash^M"), and this repo is
+# developed on Windows, so the guarantee is written down rather than left to
+# each clone's core.autocrlf.
+*.sh text eol=lf

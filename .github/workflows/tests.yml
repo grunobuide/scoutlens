@@ -26,7 +26,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - run: uv sync --frozen --all-groups
+      # public/showcase/*/players/ is gitignored, so a fresh checkout has no
+      # profiles and every test guarded by `requires_showcase` skips. Without
+      # this step the explanation contract, the adapter boundary and the eval
+      # gate reported nothing on a pull request while the job went green —
+      # 54 tests on main, 384 after scoutlens-jtt.6.3. See scoutlens-iex.10.
+      - name: Hydrate the showcase payload
+        run: .github/scripts/hydrate-showcase.sh
+      # And this is what keeps the step above from being dropped again: with it
+      # set, an absent payload is a collection error naming the remedy, not a
+      # silent skip.
       - run: uv run --frozen pytest -q
+        env:
+          SCOUTLENS_REQUIRE_SHOWCASE: "1"
 
   static-quality:
     runs-on: ubuntu-latest
@@ -58,7 +70,8 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen
         working-directory: .
-      - run: uv run --frozen python -m scoutlens.showcase.payload hydrate
+      - name: Hydrate the showcase payload
+        run: .github/scripts/hydrate-showcase.sh
         working-directory: .
       - uses: pnpm/action-setup@v6.0.8
         with:
