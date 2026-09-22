@@ -16,8 +16,9 @@ from typing import Any
 import pytest
 from conftest import requires_showcase
 
+from scoutlens.explanations.artifacts import ShowcaseArtifacts
 from scoutlens.explanations.evals import report as report_module
-from scoutlens.explanations.evals.corpus import ShowcaseArtifacts, build_corpus
+from scoutlens.explanations.evals.corpus import build_corpus
 from scoutlens.explanations.evals.report import GENERATED_BY, response_set_digest
 from scoutlens.explanations.evals.run_report import (
     ARTIFACT_PATH,
@@ -157,18 +158,17 @@ def test_the_committed_artifact_is_what_the_command_produces(
     This is the CI form of the modeling contract's condition 3: the diff is
     explainable as the bead's change because the file is not hand-writable.
 
-    Skipped while the artifact is absent, which today means *untracked*:
-    `.gitignore:3` is `artifacts/*` and the negation that would let this one
-    file be committed is `scoutlens-iex.9`'s to add — `.gitignore` is Denied to
-    the modeling track with no reviewer. The skip is deliberately narrow, so the
-    day the file is tracked this starts guarding it without anyone remembering
-    to re-enable it.
+    The artifact is tracked as of `scoutlens-iex.9`, so this no longer skips on
+    a normal checkout — it skipped for as long as `.gitignore` made the file
+    untrackable, which is precisely how long "regenerated, never edited" went
+    unchecked. The guard stays for the one case left: someone deleted the file
+    locally, where a missing-file error would say less than this message does.
     """
     if not ARTIFACT_PATH.exists():
         pytest.skip(
-            f"{ARTIFACT_PATH.name} is not present. Generate it with "
-            "'python -m scoutlens.explanations.evals.run_report'; it becomes a tracked "
-            "file under scoutlens-iex.9."
+            f"{ARTIFACT_PATH.name} is missing from the checkout. It is a tracked file; "
+            "restore it with 'git checkout -- artifacts/ai-evals/' or regenerate it with "
+            "'python -m scoutlens.explanations.evals.run_report'."
         )
     _, payload = generated
     assert ARTIFACT_PATH.read_bytes() == payload, (

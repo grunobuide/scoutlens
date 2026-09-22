@@ -30,11 +30,8 @@ from pathlib import Path
 from typing import Any
 
 from scoutlens.explanations.adapters.conformance import load_adapter
-from scoutlens.explanations.evals.corpus import (
-    CORPUS_VERSION,
-    CorpusUnavailable,
-    ShowcaseArtifacts,
-)
+from scoutlens.explanations.artifacts import ShowcaseArtifacts, ShowcaseUnavailable
+from scoutlens.explanations.evals.corpus import CORPUS_VERSION
 from scoutlens.explanations.evals.metrics import compute_metrics
 from scoutlens.explanations.evals.runner import LIVE, CorpusRun, live_cases, run_corpus
 from scoutlens.explanations.evals.thresholds import PREREGISTERED, evaluate_live_gate
@@ -179,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     artifacts = ShowcaseArtifacts()
     try:
         runs = [run_once(adapter, artifacts) for _ in range(args.runs)]
-    except CorpusUnavailable as error:
+    except ShowcaseUnavailable as error:
         print(f"cannot run: {error}", file=sys.stderr)
         return EXIT_UNAVAILABLE
 
