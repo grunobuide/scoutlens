@@ -363,11 +363,24 @@ def test_an_unknown_profile_does_not_tell_you_to_hydrate(
 
 
 def test_v1_is_reachable_only_by_asking_for_it(artifacts: ShowcaseArtifacts) -> None:
-    """`jtt.6.1` refuses a v1 profile that was not explicitly flagged."""
+    """`jtt.6.1` refuses a v1 profile that was not explicitly flagged.
+
+    The guard is in `_profile_major`, which reads `schema_version` and refuses
+    before touching anything else — so a v1-shaped dict exercises it exactly and
+    a v1 *payload* is not needed.
+
+    The first version of this test read a real v1 profile, which a clean clone
+    cannot obtain: one payload pin, hydrating v2 only. It passed here and failed
+    on a fresh clone. That is the same mistake that broke `main` in #115, made
+    again in the bead that was meant to have learned it, and caught only because
+    the clean-clone run in `jtt.6` AC2 was actually performed rather than
+    assumed.
+    """
     from scoutlens.explanations import BundleError, build_bundle
 
+    v1_shaped = {"schema_version": "1.0.0"}
     with pytest.raises(BundleError, match="audit_baseline"):
-        build_bundle(artifacts.profile(CANONICAL, major=1), artifacts.representation())
+        build_bundle(v1_shaped, artifacts.representation())
 
 
 @requires_v1
