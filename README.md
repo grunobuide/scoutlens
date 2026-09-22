@@ -148,6 +148,92 @@ uv build
 SCOUTLENS_DRIFT=1 uv run --frozen pytest tests/evaluation/test_artifact_drift.py
 ```
 
+## Local AI explanations
+
+Four sections, permitted by `D057` for setup, CLI usage, adapter configuration
+and status. They describe how to run the tool. They restate no result: the
+numbers live in [`docs/ai-eval-method.md`](docs/ai-eval-method.md) and in the
+report it describes.
+
+### AI setup
+
+No extra dependency, no credential, no account. The toolkit is part of the
+package and its default path is offline.
+
+```bash
+uv sync --frozen --all-groups
+uv run --frozen python -m scoutlens.showcase.payload hydrate
+```
+
+There is no AI anywhere in the published website, and nothing here runs in a
+browser or a backend. It is a local command-line tool.
+
+### CLI usage
+
+Generate one grounded explanation of a published profile, with no model:
+
+```bash
+uv run --frozen python -m scoutlens.explanations.cli explain --profile wy-8287-c-795
+```
+
+The default explainer builds the explanation the bundle supports, directly from
+the bundle, and the output says so. Its purpose is to show the contract is
+satisfiable and to set the bar a model is then held to — the same validator, no
+exemption for being a model.
+
+```bash
+# valid profile keys to try
+uv run --frozen python -m scoutlens.explanations.cli profiles --limit 10
+
+# the full record, including provenance and telemetry
+uv run --frozen python -m scoutlens.explanations.cli explain --profile wy-8287-c-795 --format json
+
+# reproduce the committed evaluation report without writing it
+uv run --frozen python -m scoutlens.explanations.evals.run_report --check
+```
+
+Exit codes: `0` validated, `1` the generated answer was refused and the
+deterministic fallback was returned, `2` artifacts missing, `3` usage error,
+`4` an adapter tried to reach the network while offline. A refused answer is
+never printed, written or persisted.
+
+Full walkthrough: [`docs/ai-explanation-cli.md`](docs/ai-explanation-cli.md).
+
+### Adapter configuration
+
+An adapter is any object with `adapter_id`, `adapter_version`, `model_id` and
+`complete(request)` — nothing provider-specific. Point the CLI at a
+zero-argument factory and nothing in this repository needs editing:
+
+```bash
+uv run --frozen python -m scoutlens.explanations.cli conformance --adapter mypackage.myadapter:build
+uv run --frozen python -m scoutlens.explanations.cli explain     --profile wy-8287-c-795 --adapter mypackage.myadapter:build --online
+```
+
+`--online` is required for any network access and is enforced rather than
+promised: on the default path a socket attempt fails. Credentials are read only
+from `SCOUTLENS_MODEL_API_KEY` in the environment — there is no flag that
+carries one, because arguments land in shell history, `ps` output and CI logs.
+
+The shipped reference adapter speaks the OpenAI-compatible wire format to any
+`base_url` you configure (llama.cpp, vLLM, Ollama, a hosted service), with no
+provider SDK in the base runtime. See
+[`docs/ai-adapter-guide.md`](docs/ai-adapter-guide.md).
+
+### AI status
+
+Delivered: the explanation contract and its validator, the provider-neutral
+adapter boundary with a conformance suite, the evaluation corpus and its
+preregistered gate, the deterministic fallback, and this CLI.
+
+Not delivered: **no demonstration model has been evaluated.** The live harness,
+the preregistered threshold and the drop rule all exist and are tested, but no
+model has been run against them, so the live gate records `not_run` — which is
+deliberately distinct from a pass. Anyone with an endpoint can close that loop
+with `run_live`; until someone does, this project makes no claim about any
+model's behaviour.
+
+
 ## Read the research trail
 
 1. [Final feasibility report](docs/feasibility-report.md) — claims, results,

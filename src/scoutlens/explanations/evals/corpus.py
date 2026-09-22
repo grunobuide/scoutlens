@@ -29,14 +29,16 @@ and a band chosen to be populated measures nothing.
 
 from __future__ import annotations
 
-import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from scoutlens.explanations.adapters.protocol import FailureReason
+from scoutlens.explanations.artifacts import (
+    ShowcaseArtifacts,
+    ShowcaseUnavailable,
+)
 from scoutlens.explanations.bundle import BundleOptions, build_bundle
 from scoutlens.explanations.evals import degrade
 from scoutlens.explanations.evals.mutations import MUTATIONS, apply_mutation
@@ -46,12 +48,12 @@ from scoutlens.explanations.policy import EvidenceStatus
 CORPUS_VERSION = "1.0.0"
 """Bumped when a case is added, removed or re-expected. Recorded in the report."""
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-DEFAULT_SHOWCASE_ROOT = REPO_ROOT / "public" / "showcase"
-
-
-class CorpusUnavailable(RuntimeError):
-    """The published artifacts this corpus is derived from are not present."""
+#: Kept as the name the eval suite and its tests have always used.
+#:
+#: The reader and its exception moved to `explanations.artifacts` when the CLI
+#: needed them too (`jtt.6.4`). One definition, two consumers; this alias means
+#: the move cost no caller a rename.
+CorpusUnavailable = ShowcaseUnavailable
 
 
 class Expectation(StrEnum):
@@ -301,46 +303,6 @@ class MaterialisedCase:
     bundle: dict[str, Any]
     response: dict[str, Any] | None
     expected_rule: str | None = None
-
-
-@dataclass
-class ShowcaseArtifacts:
-    """Reads the published artifacts a case is derived from.
-
-    Holds no state beyond a cache. Missing artifacts raise `CorpusUnavailable`
-    rather than yielding an empty corpus, because an eval that reports zero
-    cases passing zero checks would otherwise look like a clean run.
-    """
-
-    root: Path = field(default_factory=lambda: DEFAULT_SHOWCASE_ROOT)
-    _cache: dict[tuple[int, str], dict[str, Any]] = field(default_factory=dict, repr=False)
-
-    def available(self) -> bool:
-        return (self.root / "v2" / "representation.json").exists()
-
-    def _read(self, path: Path) -> dict[str, Any]:
-        if not path.exists():
-            raise CorpusUnavailable(
-                f"{path} is not present. Hydrate the showcase payload first: "
-                "uv run --frozen python -m scoutlens.showcase.payload hydrate"
-            )
-        return json.loads(path.read_text(encoding="utf-8"))
-
-    def profile(self, profile_key: str, *, major: int = 2) -> dict[str, Any]:
-        cached = self._cache.get((major, profile_key))
-        if cached is None:
-            cached = self._read(self.root / f"v{major}" / "players" / f"{profile_key}.json")
-            self._cache[(major, profile_key)] = cached
-        return cached
-
-    def representation(self) -> dict[str, Any]:
-        return self._read(self.root / "v2" / "representation.json")
-
-    def dataset_version(self) -> str:
-        return str(self._read(self.root / "v2" / "manifest.json")["dataset_version"])
-
-    def index(self) -> list[dict[str, Any]]:
-        return list(self._read(self.root / "v2" / "players.index.json")["profiles"])
 
 
 def _case(

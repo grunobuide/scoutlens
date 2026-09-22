@@ -28,7 +28,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from scoutlens.explanations.evals.corpus import REPO_ROOT, CorpusUnavailable, ShowcaseArtifacts
+from scoutlens.explanations.artifacts import REPO_ROOT, ShowcaseArtifacts, ShowcaseUnavailable
 from scoutlens.explanations.evals.report import build_report, replay
 from scoutlens.showcase.io import canonical_json_bytes, write_canonical_json
 
@@ -89,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         report, payload = generate()
-    except CorpusUnavailable as error:
+    except ShowcaseUnavailable as error:
         print(f"cannot run: {error}", file=sys.stderr)
         return EXIT_UNAVAILABLE
 
