@@ -21,12 +21,31 @@ from __future__ import annotations
 
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from urllib.parse import urljoin
 
 TIMEOUT = 30
+
+#: A CDN-backed host is not instantly consistent, so a miss is retried briefly.
+#:
+#: **Honest provenance for this constant**: it was added after the first deploy
+#: failed with every asset 404ing, on the theory that the assets had not yet
+#: propagated. That theory was wrong. The real cause was a URL-joining bug in
+#: `check_assets` below, which requested `/scoutlens/scoutlens/…`; the site was
+#: serving correctly the whole time.
+#:
+#: The retry is kept anyway, because a deploy gate that hits a CDN seconds after
+#: publication genuinely can race it, and a gate that cries wolf is a gate
+#: nobody believes. But it is kept on that reasoning, not on the incident that
+#: prompted it — an invented justification in a comment is worse than no comment.
+#:
+#: Only statuses propagation can explain are retried. A 403 or a malformed
+#: response fails immediately, because waiting will not change it.
+RETRY_STATUSES = frozenset({404, 500, 502, 503, 504})
+RETRY_DELAYS = (2, 5, 10, 20)
 
 #: Routes that must survive direct navigation, including a shareable deep link.
 #:
@@ -70,12 +89,30 @@ class Result:
         )
 
 
-def fetch(url: str) -> tuple[int, dict[str, str], str]:
-    request = urllib.request.Request(url, headers={"User-Agent": "scoutlens-smoke"})
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # noqa: S310
-        body = response.read()
-        headers = {k.lower(): v for k, v in response.headers.items()}
-        return response.status, headers, body.decode("utf-8", errors="replace")
+def fetch(url: str, *, retry: bool = True) -> tuple[int, dict[str, str], str]:
+    """Fetch, retrying the statuses a propagating CDN produces.
+
+    Retries only what propagation can explain. A 403 or a malformed response is
+    returned immediately, because waiting will not change it.
+    """
+    delays = RETRY_DELAYS if retry else ()
+    for attempt in range(len(delays) + 1):
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "scoutlens-smoke"})
+            with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # noqa: S310
+                body = response.read()
+                headers = {k.lower(): v for k, v in response.headers.items()}
+                return response.status, headers, body.decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as error:
+            if error.code not in RETRY_STATUSES or attempt == len(delays):
+                raise
+        except OSError:
+            if attempt == len(delays):
+                raise
+        wait = delays[attempt]
+        print(f"    ... {url} not ready, retrying in {wait}s", flush=True)
+        time.sleep(wait)
+    raise RuntimeError("unreachable")  # pragma: no cover
 
 
 def check_routes(base: str) -> tuple[list[Result], str]:
@@ -118,7 +155,16 @@ def check_assets(base: str, home: str) -> list[Result]:
 
     missing = []
     for ref in refs[:8]:
-        url = urljoin(base, ref.lstrip("/") if not ref.startswith("http") else ref)
+        # `urljoin` already resolves a root-absolute ref against the origin, so
+        # it must be passed through untouched. An earlier version stripped the
+        # leading slash first, which on a subpath deploy produced
+        # `/scoutlens/scoutlens/_next/…` and 404'd every asset on a site that was
+        # serving them perfectly well.
+        #
+        # It passed locally because at the origin root `/_next/x` and `_next/x`
+        # resolve identically — the self-test could not have caught it, and the
+        # first real deploy did.
+        url = urljoin(base, ref)
         try:
             status, _, _ = fetch(url)
             if status != 200:
@@ -155,7 +201,11 @@ def check_caching(base: str, home: str) -> list[Result]:
 
     refs = sorted(set(ASSET_REF.findall(home)))
     if refs:
-        asset_url = urljoin(base, refs[0].lstrip("/"))
+        # Same rule as `check_assets`: pass the ref through untouched. This was
+        # the second call site of the same bug, and fixing only the first one
+        # left this check failing while the rest went green — which is precisely
+        # how a half-fixed bug survives.
+        asset_url = urljoin(base, refs[0])
         try:
             _, asset_headers, _ = fetch(asset_url)
             results.append(
