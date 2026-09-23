@@ -11,10 +11,22 @@ const distDir =
     ? undefined
     : path.relative(process.cwd(), process.env.SCOUTLENS_DIST_DIR).replaceAll("\\", "/");
 
+// SCOUTLENS_BASE_PATH serves the export from a subpath instead of the origin
+// root (scoutlens-jtt.7.2). GitHub Pages for a project repository serves at
+// `/<repo>/`, and every asset reference this export emits is root-absolute, so
+// without it the deployed site 404s on its own JavaScript.
+//
+// Opt-in rather than hard-coded: the default build, every unit test and the
+// whole e2e suite run at the root, and a base path baked in would make local
+// development differ from what CI checks. Next derives `assetPrefix` from
+// `basePath` for a static export, so setting one is enough.
+const basePath = process.env.SCOUTLENS_BASE_PATH?.trim() || undefined;
+
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
   ...(distDir === undefined ? {} : { distDir }),
+  ...(basePath === undefined ? {} : { basePath }),
   images: {
     unoptimized: true,
   },
