@@ -56,11 +56,16 @@ hydrating that pin; `public/showcase/*/players/` is deliberately not tracked.
 
 ### Versioned inputs
 
+Digests are `sha256` over **newline-normalised** content for text files, and
+over raw bytes otherwise. The manifest states this in a `digest_mode` field,
+because a digest that silently transforms its input is one nobody can
+reproduce by hand. §6 says why it had to.
+
 | File | sha256 |
 |---|---|
-| `config/experiment.json` | `6b04c4ebb2d36eb1a93e7856008823207dca7b8e5ce384c3dafd8e8cbd4d7cd1` |
-| `config/uncertainty.json` | `e23d7afb565ce757a41d4c944f7c0cd1e9d76d7af7c4ce50cd0999ac460c9d3d` |
-| `config/uncertainty-diagonal.json` | `138abf784d8f5a0bc5a8bcca3d0e51306389da974206d089f1a6895d53f281bb` |
+| `config/experiment.json` | `62052f0f79de87c65e21ea98347d752abc6c43b20652948e511e593f6ad59d13` |
+| `config/uncertainty.json` | `896d1ccbc853e44f4089623523f8be443df00bb7b35fee8c859599208d15065f` |
+| `config/uncertainty-diagonal.json` | `2404e4a8711f90af3a324c623d0c5989e294b1be1cc498a1a88d9f494240d31e` |
 | `config/showcase-payload-pack.json` | `18a46fd349dc921f32422864c59affdd5ea92c39f8a5f4b33fad226a6bf68603` |
 
 ### Published artifacts
@@ -302,6 +307,23 @@ candidate stands.
    this. The check worked exactly as intended — an untracked 676 MB directory is
    precisely the kind of thing that should stop a freeze until someone has
    looked at it.
+
+4. **The manifest gave the same commit two different identities**, depending on
+   the platform it ran on. `config/experiment.json` and the two uncertainty
+   configs carry no `eol=lf` rule, so a Windows checkout holds CRLF and a Linux
+   one holds LF, and hashing raw bytes produced different digests for identical
+   content. CI disagreed with the digests this very document had just recorded.
+
+   A release-candidate identity that changes with the checkout is not an
+   identity, so the manifest now hashes newline-normalised content for text
+   files and says so in a `digest_mode` field.
+
+   Normalising in the hash rather than adding `eol=lf` to `.gitattributes` was
+   deliberate. Renormalising those files would change their bytes, and their raw
+   digests are recorded inside already-published artifact `_manifest` blocks —
+   fixing a portability bug by invalidating recorded provenance would be the
+   worse trade. `scoutlens-jtt.19` records that those `_manifest` digests carry
+   the same platform dependence.
 
 ### Recorded, non-blocking, with beads
 
