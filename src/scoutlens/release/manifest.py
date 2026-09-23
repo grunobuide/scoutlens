@@ -67,10 +67,37 @@ ARTIFACT_FILES = (
 )
 
 
+#: Suffixes hashed as text, with newlines normalised before hashing.
+#:
+#: Not cosmetic. `config/experiment.json` and the two uncertainty configs carry
+#: no `eol=lf` rule, so a Windows checkout holds CRLF and a Linux one holds LF —
+#: and hashing raw bytes gave the same commit two different identities depending
+#: on who ran the command. A release candidate whose identity changes with the
+#: checkout is not an identity. Found when CI disagreed with the digests this
+#: repository's own audit document had just recorded.
+#:
+#: Normalising here rather than adding `eol=lf` to `.gitattributes` is
+#: deliberate: renormalising those files would change their bytes, and their raw
+#: digests are recorded inside already-published artifact `_manifest` blocks.
+#: Fixing a portability bug by invalidating recorded provenance would be the
+#: worse trade.
+TEXT_SUFFIXES = frozenset(
+    {".json", ".toml", ".lock", ".yaml", ".yml", ".md", ".txt", ".node-version"}
+)
+
+#: Stated in the manifest, because a digest that silently transforms its input
+#: is a digest nobody can reproduce by hand.
+DIGEST_MODE = "sha256; CRLF normalised to LF for text suffixes, raw bytes otherwise"
+
+
 def _sha256(path: Path) -> str | None:
+    """Content digest, independent of the checkout's line endings."""
     if not path.is_file():
         return None
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    payload = path.read_bytes()
+    if path.suffix in TEXT_SUFFIXES:
+        payload = payload.replace(b"\r\n", b"\n")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _git(*args: str) -> str:
@@ -132,6 +159,7 @@ def build_manifest() -> dict[str, Any]:
         "contract": "scoutlens.release-candidate",
         "schema_version": "1.0.0",
         "generated_by": "uv run --frozen python -m scoutlens.release.manifest",
+        "digest_mode": DIGEST_MODE,
         "project_version": _project_version(),
         "git": {
             "commit": _git("rev-parse", "HEAD"),

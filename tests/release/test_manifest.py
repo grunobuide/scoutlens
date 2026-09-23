@@ -8,6 +8,7 @@ than smoothed over.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -18,6 +19,8 @@ from scoutlens.release.manifest import (
     CONFIG_FILES,
     LOCK_FILES,
     REPO_ROOT,
+    TEXT_SUFFIXES,
+    _sha256,
     build_manifest,
     main,
     manifest_digest,
@@ -130,3 +133,46 @@ def test_the_manifest_writes_nothing_by_default(capsys: pytest.CaptureFixture) -
     main([])
     printed = json.loads(capsys.readouterr().out)
     assert printed["contract"] == "scoutlens.release-candidate"
+
+
+# --- the digest identifies content, not the checkout ---------------------
+
+
+def test_a_text_digest_ignores_line_endings(tmp_path: Path) -> None:
+    """The bug CI caught after the audit document had recorded the wrong values.
+
+    `config/experiment.json` and the two uncertainty configs carry no `eol=lf`
+    rule, so a Windows checkout holds CRLF and a Linux one holds LF. Hashing raw
+    bytes gave the same commit two different identities depending on who ran the
+    command, which is not an identity.
+    """
+    content = '{\n  "a": 1,\n  "b": 2\n}\n'
+    lf = tmp_path / "lf.json"
+    crlf = tmp_path / "crlf.json"
+    lf.write_bytes(content.encode())
+    crlf.write_bytes(content.replace("\n", "\r\n").encode())
+
+    assert lf.read_bytes() != crlf.read_bytes(), "the fixture failed to differ"
+    assert _sha256(lf) == _sha256(crlf)
+
+
+def test_a_binary_digest_is_not_normalised(tmp_path: Path) -> None:
+    """Only text is normalised. Rewriting bytes inside a binary would be a new bug."""
+    payload = bytes([0, 13, 10, 1])
+    binary = tmp_path / "payload.bin"
+    binary.write_bytes(payload)
+
+    assert ".bin" not in TEXT_SUFFIXES
+    assert _sha256(binary) == hashlib.sha256(payload).hexdigest()
+
+
+def test_the_manifest_states_how_it_digests(manifest: dict) -> None:
+    """A digest that silently transforms its input is one nobody can reproduce."""
+    assert "normalised" in manifest["digest_mode"]
+    assert "sha256" in manifest["digest_mode"]
+
+
+def test_every_config_the_manifest_pins_is_digested_portably() -> None:
+    """Each pinned config is a text file, so each one is normalised."""
+    for name in CONFIG_FILES:
+        assert Path(name).suffix in TEXT_SUFFIXES, f"{name} would be hashed raw"
