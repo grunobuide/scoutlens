@@ -1,8 +1,8 @@
 # Data Licenses
 
-This file covers licensing for the **data** ScoutLens consumes. It is
-separate from any license governing this repository's own source code
-(not yet decided — see [`README.md`](README.md)).
+This file covers licensing for the **data** ScoutLens consumes. It is separate
+from the license governing this repository's own source code, which is
+[MIT](LICENSE) and covers the code only — never the data described below.
 
 ## Source
 
