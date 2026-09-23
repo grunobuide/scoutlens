@@ -31,6 +31,11 @@ artifacts/ai-evals/*
 # Reviewable contract/index/manifest/research files remain tracked; the player
 # pack is distributed separately as an immutable, content-addressed asset.
 public/showcase/v1/players/
+# pnpm's content-addressable store, if a run puts it in the repo root instead of
+# the global location. 676 MB of build cache, untracked, reported by every
+# `git status` -- and it made the release-candidate manifest refuse to freeze,
+# which is working as designed: a candidate is frozen from a clean tree.
+.pnpm-store/
 web/node_modules/
 web/.next/
 web/out/

@@ -292,6 +292,16 @@ candidate stands.
 1. **`DATA_LICENSES.md` contradicted `LICENSE`** on the code licence. §4.
 2. **A test required a v1 payload no clean clone can obtain**, found by the §2.1
    clean-clone run. Fixed in `scoutlens-jtt.6.4` before this candidate.
+3. **A 676 MB `.pnpm-store/` sat untracked in the repository root**, reported by
+   every `git status` and absent from `.gitignore`. It is pnpm's
+   content-addressable store, landing in the repo root rather than the global
+   location. Now ignored.
+
+   It is worth saying how this one surfaced: the manifest command **refused to
+   produce a candidate** because the tree was dirty, and the only dirty path was
+   this. The check worked exactly as intended — an untracked 676 MB directory is
+   precisely the kind of thing that should stop a freeze until someone has
+   looked at it.
 
 ### Recorded, non-blocking, with beads
 
