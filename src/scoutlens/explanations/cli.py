@@ -40,6 +40,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from scoutlens.console import use_utf8_output
 from scoutlens.explanations.adapters.conformance import load_adapter, run_conformance
 from scoutlens.explanations.adapters.protocol import (
     ADAPTER_PROTOCOL_VERSION,
@@ -523,32 +524,8 @@ def _run_profiles(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _use_utf8_output() -> None:
-    """Make stdout and stderr able to carry the names in the data.
-
-    The published profiles contain players called Areola, Barak and Lukic with
-    the diacritics intact, and a Windows console defaults to cp1252, which
-    cannot encode them. Printing a profile list therefore died with
-    `UnicodeEncodeError` partway through — on the platform this repository is
-    developed on, and nowhere else.
-
-    Reconfiguring is the fix rather than stripping the accents: a tool that
-    quietly renamed people to make its own output easier would be a worse bug
-    than the crash. `errors="replace"` keeps a genuinely undecodable terminal
-    from turning a display problem into a failure.
-    """
-    for stream in (sys.stdout, sys.stderr):
-        reconfigure = getattr(stream, "reconfigure", None)
-        if reconfigure is None:  # pragma: no cover - not a real tty
-            continue
-        try:
-            reconfigure(encoding="utf-8", errors="replace")
-        except (ValueError, OSError):  # pragma: no cover - already closed or redirected oddly
-            pass
-
-
 def main(argv: list[str] | None = None) -> int:
-    _use_utf8_output()
+    use_utf8_output()
     args = build_parser().parse_args(argv)
     try:
         if args.command == "explain":
