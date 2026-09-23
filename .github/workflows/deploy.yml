@@ -1,0 +1,127 @@
+name: deploy
+
+# Publishes the static export to GitHub Pages.
+#
+# **Only what passed.** This runs on the *completion* of the `quality` workflow
+# rather than on push, and refuses to deploy unless that run succeeded. A deploy
+# triggered by push would race the tests and could publish a commit whose e2e or
+# Lighthouse gates were still red, which is the one failure a deploy pipeline
+# must not have.
+#
+# **Rollback is a dispatch, not a revert.** `workflow_dispatch` takes a `ref`, so
+# restoring a previous release is redeploying that commit — no revert commit, no
+# history rewrite, and the rolled-back state is a commit that already passed its
+# own gates. Rehearsed and recorded in docs/hosting-adr.md.
+on:
+  workflow_run:
+    workflows: ["quality"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit SHA or ref to deploy. Defaults to main. Use a previous SHA to roll back."
+        required: false
+        default: "main"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one in flight: a half-published site is
+# worse than a late one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # A dispatch is a deliberate act and runs unconditionally. A workflow_run
+    # only deploys a green one.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+      deployed_sha: ${{ github.event.workflow_run.head_sha || inputs.ref }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # workflow_run does not check out the commit that triggered it, so the
+          # SHA is taken explicitly. Without this a deploy could publish a
+          # different commit from the one whose gates just passed.
+          ref: ${{ github.event.workflow_run.head_sha || inputs.ref || 'main' }}
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - run: uv sync --frozen
+
+      # The player profiles are gitignored and hydrated from the content-addressed
+      # pin, so the deployed site is built from the same immutable payload every
+      # other gate used.
+      - name: Hydrate the showcase payload
+        run: .github/scripts/hydrate-showcase.sh
+
+      - uses: pnpm/action-setup@v6.0.8
+        with:
+          version: 11.9.0
+          run_install: false
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version-file: web/.node-version
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+
+      # GitHub Pages serves a project repository from /<repo>/, and every asset
+      # reference this export emits is root-absolute. Without the base path the
+      # deployed site 404s on its own JavaScript. `pnpm build` ends in
+      # static:check, so a broken export fails here rather than in production.
+      - name: Build the static export for the Pages subpath
+        run: pnpm build
+        working-directory: web
+        env:
+          SCOUTLENS_BASE_PATH: /${{ github.event.repository.name }}
+
+      # `_next/` and the `__next*.txt` payloads all begin with an underscore,
+      # which Jekyll strips. The Actions Pages pipeline does not run Jekyll, but
+      # this costs one file and removes the question entirely.
+      - name: Disable Jekyll processing
+        run: touch web/out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: web/out
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Report what was published
+        run: |
+          echo "### Deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: ${{ steps.deployment.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`${{ github.event.workflow_run.head_sha || inputs.ref }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Base path: \`/${{ github.event.repository.name }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  smoke:
+    # Production smoke checks against the URL that was actually published,
+    # rather than against a local server that only resembles it.
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - name: Smoke the published site
+        run: uv run --frozen --no-project python .github/scripts/smoke-production.py "${{ needs.deploy.outputs.page_url || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}"
