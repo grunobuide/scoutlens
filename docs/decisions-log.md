@@ -2434,3 +2434,81 @@ workflow.
 named command, under §4.1 plus §4.6. `scoutlens-jtt.6.4` may write the four named
 README sections and nothing else in that file. Anything wider is a new amendment,
 not an interpretation of this one.
+
+---
+
+## D058 — 2026-09-24 — The public name changes; the technical identity does not
+
+**Decision:** the project presents itself publicly as **Yumusarái Labs**, and
+every technical identifier stays `scoutlens`. The two are now different names on
+purpose. [`public-identity-contract.md`](public-identity-contract.md) freezes
+which is which, string by string.
+
+Three parts:
+
+1. **Display only.** Twelve strings across six website files change: the title
+   default and template, `applicationName`, the header wordmark, its `YL`
+   monogram and home ARIA label, four name-only mentions in landing and
+   `/science` copy, and the one brand-bearing integrity-failure message. The
+   product descriptor — *Player Fingerprint Lab* — does not change.
+2. **Nothing else.** No repository, package, import, environment-variable,
+   Beads-prefix, URL, base-path, domain, provider, dataset, schema or artifact
+   rename. No palette, font, layout, navigation or dependency change. No
+   scientific copy, metric, caveat or threshold change.
+3. **The release is not held for it.** `scoutlens-jtt.7.4` tags v1.0.0 under the
+   identity that shipped. The dependency runs the other way: the display rename
+   lands after the tag, against a released baseline.
+
+**Why the technical name stays.** Renaming it is not a bigger version of the
+same job; it is a different and destructive one. `github.com/grunobuide/scoutlens`
+and the `/scoutlens` base path are in every published deep link and in the
+release-asset URLs the payload pack pins. `scoutlens.showcase/2.0.0` is validated
+fail-closed at the web boundary, so changing it is a schema change. `python -m
+scoutlens.showcase.export` is printed in the README and the case study as a
+reproduction command. The Beads ids appear in code comments as provenance. A
+rename would trade a working, checkable identity for a cosmetic one.
+
+**The occurrence that proves the rule.** `data-provenance.tsx` renders
+`manifest.source.redistribution_note` on all three routes, and that string reads
+*"ScoutLens publishes attributed player-period aggregates only…"*. It is not in
+the website's source: it is baked into `public/showcase/v2/manifest.json`, pinned
+by `config/showcase-payload-pack.json` as `manifest_sha256`, inside an archive
+whose digest belongs to a release asset that is already published. Rewording it
+would change the dataset identity that the case study, the claims matrix and the
+release manifest all quote — a cosmetic edit propagating into the project's
+scientific identity.
+
+So it stays, and the site explains it rather than hiding it. The
+brand-versus-technical-name explanation in `scoutlens-vif.5` is what discharges
+this, and `scoutlens-vif.6` records the occurrence as an accounted-for exception
+rather than an unexplained stale wordmark. "No old brand on the active surface"
+was never achievable here; "no *unexplained* old brand" is, and is the standard
+that binds.
+
+**Why this is a decision and not just a task.** A rename executed by search and
+replace would have hit every item in the paragraph above, and each hit would
+have looked like tidying. Writing down which strings are display and which are
+identity is the whole safeguard; without it the next reader has no way to tell a
+leftover from a load-bearing identifier.
+
+**On the name itself.** *Yumusarái* is Nheengatu, glossed *brincar* and
+*divertir-se* in the sources recorded in `scoutlens-vif.1`. It is attributed as
+Nheengatu, never as "Tupi", and never in a way that implies Indigenous
+endorsement of this project's results. *Celebrar* is the owner's brand
+association, not a verified gloss, and is not published as a translation.
+Domain, handle and trademark availability are unverified; no availability claim
+is published and no registration is authorised.
+
+**Backlog health, clarified.** An open identity bead is not an unresolved
+blocker of the v1 release. `scoutlens-jtt.7.4`'s criterion 6 is scoped to the
+audited candidate and its required delivery tasks, and classifies unrelated
+future work as out of release scope. The earlier reading — that the global
+backlog had to be empty of human decisions and in-progress items — would let any
+future identity or AI work block a release it has nothing to do with.
+
+**How to apply:** `scoutlens-vif.3` makes production smoke recognise the home
+page by its own h1 phrase instead of the brand, so the rename cannot break the
+deploy gate. `scoutlens-vif.4` applies the twelve strings after v1.0.0 is
+tagged. `scoutlens-vif.5` converges README, case study and media. `scoutlens-vif.6`
+verifies. Anything wider than the inventory in the contract is a new decision,
+not an interpretation of this one. `D056` and `D057` are preserved unchanged.
