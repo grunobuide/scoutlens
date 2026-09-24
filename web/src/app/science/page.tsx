@@ -6,7 +6,7 @@ import { loadShowcaseStory } from "@/content/load-showcase-story";
 
 export const metadata: Metadata = {
   title: "How it works",
-  description: "The frozen question, controls, replication, null result, and evidence boundary behind ScoutLens.",
+  description: "The frozen question, controls, replication, null result, and evidence boundary behind Yumusarái Labs.",
 };
 
 export default async function SciencePage() {
@@ -25,7 +25,7 @@ export default async function SciencePage() {
         </p>
         <div className="science-orientation">
           <p>
-            ScoutLens asks one question: can a player&apos;s statistical profile identify them?
+            Yumusarái Labs asks one question: can a player&apos;s statistical profile identify them?
             We take public football event data from the {story.manifest.source.season} season,
             split every player&apos;s play time into two chronological halves, and test whether{" "}
             {story.manifest.population.feature_count} simple measurements of how they act can find
@@ -47,7 +47,7 @@ export default async function SciencePage() {
           <article>
             <h3>Engineering</h3>
             <p>
-              ScoutLens is a static website. Every number is computed in Python from frozen
+              Yumusarái Labs is a static website. Every number is computed in Python from frozen
               event data, exported as immutable JSON, and consumed by a typed TypeScript
               client. There is no backend, no live database, and no client-side computation
               of retrieval, ranks, or similarities. Quality gates enforce the build, the

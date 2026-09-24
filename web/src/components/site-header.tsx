@@ -10,11 +10,11 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="shell site-header__inner">
-        <Link className="wordmark" href="/" aria-label="ScoutLens home">
+        <Link className="wordmark" href="/" aria-label="Yumusarái Labs home">
           <span className="wordmark__mark" aria-hidden="true">
-            SL
+            YL
           </span>
-          <span>ScoutLens</span>
+          <span>Yumusarái Labs</span>
         </Link>
         <nav aria-label="Primary navigation">
           <ul className="site-nav">
