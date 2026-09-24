@@ -1,9 +1,16 @@
-# ScoutLens — case study
+# Yumusarái Labs — case study
 
 **Live: [grunobuide.github.io/scoutlens](https://grunobuide.github.io/scoutlens/)**
 · [Source](https://github.com/grunobuide/scoutlens)
 · [How it works](https://grunobuide.github.io/scoutlens/science/)
 · [Architecture](architecture.md) · [Decisions](decisions-log.md) · [Licences](../DATA_LICENSES.md)
+
+> **On the two names.** The published name is Yumusarái Labs. Every technical
+> identifier — repository, package, imports, URLs, environment variables,
+> artifact contract, dataset pins, release tags — is still `scoutlens`, and
+> stays that way: renaming one would break a published link, a pinned digest or
+> a reproduction command below. Frozen in
+> [`public-identity-contract.md`](public-identity-contract.md) (`D058`).
 
 ---
 
@@ -33,7 +40,7 @@ or the future follows from it.
 
 ### What it looks like
 
-![The ScoutLens Fingerprint Lab at desktop width. A badge row reads "Historical reproducible benchmark", "2017/18", "CC BY 4.0" and the dataset version wyscout-2017-18-v2-332766e3a822. The heading says "Compare one player with himself." A highlighted note reads: "This is a statistical fingerprint—not a quality score, style proof, recruitment ranking, or automated verdict."](media/lab-desktop.png)
+![The Fingerprint Lab at desktop width. The header shows a circular YL monogram beside the wordmark "Yumusarái Labs". A badge row reads "Historical reproducible benchmark", "2017/18", "CC BY 4.0" and the dataset version wyscout-2017-18-v2-332766e3a822. The heading says "Compare one player with himself." A highlighted note reads: "This is a statistical fingerprint—not a quality score, style proof, recruitment ranking, or automated verdict."](media/lab-desktop.png)
 
 The claim, and the evidence behind it, on one screen:
 

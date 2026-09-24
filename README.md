@@ -1,11 +1,11 @@
-# ScoutLens — Evidence-first Player Fingerprints
+# Yumusarái Labs — Evidence-first Player Fingerprints
 
 [![quality](https://github.com/grunobuide/scoutlens/actions/workflows/tests.yml/badge.svg)](https://github.com/grunobuide/scoutlens/actions/workflows/tests.yml)
 
 **Live: [grunobuide.github.io/scoutlens](https://grunobuide.github.io/scoutlens/)**
  · [Case study](docs/case-study.md) · [How it works](https://grunobuide.github.io/scoutlens/science/)
 
-ScoutLens is a research-backed portfolio project for building, testing, and
+Yumusarái Labs is a research-backed portfolio project for building, testing, and
 explaining statistical fingerprints of football players from event data.
 It combines reproducible data engineering, deliberately simple baselines,
 external replication, uncertainty-aware evaluation, and an interactive
@@ -16,9 +16,28 @@ individual fingerprint worth turning into a flagship experience.** The project
 does not claim that statistical similarity proves playing style, recommends a
 signing, or predicts transfer success.
 
+### Two names, on purpose
+
+The published name is **Yumusarái Labs**. Everything a machine resolves is still
+`scoutlens`: this repository and its URL, the Python package and its imports,
+the `SCOUTLENS_*` environment variables, the `scoutlens.showcase/2.0.0` artifact
+contract, the dataset pins and the release tags.
+
+That is not half a rename waiting to be finished. Renaming any of them would
+break a published deep link, a release-asset URL, a fail-closed contract string
+validated at the web boundary, or a reproduction command printed further down
+this page. One occurrence is even visible on the site itself — the provenance
+note rendered on every route comes from a content-addressed artifact whose
+digest is pinned and already published, so rewording it would change the
+dataset identity this project's own numbers are quoted against.
+
+The boundary is frozen in
+[`docs/public-identity-contract.md`](docs/public-identity-contract.md), with the
+reasoning in `D058` of the [decisions log](docs/decisions-log.md).
+
 ## Why this project is interesting
 
-ScoutLens is not a story about adding the most complex model available. It is
+Yumusarái Labs is not a story about adding the most complex model available. It is
 a record of scientific decisions under imperfect real-world data:
 
 - A 32-feature cosine baseline recovered the same player's second-half profile
@@ -301,11 +320,11 @@ deliberately not versioned here.
 - **Wyscout/Pappalardo:** CC BY 4.0. The public flagship dataset will use only
   attributed, derived Wyscout aggregates.
 - **StatsBomb Open Data:** non-commercial, no raw-data redistribution, and logo
-  attribution required for published analysis. ScoutLens exposes StatsBomb only
+  attribution required for published analysis. Yumusarái Labs exposes StatsBomb only
   as aggregate replication evidence; raw and per-player derived tables remain
   local.
-- **ScoutLens code:** [MIT](LICENSE). The MIT licence covers this repository's
-  code, not third-party data or analyses with additional source restrictions.
+- **This repository's code:** [MIT](LICENSE). The MIT licence covers the code here,
+  not third-party data or analyses with additional source restrictions.
 
 See [DATA_LICENSES.md](DATA_LICENSES.md) for the complete attribution and usage
 boundary.
