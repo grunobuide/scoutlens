@@ -110,25 +110,91 @@ not run Jekyll, but a `.nojekyll` file costs nothing and removes the question
 permanently. The failure it prevents — a site that loses its JavaScript
 directory — is silent and total.
 
-**Headers are the host's.** GitHub Pages sets its own caching and does not allow
-custom headers. Measured on the built export: HTML `no-cache`, hashed assets
-`public, max-age=31536000, immutable`. That is the behaviour this project wants
-and it happens to be the default, which is luck rather than design — recorded so
-the next person knows it is not enforced by anything here. If custom headers
-ever become a requirement, that is the trigger to revisit Cloudflare.
+**Headers are the host's, and they are worse than the local server's.** GitHub
+Pages sets its own caching and allows no overrides.
+
+An earlier draft of this ADR claimed hashed assets are served
+`public, max-age=31536000, immutable`. That was measured from
+`scripts/serve-static.mjs`, the local development server, which sets those
+headers itself. It is not what the host does, and the claim survived until the
+production smoke check was pointed at the real site.
+
+Measured on `https://grunobuide.github.io/scoutlens/`:
+
+| Resource | `Cache-Control` |
+|---|---|
+| HTML | `max-age=600` |
+| Hashed `_next/static/*` assets | `max-age=600` |
+
+So **content-hashed assets are revalidated every ten minutes rather than cached
+for a year**. Functionally fine — the filenames are hashed, so a stale copy is
+never wrong, and a repeat visitor pays a conditional request rather than a
+download. But it is a real performance characteristic, it is not what this
+project would choose, and nothing here can change it.
+
+That is the concrete trigger for revisiting Cloudflare Pages: it allows header
+rules, and immutable caching on hashed assets is the first thing worth setting.
+Recorded as `scoutlens-uze.18` rather than acted on, because a four-page static
+site does not justify a second vendor today.
+
+**The lesson worth keeping**: this is exactly the claim that could only be
+settled in production, and the local server was actively misleading about it.
 
 ## Rollback
 
 **Redeploy the previous commit.** `workflow_dispatch` takes a `ref` input, so
-rolling back is dispatching the deploy workflow with an earlier SHA.
+rolling back is dispatching the deploy workflow with an earlier commit.
 
 No revert commit, no history rewrite, and the restored state is a commit that
-already passed its own gates. The rehearsal is recorded in
-`docs/release-candidate-v1.md`.
+already passed its own gates. Rollback is *not* re-running an old workflow run:
+that would rebuild from whatever the action versions resolve to today.
+Dispatching a ref rebuilds that commit's own tree from its own lockfiles.
 
-Rollback is *not* re-running an old workflow: that would rebuild from whatever
-the action versions resolve to today. Dispatching a SHA rebuilds that commit's
-own tree from its own lockfiles.
+### What the rehearsal found
+
+The rehearsal was run against production, and it is the most useful thing in
+this document, because all three findings were things reasoning had missed.
+
+**1. A rollback target must itself support the base path.** Rolling back to
+`9b31c4bdc` — the release candidate, one commit before Pages support — published
+a site that referenced `/_next/…` while living at `/scoutlens/`. Every asset
+404'd. The candidate is a perfectly good commit; it simply predates the config
+that makes it deployable *here*.
+
+So the rollback window does not extend below the first Pages-capable commit, and
+"redeploy any previous release" is not true in general. It is true from
+`e1d849a` onward.
+
+**2. The smoke check passed that broken deploy.** This is the serious one. The
+check had a URL-joining bug that probed `/scoutlens/scoutlens/…`; against a
+root-built site those paths happened to be exactly where the files were, so the
+gate went green on a site that served its users nothing but 404s.
+
+A gate that fails on a working site is annoying. A gate that passes a broken one
+is worse than no gate, because it converts an outage into a false assurance. The
+bug is fixed and both call sites are corrected; it is recorded here because the
+next person to write a production check should know the shape of it.
+
+**3. `actions/checkout` rejects a short SHA.** Dispatching with `e1d849a` fails
+with `git fetch ... failed with exit code 1` after three retries, because the
+action fetches the value as a branch or tag pattern. **Use a full 40-character
+SHA or a branch name.** The workflow input documents this.
+
+### The procedure, corrected
+
+```bash
+# roll back to a specific commit - FULL sha, and it must be e1d849a or later
+gh workflow run deploy.yml --ref main -f ref=<40-character-sha>
+
+# restore to current main
+gh workflow run deploy.yml --ref main -f ref=main
+```
+
+Then verify, because the deploy job succeeding does not mean the site works:
+
+```bash
+uv run --frozen python .github/scripts/smoke-production.py https://grunobuide.github.io/scoutlens/
+```
 
 ## Verification
 

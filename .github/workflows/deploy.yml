@@ -20,7 +20,12 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Commit SHA or ref to deploy. Defaults to main. Use a previous SHA to roll back."
+        description: >-
+          Full 40-character commit SHA, or a branch name. Defaults to main.
+          A short SHA fails: actions/checkout fetches the value as a branch or tag
+          pattern. The rollback window starts at the first Pages-capable commit --
+          anything earlier has no base path and publishes a site that 404s its own
+          assets. See docs/hosting-adr.md.
         required: false
         default: "main"
 
