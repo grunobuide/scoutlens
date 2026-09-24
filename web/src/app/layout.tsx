@@ -26,12 +26,12 @@ const inter = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "ScoutLens — Player Fingerprints",
-    template: "%s — ScoutLens",
+    default: "Yumusarái Labs — Player Fingerprints",
+    template: "%s — Yumusarái Labs",
   },
   description:
     "An evidence-first exploration of stable statistical fingerprints in football event data.",
-  applicationName: "ScoutLens",
+  applicationName: "Yumusarái Labs",
   keywords: ["football analytics", "data science", "player fingerprints", "reproducible research"],
 };
 

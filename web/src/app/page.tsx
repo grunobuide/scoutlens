@@ -44,12 +44,12 @@ export default async function HomePage() {
             season later.
           </h1>
           <p className="lede">
-            ScoutLens tests whether event-derived profiles can retrieve the same player across two chronological halves—then exposes the controls that narrow what that result means.
+            Yumusarái Labs tests whether event-derived profiles can retrieve the same player across two chronological halves—then exposes the controls that narrow what that result means.
           </p>
           <p className="hero__boundary">
             Evidence of individual signal. Not proof of playing style. Not a recruitment recommendation.
           </p>
-          <div className="actions" aria-label="Explore ScoutLens">
+          <div className="actions" aria-label="Explore Yumusarái Labs">
             <Link className="button button--primary" href="/lab/">
               Explore every fingerprint
             </Link>

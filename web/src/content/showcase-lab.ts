@@ -547,7 +547,7 @@ export function describeLabError(error: unknown): LabProblem {
         eyebrow: "Integrity check failed",
         title: "This profile does not match the active manifest",
         message:
-          "ScoutLens stopped before rendering any profile values. Refresh the versioned assets, then retry.",
+          "Yumusarái Labs stopped before rendering any profile values. Refresh the versioned assets, then retry.",
         canRetry: true,
       };
     }

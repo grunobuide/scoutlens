@@ -19,7 +19,7 @@ test("complete selected-player flow works by keyboard at desktop and 360 px", as
   await expect(skipLink).toBeInViewport();
   await expect(skipLink).toHaveCSS("outline-width", "3px");
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "ScoutLens home" })).toBeFocused();
+  await expect(page.getByRole("link", { name: "Yumusarái Labs home" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Overview" })).toBeFocused();
   await page.keyboard.press("Tab");
