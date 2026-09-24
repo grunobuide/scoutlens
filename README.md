@@ -2,10 +2,13 @@
 
 [![quality](https://github.com/grunobuide/scoutlens/actions/workflows/tests.yml/badge.svg)](https://github.com/grunobuide/scoutlens/actions/workflows/tests.yml)
 
+**Live: [grunobuide.github.io/scoutlens](https://grunobuide.github.io/scoutlens/)**
+ · [Case study](docs/case-study.md) · [How it works](https://grunobuide.github.io/scoutlens/science/)
+
 ScoutLens is a research-backed portfolio project for building, testing, and
 explaining statistical fingerprints of football players from event data.
 It combines reproducible data engineering, deliberately simple baselines,
-external replication, uncertainty-aware evaluation, and a planned interactive
+external replication, uncertainty-aware evaluation, and an interactive
 Player Fingerprint Lab.
 
 The feasibility phase is complete: **event-derived profiles contain a stable
@@ -58,9 +61,8 @@ the design's uniform-target floor.
 
 Two provider-scoped ingestion and feature pipelines feed a provider-agnostic
 evaluation layer. Small result artifacts carry their config, code revision,
-environment, and input hashes. The flagship web experience will consume a
-separate, versioned showcase contract rather than recomputing research logic in
-the browser.
+environment, and input hashes. The web experience consumes a separate, versioned
+showcase contract rather than recomputing research logic in the browser.
 
 ```mermaid
 flowchart LR
@@ -70,11 +72,15 @@ flowchart LR
     SA --> F
     F --> E["Retrieval, robustness, and uncertainty"]
     E --> R["Versioned result artifacts + manifests"]
-    R -. planned .-> X["Showcase artifact contract"]
-    X -. planned .-> UI["Interactive Player Fingerprint Lab"]
-    X -. optional .-> AI["Evidence-grounded AI explanation"]
-    AI -. planned .-> UI
+    R --> X["Showcase artifact contract"]
+    X --> UI["Interactive Player Fingerprint Lab (static site)"]
+    X --> AI["Grounded explanation toolkit (local CLI)"]
 ```
+
+The AI toolkit reads the same published contract and runs **locally, on a
+developer's machine**. It is deliberately not wired into the site: there is no
+AI in the public UI, none is planned, and the deployed pages make no network
+call to any model.
 
 See [docs/architecture.md](docs/architecture.md) for current boundaries,
 planned components, data licensing, reproducibility, and the AI trust model.
@@ -278,9 +284,12 @@ public/showcase/v1/             generated public contract, index, evidence, and 
 docs/                           methods, provenance, decisions, results, architecture
 ```
 
-The static web foundation and public showcase contract now form the flagship
-delivery boundary. Interactive Lab screens, the uncertainty layer, and grounded
-AI explanation remain planned, not delivered.
+The static web foundation, the public showcase contract, the interactive Lab,
+the uncertainty layer and the grounded-explanation toolkit are delivered and
+deployed. What is **not** delivered is a demonstration model: the evaluation
+harness and its preregistered threshold exist and are tested, but no model has
+been run against them, so the live gate records `not_run` and this project makes
+no claim about any model's behaviour.
 
 This repository contains the project and what is needed to run it after a
 clone. The agent/orchestration tooling used during development (issue tracker,
