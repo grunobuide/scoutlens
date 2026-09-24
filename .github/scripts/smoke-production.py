@@ -59,11 +59,31 @@ ROUTES = (
 )
 
 #: Text each route must contain, so a 200 that served the wrong page still fails.
+#:
+#: Each value is that route's own `h1`. Nothing here is a brand string, a nav
+#: label or a footer line, and that is the whole point: the previous sentinels
+#: were `ScoutLens`, `Fingerprint Lab`, `How it works` and `Fingerprint Lab`,
+#: and **every one of them is in the shared site chrome**. Measured against
+#: production, the home page alone contains `Fingerprint Lab` four times and
+#: `How it works` twice — so three of the four route checks would have passed
+#: on a host that served the home page at every path. The check that exists to
+#: catch "a 200 that served the wrong page" could not have caught it.
+#:
+#: These four phrases were measured on the live site and form a clean diagonal:
+#: each appears twice on its own route and zero times on the other two.
+#:
+#: They are also load-bearing elsewhere, so they cannot drift silently:
+#: `web/scripts/check-static-output.mjs` asserts the home phrase and
+#: `web/e2e/claims-consistency.spec.ts` asserts it against the rendered page.
+#:
+#: If a route's `h1` is ever rewritten, this gate fails loudly and the fix is a
+#: new route-specific phrase — never a shorter one, and never a header or
+#: footer string that every route would satisfy.
 EXPECTED_TEXT = {
-    "": "ScoutLens",
-    "lab/": "Fingerprint Lab",
-    "science/": "How it works",
-    "lab/?player=wy-8287-c-795": "Fingerprint Lab",
+    "": "A player leaves a reproducible fingerprint",
+    "lab/": "Compare one player with himself.",
+    "science/": "The science is the sequence, not one headline number.",
+    "lab/?player=wy-8287-c-795": "Compare one player with himself.",
 }
 
 SECRET_MARKERS = (
