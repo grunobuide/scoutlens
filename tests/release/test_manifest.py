@@ -16,6 +16,7 @@ import pytest
 
 from scoutlens.release.manifest import (
     ARTIFACT_FILES,
+    CHECKOUT_FIELDS,
     CONFIG_FILES,
     LOCK_FILES,
     REPO_ROOT,
@@ -48,6 +49,76 @@ def test_the_digest_ignores_the_working_tree(manifest: dict) -> None:
     dirty["git"]["dirty"] = not dirty["git"]["dirty"]
     dirty["git"]["dirty_paths"] = ["some/scratch/file"]
     assert manifest_digest(dirty) == manifest_digest(manifest)
+
+
+def test_the_digest_ignores_which_ref_pointed_at_the_commit(manifest: dict) -> None:
+    """`scoutlens-jtt.21`. A branch name is not a property of a commit.
+
+    This is the same principle as `dirty`, with a sharper consequence. Checking
+    out a tag — or a SHA, which is what `actions/checkout` does — detaches HEAD,
+    and `rev-parse --abbrev-ref HEAD` then returns the literal string `HEAD`.
+    So the producer running this on `main` and a reviewer verifying the
+    published tag would have disagreed on the digest while agreeing on every
+    content digest: the shape of a discrepancy that looks like tampering and is
+    not.
+    """
+    detached = json.loads(json.dumps(manifest))
+    detached["git"]["branch"] = "HEAD"
+    assert manifest_digest(detached) == manifest_digest(manifest)
+
+    on_a_branch = json.loads(json.dumps(manifest))
+    on_a_branch["git"]["branch"] = "bd/scoutlens-jtt.21"
+    assert manifest_digest(on_a_branch) == manifest_digest(manifest)
+
+
+def test_the_same_tree_checked_out_two_ways_gives_one_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The end-to-end version of the above, through `build_manifest`.
+
+    `_git` is simulated rather than the repository re-checked-out, so the test
+    states the property without depending on this clone's current branch.
+    """
+    import scoutlens.release.manifest as module
+
+    real_git = module._git
+
+    def git_on(branch: str):
+        def fake(*args: str) -> str:
+            if args == ("rev-parse", "--abbrev-ref", "HEAD"):
+                return branch
+            return real_git(*args)
+
+        return fake
+
+    monkeypatch.setattr(module, "_git", git_on("main"))
+    from_main = build_manifest()
+
+    monkeypatch.setattr(module, "_git", git_on("HEAD"))
+    from_detached = build_manifest()
+
+    assert from_main["git"]["branch"] == "main"
+    assert from_detached["git"]["branch"] == "HEAD"
+    assert manifest_digest(from_main) == manifest_digest(from_detached)
+
+    # The branch is still recorded — excluded from the digest, not dropped.
+    assert from_detached["git"]["branch"] == "HEAD"
+
+
+def test_only_the_checkout_fields_are_excluded(manifest: dict) -> None:
+    """A guard on the exclusion list itself.
+
+    Widening it is how a digest quietly stops identifying anything. Every field
+    in it describes the checkout; nothing else may join without a decision.
+    """
+    assert set(CHECKOUT_FIELDS) == {"dirty", "dirty_paths", "branch"}
+    assert "commit" not in CHECKOUT_FIELDS
+
+    moved = json.loads(json.dumps(manifest))
+    moved["project_version"] = "9.9.9"
+    assert manifest_digest(moved) != manifest_digest(manifest), (
+        "a field outside the checkout set must still change the identity"
+    )
 
 
 def test_the_commit_is_part_of_the_identity(manifest: dict) -> None:

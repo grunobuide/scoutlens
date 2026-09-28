@@ -23,6 +23,23 @@ commit. Run it on the candidate commit to obtain the commit-bound record; the
 content identities below are stable and do not depend on which commit carries
 them.
 
+**What `manifest_digest` is a function of.** The commit, the project version,
+the contract versions, the payload pin, and every config, dependency and
+artifact digest. Change any of those and the candidate is a different candidate.
+
+**What it is deliberately not a function of.** Anything that describes the
+*checkout* rather than the candidate: `dirty`, `dirty_paths` and — since
+`scoutlens-jtt.21` — `branch`. All three are still recorded in the manifest;
+none is hashed into it.
+
+`branch` was the subtle one. Checking out a tag, or a SHA as `actions/checkout`
+does, detaches HEAD, and `rev-parse --abbrev-ref HEAD` then returns the literal
+string `HEAD`. Before that fix, a producer running this on `main` and a reviewer
+verifying the published tag got different digests from an identical tree while
+agreeing on every content digest — a discrepancy shaped exactly like tampering
+and caused by nothing at all. Re-running the manifest on a published tag now
+reproduces the digest recorded when it was cut.
+
 ### Version
 
 | | |
