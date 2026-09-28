@@ -21,8 +21,8 @@ differ only when the site does.
 
 | | |
 |---|---|
-| Source commit | `0045ea41d4d518e5790017a2384abf66b833d60f` |
-| Deployed by | `deploy` run [36063429790](https://github.com/grunobuide/scoutlens/actions/runs/36063429790), 2026-09-24, smoke 9/9 |
+| Source commit | `d79e3362c9e9424ec1412a2661e66a6d389e1b0e` — read from the served page, not inferred (`scoutlens-uze.20`) |
+| Deployed by | `deploy` run [36475145629](https://github.com/grunobuide/scoutlens/actions/runs/36475145629), 2026-09-28, smoke 10/10 |
 | Captured from | <https://grunobuide.github.io/scoutlens/> |
 | Command | `node scripts/capture-media.mjs https://grunobuide.github.io/scoutlens/` |
 | Profile | `wy-8287-c-795` (L. Modrić, Spanish first division, 2017/18) |
@@ -33,15 +33,18 @@ differ only when the site does.
 68237814b27eab04ceb455d3178122608024cb6dfad272c7332c7ef2b3050234  lab-desktop.png
 9f0384b0658457ce3a2da088672f56dbeb5c6260d354419741b3dd0dc36f45f9  lab-evidence-desktop.png
 eee62b579fbbc2f3a979ce659ff6c086467dd8bef988538155df481b567a5c14  lab-retrieval-desktop.png
-0c7c2a007cfa932fbf0634d06eb7c9dcf312305c75a6dd7305970882d1bce875  science-desktop.png
+0d21c9235206f4da346b9a1ea56ad8dd8860ec80edd908f98727050c7f68b3ef  science-desktop.png
 386947bf7ce30cc97d60be27014a22e17525193310dbca7fb64bee46e5ba0eda  lab-mobile.png
 ```
 
-**Two of these five are byte-identical to the pre-rename capture.**
-`lab-evidence-desktop.png` and `lab-retrieval-desktop.png` are scrolled past the
-site header, so the wordmark is not in frame and nothing in them changed. That is
-not an oversight — it is the determinism claim above, checked: the only files
-whose digests moved are the three where the header is visible.
+**Four of these five are byte-identical to the previous capture.** Only
+`science-desktop.png` moved, because only `/science` changed between the two
+deployments. Unchanged digests here are evidence, not a failed capture: the
+determinism claim above says re-runs differ only when the site does, and this is
+that claim being checked rather than asserted.
+
+The same held for the rename capture before it, where the two shots scrolled
+past the site header came back identical because the wordmark was not in frame.
 
 ## Alt text
 
@@ -96,14 +99,6 @@ reader, not more.
 > "Yumusarái Labs" wordmark sit on their own row above the navigation, and the
 > badge row wraps onto two lines. The same heading, lede and fingerprint caveat
 > appear in a single column.
-
-## A known defect these images show
-
-`science-desktop.png` renders **"2017/18season"** with no space, in the
-introduction paragraph. That is `scoutlens-9a3.16`, open and unfixed. The
-screenshot is not retouched and the alt text does not quietly correct it: media
-shows what a reader actually gets, and a portfolio image that silently fixes a
-live defect is a small lie about the product.
 
 ## What is not here
 
