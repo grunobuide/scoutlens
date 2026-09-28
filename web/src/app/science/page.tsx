@@ -26,8 +26,9 @@ export default async function SciencePage() {
         <div className="science-orientation">
           <p>
             Yumusarái Labs asks one question: can a player&apos;s statistical profile identify them?
-            We take public football event data from the {story.manifest.source.season} season,
-            split every player&apos;s play time into two chronological halves, and test whether{" "}
+            We take public football event data from the {story.manifest.source.season}{" "}
+            season, split every player&apos;s play time into two chronological halves, and test
+            whether{" "}
             {story.manifest.population.feature_count} simple measurements of how they act can find
             that same player again in the second half.
           </p>
