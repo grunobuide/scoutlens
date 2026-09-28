@@ -277,5 +277,12 @@ one evaluator and no independent post-fix re-run (`D056`); no demonstration mode
 has been evaluated; and the name's domain, handle and trademark status remain
 unverified, with no registration made or authorised.
 
-Still open and routed, none of them identity: `uze.19`, `uze.20`, `9a3.16`,
-`jtt.20`, `jtt.21`.
+**`scoutlens-uze.20` is resolved too, later the same day.** The build ID is now
+derived from the deployed commit, so §1's line about having to take the commit
+from the Actions run is a statement about how this audit was done, not a
+permanent limitation: a future packet can read the served commit out of the page
+itself, and the production smoke gate asserts that the site serving right now was
+built from the commit just deployed.
+
+Still open and routed, none of them identity: `uze.19`, `9a3.16`, `jtt.20`,
+`jtt.21`.

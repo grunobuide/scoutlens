@@ -13,6 +13,7 @@
     "check:baseline-pairs": "node scripts/check-visual-baseline-pairs.mjs",
     "build": "pnpm assets:sync && next build && pnpm static:check",
     "build:fixtures": "node scripts/build-all-fixtures.mjs",
+    "build:reproducible": "node scripts/check-build-reproducible.mjs",
     "contracts:check": "node scripts/generate-contracts.mjs --check",
     "contracts:generate": "node scripts/generate-contracts.mjs",
     "dev": "pnpm assets:sync && next dev",

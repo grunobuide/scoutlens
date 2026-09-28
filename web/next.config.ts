@@ -22,7 +22,26 @@ const distDir =
 // `basePath` for a static export, so setting one is enough.
 const basePath = process.env.SCOUTLENS_BASE_PATH?.trim() || undefined;
 
+// SCOUTLENS_BUILD_ID names the commit a build came from (scoutlens-uze.20).
+//
+// Next generates a random 21-character build ID per build and embeds it in
+// every page's flight payload and in `_next/static/<buildId>/`. Two builds of
+// an identical tree therefore differ, which cost two real things: a no-op
+// deploy could not be told apart from a real one by digest, and the served site
+// could not say which commit produced it -- `scoutlens-vif.6` had to read that
+// off an Actions log.
+//
+// Deriving it from the commit fixes both at once. The fallback is a fixed
+// literal rather than a timestamp or a random value on purpose: it is what
+// makes `pnpm build:reproducible` a usable check locally, where there is no
+// commit to name.
+//
+// Read at call time, not captured at module load, so the mechanism is testable
+// without reloading the module.
+const LOCAL_BUILD_ID = "scoutlens-local";
+
 const nextConfig: NextConfig = {
+  generateBuildId: async () => process.env.SCOUTLENS_BUILD_ID?.trim() || LOCAL_BUILD_ID,
   output: "export",
   trailingSlash: true,
   ...(distDir === undefined ? {} : { distDir }),

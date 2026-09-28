@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 """Smoke the published site, against the URL that was actually deployed.
 
-    python .github/scripts/smoke-production.py https://owner.github.io/scoutlens/
+    python .github/scripts/smoke-production.py https://owner.github.io/scoutlens/ [commit]
+
+The optional second argument is the commit the deploy just published. Given
+it, the script also asserts the delivered HTML names that commit, which is
+the one thing every other check here would pass on a stale deployment.
 
 `scoutlens-jtt.7.2` AC4 and AC6. Checks the things a static deploy gets wrong and
 a local server cannot tell you about: the subpath actually resolves, direct
@@ -251,17 +255,39 @@ def check_no_secrets(base: str, home: str) -> list[Result]:
     ]
 
 
+def check_build_identity(home: str, expected: str) -> list[Result]:
+    """The page must name the commit that built it (`scoutlens-uze.20`).
+
+    Next bakes the build ID into the flight payload and into
+    `_next/static/<buildId>/`, and the deploy workflow sets that ID to the
+    commit it checked out. So this closes the loop the other checks cannot:
+    every other check here would pass just as happily against a stale
+    deployment of an older commit.
+    """
+    return [
+        Result(
+            "the page names the deployed commit",
+            expected in home,
+            f"expected {expected[:12]} in the delivered HTML",
+        )
+    ]
+
+
 def check_https(base: str) -> list[Result]:
     return [Result("served over HTTPS", base.startswith("https://"), base)]
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
+    if not 2 <= len(argv) <= 3:
         print(__doc__, file=sys.stderr)
         return 2
     base = argv[1]
     if not base.endswith("/"):
         base += "/"
+    # Optional, so the script stays usable standalone against any deployment —
+    # which is how `scoutlens-vif.6` audited production without a build to
+    # compare against.
+    expected_build = argv[2].strip() if len(argv) == 3 else ""
 
     print(f"smoking {base}\n")
     route_results, home = check_routes(base)
@@ -271,6 +297,7 @@ def main(argv: list[str]) -> int:
         *(check_assets(base, home) if home else [Result("assets", False, "home page not fetched")]),
         *(check_caching(base, home) if home else []),
         *(check_no_secrets(base, home) if home else []),
+        *(check_build_identity(home, expected_build) if home and expected_build else []),
     ]
 
     for result in results:
