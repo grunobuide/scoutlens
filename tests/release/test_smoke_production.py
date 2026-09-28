@@ -316,6 +316,95 @@ def test_a_page_referencing_no_asset_fails(monkeypatch: pytest.MonkeyPatch) -> N
     assert "references no _next asset" in results[0].detail
 
 
+# --- the commit the page was built from ----------------------------------
+
+SHA = "c79d2a0f4c2d4ac86f3da1eca106e2eaa7c98962"
+
+
+def _built_page(sha: str) -> str:
+    """A page carrying a build ID, the way Next emits one.
+
+    It appears twice: as the asset directory and inside the flight payload.
+    """
+    return _page(heading=HOME_H1).replace(
+        "</body>",
+        f'<script src="/scoutlens/_next/static/{sha}/_buildManifest.js"></script>'
+        f'<script>self.__next_f.push([1,"\\"b\\":\\"{sha}\\""])</script></body>',
+    )
+
+
+#: Where `urljoin` resolves a root-absolute `/scoutlens/...` ref to.
+ORIGIN = "https://grunobuide.github.io"
+
+
+def test_a_page_built_from_another_commit_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`scoutlens-uze.20`. The check every other check here cannot make.
+
+    A stale deployment of an older commit serves a perfectly healthy site:
+    every route resolves, every asset is present, no secret leaks. Only the
+    build identity can tell that what is published is not what was just built.
+    """
+    stale = _built_page("0045ea41d4d518e5790017a2384abf66b833d60f")
+    assert _failures(smoke.check_build_identity(stale, SHA)) != []
+    assert _failures(smoke.check_build_identity(_built_page(SHA), SHA)) == []
+
+
+def test_the_build_identity_check_is_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Standalone auditing must keep working without a commit to compare.
+
+    `scoutlens-vif.6` smoked production with no build in hand. Making the
+    argument required would have taken that away.
+    """
+    _install(monkeypatch, Host(_site()))
+    assert smoke.main(["smoke-production.py", BASE]) == 0
+
+    _install(monkeypatch, Host(_site()))
+    assert smoke.main(["smoke-production.py", BASE, "   "]) == 0, (
+        "an empty interpolation must not silently add a check that cannot pass"
+    )
+
+
+def _site_built_from(sha: str) -> dict[str, str]:
+    """A healthy site whose home page was built from `sha`.
+
+    The build manifest is served too: it is a real `_next/static` reference, so
+    leaving it out would fail the asset check rather than the identity one, and
+    the test would pass for the wrong reason.
+    """
+    pages = _site()
+    pages[BASE] = _built_page(sha)
+    pages[f"{ORIGIN}/scoutlens/_next/static/{sha}/_buildManifest.js"] = "{}"
+    return pages
+
+
+def test_main_runs_the_identity_check_when_given_a_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The wiring, not just the function: a stale site must fail the gate."""
+    _install(monkeypatch, Host(_site_built_from(SHA)))
+    assert smoke.main(["smoke-production.py", BASE, SHA]) == 0
+
+    older = "0045ea41d4d518e5790017a2384abf66b833d60f"
+    _install(monkeypatch, Host(_site_built_from(older)))
+    assert smoke.main(["smoke-production.py", BASE, SHA]) == 1, (
+        "a healthy deployment of the wrong commit must not pass the gate"
+    )
+
+
+def test_the_workflow_passes_the_deployed_commit_to_the_check() -> None:
+    """A check nothing invokes is decoration."""
+    workflow = (REPO_ROOT / ".github" / "workflows" / "deploy.yml").read_text(encoding="utf-8")
+    assert "needs.deploy.outputs.deployed_sha" in workflow
+    assert "git rev-parse HEAD" in workflow, (
+        "the deployed SHA must be resolved from the checkout, because a dispatch "
+        "ref may be a branch name"
+    )
+
+
+def test_too_many_arguments_is_still_a_usage_error() -> None:
+    assert smoke.main(["smoke-production.py", BASE, SHA, "extra"]) == 2
+
+
 # --- 3. the other checks keep their previous behaviour -------------------
 
 
