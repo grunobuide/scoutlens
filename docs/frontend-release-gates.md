@@ -157,6 +157,55 @@ a removed disclaimer, and — for the exception mechanism itself — dropping on
 entry from `unsupported_claims`, which correctly turns the still-rendered
 sentence into a violation.
 
+### 3.5 RSC prefetch 404s on a Windows build — accepted, upstream
+
+`scoutlens-uze.17`. Serving a locally built export on Windows produces two
+console 404s on every page load:
+
+```
+GET /lab/__next.lab.__PAGE__.txt?_rsc=…      404
+GET /science/__next.science.__PAGE__.txt?_rsc=…  404
+```
+
+**The cause is a path bug in the exporter, not in this project.** The client
+router requests the flat, dot-separated segment name. The exporter builds that
+name by replacing path separators with dots, but on Windows `path.relative()`
+returns backslashes and only forward slashes are replaced — so the leftover
+backslashes are read as directory separators and the file lands at
+`out/lab/__next.lab/__PAGE__.txt`. Measured on a Windows build: three such
+directories exist (`lab`, `science` and `_not-found`), and none of the flat
+files the client asks for does.
+
+Upstream: [vercel/next.js#85374](https://github.com/vercel/next.js/issues/85374),
+with [#92339](https://github.com/vercel/next.js/issues/92339) closed as its
+duplicate. [PR #99058](https://github.com/vercel/next.js/pull/99058) normalises
+the separators; at Next 16.2.12 it is **still open against `canary`**, so there
+is no fixed version to pin to.
+
+**Production is not affected, and that is verified rather than assumed.** CI
+builds on Linux, where the separator is already a forward slash. Driven with a
+browser against the deployed site: `/`, `/lab/` and `/science/` each load with
+**zero console errors**, and `/lab/__next.lab.__PAGE__.txt` and
+`/science/__next.science.__PAGE__.txt` both return 200. Navigation was never
+broken in either case — Next falls back to a full navigation when a prefetch
+payload is missing.
+
+**What guards it.** `check-static-output.mjs` now walks the export for
+`__next.*` *directories*, and its response is deliberately asymmetric:
+
+- on Linux and macOS it **fails the build**, because a nested segment directory
+  there is a real regression and would reach production;
+- on Windows it **warns**, naming the upstream issue, because failing would make
+  `pnpm build` red for every Windows contributor over a defect that cannot reach
+  production and that this project cannot fix.
+
+The warning is the point. A developer who opens devtools on a local build finds
+the explanation instead of hunting a phantom — which is how this was filed in
+the first place, during the `scoutlens-jtt.7.1` audit.
+
+Revisit when PR #99058 lands in a release: pin that version and make the
+Windows branch fail too.
+
 ## 4. Baselines and their review protocol
 
 ### 4.1 The set
