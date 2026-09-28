@@ -214,6 +214,30 @@ def test_the_media_note_records_its_provenance(media_note: str) -> None:
     assert re.search(r"\b[0-9a-f]{7,40}\b", flat), "no source commit is recorded"
 
 
+def test_the_recorded_digests_are_the_digests_of_the_committed_images(
+    media_note: str,
+) -> None:
+    """`scoutlens-jtt.22`. The note must describe the images that are actually here.
+
+    Provenance is only worth recording if it stays true. This is the cheap half
+    of that — a note listing a digest no committed file has is describing some
+    other capture, which is how media quietly comes to document a version of the
+    site nobody ships.
+
+    It cannot prove the images came from the deployment the note names; that
+    needs the network. It can prove the note and the files have not drifted
+    apart, which is the failure that actually happened.
+    """
+    import hashlib
+
+    for image in MEDIA:
+        digest = hashlib.sha256((MEDIA_NOTE.parent / image).read_bytes()).hexdigest()
+        assert f"{digest}  {image}" in media_note, (
+            f"the note does not record the current digest of {image}; "
+            f"the committed file hashes to {digest}"
+        )
+
+
 def test_the_alt_text_describes_the_current_wordmark(media_note: str) -> None:
     """The failure this bead exists to prevent: media showing an obsolete brand.
 
