@@ -2512,3 +2512,60 @@ deploy gate. `scoutlens-vif.4` applies the twelve strings after v1.0.0 is
 tagged. `scoutlens-vif.5` converges README, case study and media. `scoutlens-vif.6`
 verifies. Anything wider than the inventory in the contract is a new decision,
 not an interpretation of this one. `D056` and `D057` are preserved unchanged.
+
+---
+
+## D059 — 2026-09-28 — The frontend agent contract is a project document, and is tracked
+
+**Decision:** remove `docs/frontend-agent-contract.md` from `.gitignore` and
+commit it. **This supersedes `3ef206c`'s classification of that one file**, and
+nothing else in that commit: `.beads/`, `.claude/`, `.codex/`, `personas/`,
+`CLAUDE.md` and `AGENTS.md` stay untracked on exactly the reasoning `3ef206c`
+gave — the repository holds the project and what a clone needs to run it, not
+the tooling used to build it.
+
+**Why that reasoning stops at this file.** Two contracts, described in `D040` as
+mirrors — *"the same three ownership levels, the same Denied-by-default rule for
+any unlisted path, and the same precedence"* — were on opposite tracking
+policies, and nothing recorded that the later one had reversed the earlier
+decision. `docs/modeling-agent-contract.md` was committed four days after
+`3ef206c` and has been tracked ever since. One of each, for two documents that
+are deliberately the same document twice, is the state that could not stand.
+
+**What it was already costing.** Three things, all observed rather than
+predicted:
+
+1. **A fresh clone had no frontend contract at all.** `CLAUDE.md` links both and
+   says anything unlisted is forbidden by default. Read literally, on a clean
+   clone every frontend path was Denied.
+2. **Tracked documents cited an untracked one.** `docs/frontend-release-gates.md`
+   references its §1, §3, §5.7 and §5.9; `docs/frontend-qa-audit.md` and
+   `web/e2e/claims-consistency.spec.ts` do the same. A reader could follow none
+   of them.
+3. **Ownership repairs could not be reviewed.** `scoutlens-uze.15` repointed
+   three Conditional rows from a closed bead to the `scoutlens-uze` epic. The
+   change was real on disk and invisible in the pull request, so `D055`
+   described edits nobody could read.
+
+`scoutlens-vif.2` hit the same wall from the other side and had to write around
+it: the public identity contract quotes the frontend contract's path instead of
+linking it, with a note explaining that a reader on GitHub cannot open the
+document it defers to. That note is now removed, because the link works.
+
+**The rule this settles, beyond this file.** A document is scaffolding when it
+describes *how work gets delegated* and travels with the agent template. It is a
+project document when *work that lands in this repository is judged against it*.
+The frontend contract decides which files a change may touch and who must
+approve it; a reviewer cannot assess a pull request without it. That is the test
+to apply next time, and it is why `CLAUDE.md` — which points at the template and
+carries no binding path table of its own — stays out.
+
+**What this does not change.** Not one ownership level, reviewer, rule or
+section of either contract. `D033` freezes the frontend contract's substance and
+`D040` the modeling one; both stand exactly as written. This decision is about
+where the file lives, not what it says.
+
+**How to apply:** the file is committed as-is. Edits to it now appear in diffs
+and are reviewed like any other project document, under `D033`. If the agent
+template ships its own copy, this repository's copy is the one that governs work
+here.
