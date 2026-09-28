@@ -1,5 +1,5 @@
 import { readFile, readdir } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { FIXTURE_MARKERS, SYNTHETIC_PROFILE_KEYS } from "./fixture-pack.mjs";
@@ -232,5 +232,71 @@ async function assertStaticOnly(directory) {
   }
 }
 
+/**
+ * RSC segment-prefetch payloads must be flat files, not nested directories
+ * (`scoutlens-uze.17`).
+ *
+ * The client router always requests the flat, dot-separated name — for example
+ * `/lab/__next.lab.__PAGE__.txt`. The exporter builds that name by replacing
+ * path separators with dots, but on Windows `path.relative()` returns
+ * backslashes and only forward slashes are replaced. The leftover backslashes
+ * are then read as directory separators, so the file lands at
+ * `/lab/__next.lab/__PAGE__.txt` and every prefetch 404s.
+ *
+ * Upstream: vercel/next.js#85374, with #92339 closed as its duplicate. PR
+ * #99058 normalises the separators; at Next 16.2.12 it is still open against
+ * `canary`, so there is no fixed version to pin to.
+ *
+ * **Production is not affected**, because CI builds on Linux, where the
+ * separator is already a forward slash. Verified against the deployed site:
+ * `/lab/__next.lab.__PAGE__.txt` and `/science/__next.science.__PAGE__.txt`
+ * both return 200.
+ *
+ * Hence the asymmetry below, which is deliberate. On Linux and macOS a nested
+ * segment directory would be a real regression and fails the build. On Windows
+ * it is the known upstream bug and only warns — failing there would make
+ * `pnpm build` red for every Windows contributor over a defect that cannot
+ * reach production and that this project cannot fix. The warning exists so a
+ * developer who opens devtools finds the explanation instead of hunting a
+ * phantom.
+ */
+async function assertSegmentPayloadsAreFlat(directory) {
+  const nested = [];
+  async function walk(current) {
+    for (const entry of await readdir(current, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const path = join(current, entry.name);
+      if (entry.name.startsWith("__next.")) {
+        nested.push(relative(directory, path).replaceAll("\\", "/"));
+        continue;
+      }
+      await walk(path);
+    }
+  }
+  await walk(directory);
+
+  if (nested.length === 0) return;
+
+  const detail =
+    `${nested.length} RSC segment payload(s) were written as directories instead of ` +
+    `flat files: ${nested.join(", ")}. The client requests the flat dot-separated ` +
+    `name, so each one 404s. Upstream: vercel/next.js#85374 (PR #99058, unmerged).`;
+
+  if (process.platform === "win32") {
+    console.warn(
+      `warning: ${detail}
+` +
+        "         This is the known Windows path bug and cannot reach production: " +
+        "CI builds on Linux. Expect two console 404s when serving this build locally.",
+    );
+    return;
+  }
+
+  throw new Error(
+    `${detail} This platform is not affected by the Windows bug, so this is a real regression.`,
+  );
+}
+
 await assertStaticOnly(resolve(webRoot, "src", "app"));
+await assertSegmentPayloadsAreFlat(resolve(webRoot, "out"));
 console.log("Static export contains all routes and semantic landmarks");
