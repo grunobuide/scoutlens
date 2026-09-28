@@ -19,7 +19,7 @@ wrong.
 |---|---|---|
 | **Implementation integrated** | ✅ | `vif.2` `dedd5cd`, `vif.3` `c30f4ba`, `vif.4` `0045ea4`, `vif.5` `af96be6`, all on `main` with `quality` green |
 | **Deployed identity verified** | ✅ | Served from `af96be6` by `deploy` run [36139469798](https://github.com/grunobuide/scoutlens/actions/runs/36139469798), smoke 9/9; every surface checked against the live site in §2. The commit had to be taken from the Actions run, because the served page does not name it — `scoutlens-uze.20`, §7 |
-| **Promotion ready** | ⛔ **No** | The GitHub repository description claims RAG and AI this project does not have — `scoutlens-vif.7`, §7. Sending anyone to the repository today leads with a false claim |
+| **Promotion ready** | ⛔ **No** at the time of this audit | The GitHub repository description claimed RAG and AI this project does not have — `scoutlens-vif.7`, §7. Sending anyone to the repository would have led with a false claim. **Resolved on 2026-09-28; see the addendum in §9** |
 
 The third row is the point of separating them. The implementation is complete
 and the deployment is correct; the project is still not ready to be pointed at.
@@ -247,3 +247,35 @@ validated — it was not, `D056` stands with one evaluator and no independent
 post-fix re-run; that any model has been evaluated — none has; and that the
 name is legally available — domain, handle and trademark status remain
 unverified, and no registration was made or authorised.
+
+---
+
+## 9. Addendum — 2026-09-28
+
+Appended rather than edited into the audit above: what §1 and §7 recorded was
+true when they were written, and a verification packet that quietly rewrites its
+own findings is worth nothing.
+
+**`scoutlens-vif.7` is resolved.** The owner chose the wording and it was
+applied:
+
+> Yumusarái Labs: Evidence-first football analytics experiment and playground
+> using data science and AI
+
+No RAG claim, no implication of AI in the deployed site, and no suggestion that
+any model has been evaluated. The homepage field now points at
+<https://grunobuide.github.io/scoutlens/>, so the repository sidebar links the
+live site.
+
+`docs/public-identity-contract.md` §3.3 now lists the surfaces that are not
+files — description, homepage, topics, social preview, release titles — with the
+commands that check them, because nothing in this repository's test suite can.
+
+**Promotion ready: yes**, on the identity axis. The three limits this packet
+refused to claim are unchanged and still hold: comprehension was validated with
+one evaluator and no independent post-fix re-run (`D056`); no demonstration model
+has been evaluated; and the name's domain, handle and trademark status remain
+unverified, with no registration made or authorised.
+
+Still open and routed, none of them identity: `uze.19`, `uze.20`, `9a3.16`,
+`jtt.20`, `jtt.21`.

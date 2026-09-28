@@ -156,6 +156,41 @@ wordmark, not by assuming the subset. Adding a font file is a non-goal.
 
 ---
 
+### 3.3 The surfaces that are not files
+
+Added by `scoutlens-vif.7`, which exists because §3 originally missed all of
+these. They are display surfaces in every sense that matters — a visitor reads
+the repository description **before** the README — but they live in GitHub
+settings, so no rename touches them and **no test in this repository can see
+them**. That is exactly why they need writing down.
+
+| Surface | Where | Checked by |
+|---|---|---|
+| Repository description | GitHub settings → General | `gh repo view --json description` |
+| Homepage field | same | `gh repo view --json homepageUrl` |
+| Topics | same | `gh repo view --json repositoryTopics` |
+| Social preview image | Settings → General → Social preview | `gh repo view --json openGraphImageUrl,usesCustomOpenGraphImage` |
+| Release titles and bodies | the Releases page | `gh release list`, `gh release view <tag>` |
+
+Two rules for this group, and the second is the one that bites.
+
+1. **A public identity change is not complete until these are checked.** Run the
+   commands above and compare against §1; nothing else will.
+2. **They are the owner's to write.** The description is a person's professional
+   positioning, not a string an agent substitutes. An executor proposes wording
+   and applies what the owner chooses — it never picks the words.
+
+Published release titles and bodies are **historical**, like the decisions log:
+`v1.0.0` describes the site as it shipped, under the name it shipped with, and is
+not edited to match a later brand.
+
+The cost of having missed this once is recorded in `scoutlens-vif.7`: through the
+entire rename, the repository's own description claimed the project did RAG. It
+does not, has never, and the claim outranked every careful disclaimer in the
+documents because GitHub prints it above the README.
+
+---
+
 ## 4. Do-not-rename inventory
 
 Every occurrence of `scoutlens` below stays. None of them is a leftover.
