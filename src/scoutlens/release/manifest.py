@@ -191,16 +191,32 @@ def build_manifest() -> dict[str, Any]:
     }
 
 
-def manifest_digest(manifest: dict[str, Any]) -> str:
-    """Digest over everything except the tree-state fields.
+#: Fields under `git` that describe the *checkout* rather than the candidate.
+#: Recorded in the manifest, excluded from its digest.
+CHECKOUT_FIELDS = ("dirty", "dirty_paths", "branch")
 
-    `git.dirty` and `dirty_paths` describe the working copy rather than the
-    candidate, so including them would make the digest of a commit depend on who
-    happened to have an editor open. The commit itself stays in.
+
+def manifest_digest(manifest: dict[str, Any]) -> str:
+    """Digest over everything except the fields that describe the checkout.
+
+    `dirty` and `dirty_paths` describe the working copy, so including them would
+    make the digest of a commit depend on who happened to have an editor open.
+
+    `branch` joins them for a sharper reason (`scoutlens-jtt.21`). A commit's
+    branch membership is not a property of the commit. Checking out a tag — or a
+    SHA, which is what `actions/checkout` does — detaches HEAD, and
+    `rev-parse --abbrev-ref HEAD` then returns the literal string `HEAD`. So the
+    producer running this on `main` and a reviewer verifying the published tag
+    would get different digests from the same tree, while agreeing on every
+    content digest. That is the worst possible shape for a verification step: it
+    looks exactly like tampering and is exactly not.
+
+    The commit itself stays in. It identifies the candidate; the ref that
+    happened to point at it does not.
     """
     stable = json.loads(json.dumps(manifest))
-    stable["git"].pop("dirty", None)
-    stable["git"].pop("dirty_paths", None)
+    for field in CHECKOUT_FIELDS:
+        stable["git"].pop(field, None)
     return hashlib.sha256(canonical_json_bytes(stable)).hexdigest()
 
 
