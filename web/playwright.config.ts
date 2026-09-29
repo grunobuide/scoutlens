@@ -21,7 +21,39 @@ export default defineConfig({
   expect: {
     toHaveScreenshot: {
       animations: "disabled",
-      maxDiffPixelRatio: 0.03,
+      // Set from measurement, not from a round number (`scoutlens-uze.19`).
+      //
+      // It was 0.03, and at 0.03 the gate did not notice the site wordmark
+      // changing on every page. Every figure below is Playwright's own
+      // arithmetic, taken by running the suite at `maxDiffPixelRatio: 0`:
+      //
+      //   run-to-run, same machine                 0.00000
+      //   CI render vs pinned container, same      0.00043   <- the floor
+      //     platform, content unchanged
+      //   landing-claims, desktop                  0.00562
+      //   landing-hero, desktop                    0.00603 / 0.00749
+      //   science-stage-01, desktop                0.00964 / 0.01049
+      //   science-stage-01, mobile-360             0.01252 / 0.01530
+      //   landing-hero, mobile-360                 0.02370 / 0.02479
+      //
+      // (win32 / linux where both were measured.)
+      //
+      // Two things that fixes. Nothing on that list was caught, including a
+      // full rename of the site. And `landing-hero` at mobile-360 had reached
+      // 83% of the old budget, so the gate was also about to go red for
+      // reasons nobody would have connected to a change three beads earlier.
+      //
+      // 0.002 is ~4.6x the measured environment floor and ~2.8x below the
+      // smallest real change in the list. The floor is what the tolerance is
+      // actually for: run-to-run variance on one machine is zero, so the only
+      // thing it must absorb is CI rendering one monospace chip differently
+      // from the container the frontend contract pins for regenerating
+      // baselines (`scoutlens-uze.14`).
+      //
+      // May only move down (frontend contract section 5.5). If it ever has to
+      // move up, that is a finding about the two environments, not a budget
+      // decision.
+      maxDiffPixelRatio: 0.002,
     },
   },
   use: {
