@@ -55,6 +55,25 @@ jobs:
 
   web-quality:
     runs-on: ubuntu-latest
+    # Run in the same image contributors regenerate Linux baselines from
+    # (`scoutlens-uze.23`).
+    #
+    # Before this, CI installed a browser onto `ubuntu-latest` while the
+    # frontend contract §5.7 told contributors to regenerate inside
+    # `v1.62.0-noble`. Two font environments, so the same page rendered one
+    # monospace element differently in each — about 1,052 pixels, constant,
+    # because it is one piece of text. Every Linux baseline therefore
+    # disagreed slightly with whichever environment did not produce it, and
+    # `maxDiffPixels` had to stay wide enough to swallow that. It is the only
+    # reason the budget is 2,000 rather than a few hundred: run-to-run
+    # variance on one machine is zero.
+    #
+    # **This image tag and `@playwright/test` in web/package.json must move
+    # together.** The image ships the browsers for its own Playwright version;
+    # bumping one alone gives a client/browser mismatch that will not
+    # necessarily fail loudly.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-noble
     defaults:
       run:
         working-directory: web
@@ -119,7 +138,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
+      # No `playwright install` step: the image ships the browsers for its own
+      # Playwright version, which is the whole point of running in it.
       - run: pnpm budget:check
       - run: pnpm test:e2e
       - run: pnpm lighthouse
