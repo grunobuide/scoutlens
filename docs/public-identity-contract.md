@@ -9,17 +9,11 @@ the one reader-facing occurrence of the old name that **cannot** be changed at
 all. It binds `scoutlens-vif.3`, `.4`, `.5` and `.6`.
 
 **It does not widen any existing contract.** Every path below is already Allowed
-or already Conditional in `docs/frontend-agent-contract.md` §1; this document
+or already Conditional in
+[`frontend-agent-contract.md`](frontend-agent-contract.md) §1; this document
 supplies the named-reviewer approval that the Conditional level requires, and
 nothing more. Where the two disagree, the frontend contract wins and the
 executor stops — the same rule `CLAUDE.md` applies to beads.
-
-> **That file is not linked because it is not in the repository.**
-> `.gitignore:77` ignores `docs/frontend-agent-contract.md` while its sibling
-> `docs/modeling-agent-contract.md` is tracked. That is a known defect,
-> `scoutlens-iex.8`, and it means a reader on GitHub cannot open the contract
-> this one defers to. Fixing it is out of scope here; pretending the link works
-> is not an option, so the path is quoted and the asymmetry is stated.
 
 ---
 
@@ -285,7 +279,8 @@ reader must get the name once, not twice.
 
 ## 7. Review and snapshots
 
-Snapshots follow `docs/frontend-agent-contract.md` §5 unchanged. This contract
+Snapshots follow [`frontend-agent-contract.md`](frontend-agent-contract.md) §5
+unchanged. This contract
 adds no exception and grants no relaxation. In particular:
 
 - The wordmark change *is* the cause of the baseline diff, so updating those
