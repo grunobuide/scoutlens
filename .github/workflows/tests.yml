@@ -132,8 +132,7 @@ jobs:
           echo "--- rev-list count: $(git rev-list --count HEAD 2>&1 | head -1)"
           echo "--- is the base present? $(git cat-file -t "$BASE_SHA" 2>&1 | head -1)"
           echo "--- origin/main: $(git rev-parse origin/main 2>&1 | head -1)"
-          echo "--- refs: $(git for-each-ref --count=5 --format='%(refname)' | tr '
-' ' ')"
+          git for-each-ref --count=5 --format='--- ref: %(refname)'
 
           git diff --name-only "$BASE_SHA" HEAD > changed-paths.txt
 
