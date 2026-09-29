@@ -77,6 +77,11 @@ jobs:
     defaults:
       run:
         working-directory: web
+        # Inside a container Actions falls back to `sh`, which is dash here, and
+        # dash rejects `set -o pipefail`. On the plain runner the default was
+        # already bash, so this keeps every `run` step behaving as it did rather
+        # than changing two things at once.
+        shell: bash
     steps:
       - uses: actions/checkout@v6
         with:
