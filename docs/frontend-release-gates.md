@@ -250,47 +250,60 @@ method rename, unrounded rank bounds, a complete change of published rank
 values, and the correction of the first of those. Three separate beads confirmed
 it independently. Do not reach for a screenshot to hold a sentence.
 
-That stays true at any tolerance — §4.4 lowered it to `0.002`, which narrows the
-blind spot without closing it. A sentence still belongs in a text assertion.
+That stays true at any tolerance — §4.4 replaced the ratio with an absolute
+budget, which narrows the blind spot without closing it. A sentence still
+belongs in a text assertion.
 
-### 4.4 The tolerance, and what it is actually for
+### 4.4 The tolerance is an absolute pixel budget, not a ratio
 
-`scoutlens-uze.19`. `maxDiffPixelRatio` was `0.03` and is now **`0.002`**, set
-from measurement rather than from a round number. Every figure is Playwright's
-own arithmetic, taken by running the suite at `maxDiffPixelRatio: 0`:
+`scoutlens-uze.19`. It was `maxDiffPixelRatio: 0.03`. It is now
+**`maxDiffPixels: 2000`**. The change of *instrument* matters more than the
+change of number, and it was learned the hard way — the first attempt lowered
+the ratio to `0.002` and CI went red.
 
-| measured | ratio |
+**Why a ratio cannot work here.** The only difference this gate has to tolerate
+is CI rendering one monospace element with a different font stack from the
+`v1.62.0-noble` container §5.7 pins for regenerating baselines. That artefact is
+roughly **constant in pixels** — about 1,052 — because it is one piece of text.
+A ratio divides by image area, so the same artefact reads as 0.0009 on a
+1280×900 desktop shot and 0.0037 on a 360×800 mobile one. There is no single
+ratio above the second and below a real change.
+
+Everything below is Playwright's own arithmetic, taken at a zero budget:
+
+| measured | pixels |
 |---|---|
-| run-to-run, same machine | **0.00000** |
-| CI render vs the pinned container, same platform, content unchanged | **0.00043** |
-| `landing-claims`, desktop | 0.00562 |
-| `landing-hero`, desktop | 0.00603 / 0.00749 |
-| `science-stage-01`, desktop | 0.00964 / 0.01049 |
-| `science-stage-01`, mobile-360 | 0.01252 / 0.01530 |
-| `landing-hero`, mobile-360 | **0.02370 / 0.02479** |
+| two renders, same machine | **0** |
+| CI vs container, desktop, content unchanged | 497 |
+| CI vs container, mobile-360, content unchanged | **1,052** ← the floor |
+| `science-stage-01`, mobile-360 (wordmark + space fix) | 3,605 |
+| `landing-claims`, desktop (wordmark) | 6,474 |
+| `landing-hero`, mobile-360 (wordmark) | 6,825 |
+| `landing-hero`, desktop (wordmark) | 6,944 |
+| `science-stage-01`, desktop (wordmark + space fix) | 11,099 |
 
-(win32 / linux where both were measured.)
+`2000` is ~1.9× the floor, ~1.8× below the smallest real change, and means the
+same thing on every image in the suite. For comparison, `0.03` on the mobile
+shots was a budget of **8,640 pixels** — larger than any content change in that
+table, which is why the site wordmark could change on every page unnoticed.
 
-**Two things this fixes, not one.** Nothing on that list was caught — including
-a rename of the site's wordmark on every page. And `landing-hero` at mobile-360
-had reached **83% of the old budget**, so the gate was also heading for a red
-that nobody would have connected to a change three beads earlier.
+**Two problems that fixed, not one.** Nothing in the table was caught. And
+`landing-hero` at mobile-360 had reached 83% of the old ratio budget, so the
+gate was also heading for a red nobody would have connected to a rename three
+beads earlier.
 
-**What the tolerance is for.** Run-to-run variance on one machine is zero, so it
-was never absorbing local flake. The only thing it must absorb is the CI runner
-rendering one monospace chip differently from the `v1.62.0-noble` container that
-§5.7 pins for regenerating baselines — 497 pixels of 1,152,000 on
-`retrieval-neighbors`, `scoutlens-uze.14`. `0.002` is ~4.6× that floor and ~2.8×
-below the smallest real change in the table.
+**Set only one of the two.** Playwright treats `maxDiffPixels` and
+`maxDiffPixelRatio` as independent limits, so setting both would reintroduce the
+area-scaled one as a hidden second gate.
 
-**Where that floor comes from, and how to remove it.** CI installs Chromium onto
-`ubuntu-latest`; the container ships its own font set. Running the `web-quality`
-job *inside* the pinned image would make the two identical and let the tolerance
-go to nearly zero. That is a workflow change, Denied to frontend work, so it is
-filed rather than done.
+**The floor is removable.** CI installs a browser onto `ubuntu-latest`; the
+container ships its own fonts. Running `web-quality` inside the pinned image
+makes them the same renderer and takes the floor to zero, after which this can
+go far lower. That is `scoutlens-uze.23`, and until it lands the mobile shots
+are the binding constraint.
 
-May only move down (§5.5 of the frontend agent contract). If it ever has to move
-up, that is a finding about the two environments, not a budget decision.
+May only move down (§5.5). If it ever has to move up, that is a finding about
+the two environments, not a budget decision.
 
 ## 5. Budgets
 

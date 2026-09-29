@@ -21,39 +21,42 @@ export default defineConfig({
   expect: {
     toHaveScreenshot: {
       animations: "disabled",
-      // Set from measurement, not from a round number (`scoutlens-uze.19`).
+      // An ABSOLUTE pixel budget, not a ratio (`scoutlens-uze.19`).
       //
-      // It was 0.03, and at 0.03 the gate did not notice the site wordmark
-      // changing on every page. Every figure below is Playwright's own
-      // arithmetic, taken by running the suite at `maxDiffPixelRatio: 0`:
+      // The first attempt at this used `maxDiffPixelRatio: 0.002` and CI went
+      // red. The reason is the instrument, not the number. The only difference
+      // this gate has to tolerate is CI rendering one monospace element with a
+      // different font stack from the `v1.62.0-noble` container the frontend
+      // contract pins for regenerating baselines. That artefact is roughly
+      // CONSTANT IN PIXELS — about 1,052 of them — because it is one piece of
+      // text. A ratio divides by image area, so the same artefact reads as
+      // 0.0009 on a 1,280x900 desktop shot and 0.0037 on a 360x800 mobile one.
+      // No single ratio can sit above the second and below a real change.
       //
-      //   run-to-run, same machine                 0.00000
-      //   CI render vs pinned container, same      0.00043   <- the floor
-      //     platform, content unchanged
-      //   landing-claims, desktop                  0.00562
-      //   landing-hero, desktop                    0.00603 / 0.00749
-      //   science-stage-01, desktop                0.00964 / 0.01049
-      //   science-stage-01, mobile-360             0.01252 / 0.01530
-      //   landing-hero, mobile-360                 0.02370 / 0.02479
+      // Measured, all in Playwright's own arithmetic:
       //
-      // (win32 / linux where both were measured.)
+      //   run-to-run, same machine                    0 px
+      //   CI vs container, desktop, content unchanged      497 px
+      //   CI vs container, mobile-360, content unchanged  1052 px   <- the floor
+      //   science-stage-01, mobile-360 (wordmark + space)  3605 px
+      //   landing-claims, desktop (wordmark)               6474 px
+      //   landing-hero, mobile-360 (wordmark)              6825 px
+      //   landing-hero, desktop (wordmark)                 6944 px
+      //   science-stage-01, desktop (wordmark + space)    11099 px
       //
-      // Two things that fixes. Nothing on that list was caught, including a
-      // full rename of the site. And `landing-hero` at mobile-360 had reached
-      // 83% of the old budget, so the gate was also about to go red for
-      // reasons nobody would have connected to a change three beads earlier.
+      // 2000 is ~1.9x the floor and ~1.8x below the smallest real change, and
+      // it means the same thing on every image in the suite. The old value was
+      // `maxDiffPixelRatio: 0.03`, which on the mobile shots was a budget of
+      // 8,640 pixels — larger than any content change in that list.
       //
-      // 0.002 is ~4.6x the measured environment floor and ~2.8x below the
-      // smallest real change in the list. The floor is what the tolerance is
-      // actually for: run-to-run variance on one machine is zero, so the only
-      // thing it must absorb is CI rendering one monospace chip differently
-      // from the container the frontend contract pins for regenerating
-      // baselines (`scoutlens-uze.14`).
+      // Remove the floor and this can go far lower: `scoutlens-uze.23` runs
+      // `web-quality` inside the pinned image, which makes CI and the container
+      // the same renderer. Until then the mobile shots are the constraint.
       //
-      // May only move down (frontend contract section 5.5). If it ever has to
-      // move up, that is a finding about the two environments, not a budget
-      // decision.
-      maxDiffPixelRatio: 0.002,
+      // Only one of `maxDiffPixels` / `maxDiffPixelRatio` is set on purpose:
+      // Playwright treats each as an independent limit, so setting both would
+      // reintroduce the area-scaled one as a hidden second gate.
+      maxDiffPixels: 2000,
     },
   },
   use: {
