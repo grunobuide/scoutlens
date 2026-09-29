@@ -241,6 +241,25 @@ a reference image and does not churn when a percentile moves.
    the routine command, and CI writes an actual only on failure. To refresh one,
    delete both platforms' copies together — that keeps the pair guard satisfied
    and forces a render. This is how `uze.12` and `9a3.10` were done.
+   `--update-snapshots=all` rewrites regardless, which is the blunt instrument
+   for the same problem; prefer the delete, because `=all` also rewrites files
+   whose pixels are identical and hides which ones actually moved.
+6. **Copy `web/test-results` before doing anything else after a failure.**
+   Playwright wipes `outputDir` at the start of every run, so the trace,
+   the `-actual.png` and the diff image are gone the moment you re-run —
+   including when you re-run *to see whether it reproduces*. `scoutlens-uze.21`
+   is the bead where that happened: a keyboard test failed once under
+   full-suite parallelism, and re-running to check destroyed the only evidence
+   of why.
+7. **Retries are 1 in CI and 0 locally, and that is the wrong way round for
+   diagnosis.** `playwright.config.ts` sets `retries: process.env.CI ? 1 : 0`.
+   A non-deterministic failure therefore fails the whole gate on a
+   contributor's machine and is silently absorbed in CI, so the environment
+   with the better diagnostics reports it least. The asymmetry is deliberate —
+   CI retries to absorb infrastructure noise, and a local run should not hide
+   flakiness behind a second attempt — but it means **a green CI run is not
+   evidence that a test is stable.** Read the run summary for a retried job
+   before treating it as clean.
 
 ### 4.3 What images are for
 
