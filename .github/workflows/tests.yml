@@ -55,9 +55,33 @@ jobs:
 
   web-quality:
     runs-on: ubuntu-latest
+    # Run in the same image contributors regenerate Linux baselines from
+    # (`scoutlens-uze.23`).
+    #
+    # Before this, CI installed a browser onto `ubuntu-latest` while the
+    # frontend contract §5.7 told contributors to regenerate inside
+    # `v1.62.0-noble`. Two font environments, so the same page rendered one
+    # monospace element differently in each — about 1,052 pixels, constant,
+    # because it is one piece of text. Every Linux baseline therefore
+    # disagreed slightly with whichever environment did not produce it, and
+    # `maxDiffPixels` had to stay wide enough to swallow that. It is the only
+    # reason the budget is 2,000 rather than a few hundred: run-to-run
+    # variance on one machine is zero.
+    #
+    # **This image tag and `@playwright/test` in web/package.json must move
+    # together.** The image ships the browsers for its own Playwright version;
+    # bumping one alone gives a client/browser mismatch that will not
+    # necessarily fail loudly.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-noble
     defaults:
       run:
         working-directory: web
+        # Inside a container Actions falls back to `sh`, which is dash here, and
+        # dash rejects `set -o pipefail`. On the plain runner the default was
+        # already bash, so this keeps every `run` step behaving as it did rather
+        # than changing two things at once.
+        shell: bash
     steps:
       - uses: actions/checkout@v6
         with:
@@ -96,6 +120,21 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -euo pipefail
+
+          # TEMPORARY diagnostic (scoutlens-uze.23): the base SHA is reported as
+          # inaccessible inside the container although git is present, the fetch
+          # took every head, and safe.directory is configured. Measure rather
+          # than guess.
+          echo "--- whoami: $(id -u):$(id -g)  HOME=$HOME  PWD=$(pwd)"
+          echo "--- workspace owner: $(stat -c '%u:%g' .)"
+          echo "--- git version: $(git version)"
+          echo "--- safe.directory: $(git config --get-all safe.directory || echo none)"
+          echo "--- rev-list count: $(git rev-list --count HEAD 2>&1 | head -1)"
+          echo "--- is the base present? $(git cat-file -t "$BASE_SHA" 2>&1 | head -1)"
+          echo "--- origin/main: $(git rev-parse origin/main 2>&1 | head -1)"
+          echo "--- refs: $(git for-each-ref --count=5 --format='%(refname)' | tr '
+' ' ')"
+
           git diff --name-only "$BASE_SHA" HEAD > changed-paths.txt
 
           override=""
@@ -119,7 +158,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
+      # No `playwright install` step: the image ships the browsers for its own
+      # Playwright version, which is the whole point of running in it.
       - run: pnpm budget:check
       - run: pnpm test:e2e
       - run: pnpm lighthouse
