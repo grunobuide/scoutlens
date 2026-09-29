@@ -120,6 +120,21 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -euo pipefail
+
+          # TEMPORARY diagnostic (scoutlens-uze.23): the base SHA is reported as
+          # inaccessible inside the container although git is present, the fetch
+          # took every head, and safe.directory is configured. Measure rather
+          # than guess.
+          echo "--- whoami: $(id -u):$(id -g)  HOME=$HOME  PWD=$(pwd)"
+          echo "--- workspace owner: $(stat -c '%u:%g' .)"
+          echo "--- git version: $(git version)"
+          echo "--- safe.directory: $(git config --get-all safe.directory || echo none)"
+          echo "--- rev-list count: $(git rev-list --count HEAD 2>&1 | head -1)"
+          echo "--- is the base present? $(git cat-file -t "$BASE_SHA" 2>&1 | head -1)"
+          echo "--- origin/main: $(git rev-parse origin/main 2>&1 | head -1)"
+          echo "--- refs: $(git for-each-ref --count=5 --format='%(refname)' | tr '
+' ' ')"
+
           git diff --name-only "$BASE_SHA" HEAD > changed-paths.txt
 
           override=""
