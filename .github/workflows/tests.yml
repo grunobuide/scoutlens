@@ -88,6 +88,21 @@ jobs:
           # The visual-baseline pair guard diffs against the pull request
           # base, so a shallow single-commit checkout is not enough.
           fetch-depth: 0
+      # This job runs in a container as root (0:0) while the workspace belongs
+      # to the runner user (1001:1001), so git refuses the repository with
+      # "detected dubious ownership" and every later git command fails.
+      #
+      # `actions/checkout` does add a safe.directory exception, but into a
+      # *temporary* global config scoped to its own invocations — a `run` step
+      # sees `safe.directory: none`. On the plain runner none of this applied,
+      # because the job ran as the user that owns the files.
+      #
+      # Measured rather than assumed: the failure first surfaced as
+      # "error: Could not access '<sha>'", which reads like a missing object and
+      # is not (`scoutlens-uze.23`).
+      - name: Trust the workspace
+        working-directory: .
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: astral-sh/setup-uv@v9.0.0
         with:
           python-version: "3.14"
@@ -120,20 +135,6 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -euo pipefail
-
-          # TEMPORARY diagnostic (scoutlens-uze.23): the base SHA is reported as
-          # inaccessible inside the container although git is present, the fetch
-          # took every head, and safe.directory is configured. Measure rather
-          # than guess.
-          echo "--- whoami: $(id -u):$(id -g)  HOME=$HOME  PWD=$(pwd)"
-          echo "--- workspace owner: $(stat -c '%u:%g' .)"
-          echo "--- git version: $(git version)"
-          echo "--- safe.directory: $(git config --get-all safe.directory || echo none)"
-          echo "--- rev-list count: $(git rev-list --count HEAD 2>&1 | head -1)"
-          echo "--- is the base present? $(git cat-file -t "$BASE_SHA" 2>&1 | head -1)"
-          echo "--- origin/main: $(git rev-parse origin/main 2>&1 | head -1)"
-          git for-each-ref --count=5 --format='--- ref: %(refname)'
-
           git diff --name-only "$BASE_SHA" HEAD > changed-paths.txt
 
           override=""
