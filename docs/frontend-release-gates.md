@@ -276,8 +276,9 @@ belongs in a text assertion.
 ### 4.4 The tolerance is an absolute pixel budget, not a ratio
 
 `scoutlens-uze.19`. It was `maxDiffPixelRatio: 0.03`. It is now
-**`maxDiffPixels: 2000`**. The change of *instrument* matters more than the
-change of number, and it was learned the hard way — the first attempt lowered
+**`maxDiffPixels: 250`** (2,000 at first; see the floor note below). The change
+of *instrument* matters more than the change of number, and it was learned the
+hard way — the first attempt lowered
 the ratio to `0.002` and CI went red.
 
 **Why a ratio cannot work here.** The only difference this gate has to tolerate
@@ -315,11 +316,22 @@ beads earlier.
 `maxDiffPixelRatio` as independent limits, so setting both would reintroduce the
 area-scaled one as a hidden second gate.
 
-**The floor is removable.** CI installs a browser onto `ubuntu-latest`; the
-container ships its own fonts. Running `web-quality` inside the pinned image
-makes them the same renderer and takes the floor to zero, after which this can
-go far lower. That is `scoutlens-uze.23`, and until it lands the mobile shots
-are the binding constraint.
+**The floor was removed, and the budget came down with it.**
+`scoutlens-uze.23` moved `web-quality` inside the pinned image, so CI and the
+environment that regenerates baselines are one renderer. `scoutlens-uze.24`
+re-measured in CI at a budget of 0 and found **one** file still differing:
+`desktop-linux/retrieval-neighbors.png`, 497 px, still carrying the old CI
+environment's render of the one monospace element that ever differed. Every
+other baseline matched exactly.
+
+That corrected an assumption worth recording: the font difference was never
+spread across the suite. It only ever touched the single element that renders
+it, which is why `scoutlens-uze.14` saw five of six baselines byte-identical.
+
+With that file re-rendered, **the measured floor is 0**, and the budget is now
+`maxDiffPixels: 250` — headroom for jitter that has never been observed, not a
+measured requirement, and 14x below the smallest real content change measured
+here. CI's run and its automatic retry produce byte-identical images.
 
 May only move down (§5.5). If it ever has to move up, that is a finding about
 the two environments, not a budget decision.

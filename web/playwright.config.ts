@@ -44,19 +44,30 @@ export default defineConfig({
       //   landing-hero, desktop (wordmark)                 6944 px
       //   science-stage-01, desktop (wordmark + space)    11099 px
       //
-      // 2000 is ~1.9x the floor and ~1.8x below the smallest real change, and
-      // it means the same thing on every image in the suite. The old value was
-      // `maxDiffPixelRatio: 0.03`, which on the mobile shots was a budget of
-      // 8,640 pixels — larger than any content change in that list.
+      // The old value was `maxDiffPixelRatio: 0.03`, which on the mobile shots
+      // was a budget of 8,640 pixels — larger than any content change in that
+      // list, which is how a rename of the site wordmark passed unnoticed.
       //
-      // Remove the floor and this can go far lower: `scoutlens-uze.23` runs
-      // `web-quality` inside the pinned image, which makes CI and the container
-      // the same renderer. Until then the mobile shots are the constraint.
+      // **The floor is now zero** (`scoutlens-uze.24`). `scoutlens-uze.23` moved
+      // `web-quality` into the pinned image, so CI and the environment that
+      // regenerates baselines are one renderer. Re-measured in CI at a budget of
+      // 0: every baseline in the suite matched exactly except
+      // `desktop-linux/retrieval-neighbors.png`, which was still rendered by the
+      // old CI environment and differed by 497 px on the one monospace element
+      // that ever differed. Re-rendering it left nothing above zero.
+      //
+      // So 250 is **not** a measured requirement — it is headroom for jitter
+      // that has never been observed. Run-to-run on one machine is 0, and CI's
+      // run and its automatic retry produced byte-identical images. It is 14x
+      // below the smallest real content change ever measured here (3,605 px).
+      //
+      // If this ever has to move up, that is a finding about the renderer, not
+      // a budget decision — record what changed before touching it.
       //
       // Only one of `maxDiffPixels` / `maxDiffPixelRatio` is set on purpose:
       // Playwright treats each as an independent limit, so setting both would
       // reintroduce the area-scaled one as a hidden second gate.
-      maxDiffPixels: 0,
+      maxDiffPixels: 250,
     },
   },
   use: {
