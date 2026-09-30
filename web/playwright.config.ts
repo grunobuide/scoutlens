@@ -56,7 +56,7 @@ export default defineConfig({
       // Only one of `maxDiffPixels` / `maxDiffPixelRatio` is set on purpose:
       // Playwright treats each as an independent limit, so setting both would
       // reintroduce the area-scaled one as a hidden second gate.
-      maxDiffPixels: 2000,
+      maxDiffPixels: 0,
     },
   },
   use: {
