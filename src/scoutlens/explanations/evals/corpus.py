@@ -120,6 +120,21 @@ class Dimension(StrEnum):
 #: can reach it — see `audit_cases`. It stays a named member rather than being
 #: deleted, because the gap is a fact about the published data that a reader of
 #: the coverage matrix should see, exactly like the empty goalkeeper cell.
+#: Dimensions the recorded report can describe.
+#:
+#: `SEMANTICS_AUDIT_BASELINE` is excluded, and stays excluded after
+#: `scoutlens-jtt.18` gave the v1 audit path CI coverage. The two facts are
+#: compatible and the distinction is the point (`D060`):
+#:
+#: - the audit-baseline **code path** is a property of the validator, and is now
+#:   exercised in CI from a committed fixture, in `tests/explanations/`;
+#: - the recorded **report** describes what `config/showcase-payload-pack.json`
+#:   produces, and the pin produces v2 only.
+#:
+#: Filling this dimension from a frontend e2e fixture would make a published
+#: artifact depend on a test asset owned by another workstream, so that
+#: regenerating that pack would silently change a recorded number. A code-path
+#: property belongs in a test, not in a measurement.
 REPRODUCIBLE_DIMENSIONS: frozenset[Dimension] = frozenset(Dimension) - {
     Dimension.SEMANTICS_AUDIT_BASELINE
 }
