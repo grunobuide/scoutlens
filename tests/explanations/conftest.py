@@ -42,6 +42,43 @@ V1_DIR = REPO_ROOT / "public" / "showcase" / "v1"
 V2_PROFILE = V2_DIR / "players" / "wy-8287-c-795.json"
 V1_PROFILE = V1_DIR / "players" / "wy-10131-c-364.json"
 
+#: A committed v1 profile, so the audit-baseline path is testable without one
+#: (`scoutlens-jtt.18`).
+#:
+#: `web/e2e/fixtures/lab-max-content/` is a delegated fixture pack built by
+#: `web/scripts/fixture-pack.mjs` and verified against its own checksum
+#: manifest. It is schema-valid v1, it is committed, and a clean clone has it —
+#: which is the property the hydrated payload lacks and cannot regain.
+V1_FIXTURE_PROFILE = (
+    REPO_ROOT / "web" / "e2e" / "fixtures" / "lab-max-content" / "players" / "wy-900001-c-901.json"
+)
+
+
+#: Force the fixture even on a machine that still has a hydrated v1 tree.
+#:
+#: This exists because of a specific, recorded failure. The eval corpus was
+#: first written on a machine with a leftover v1 payload from before the repin;
+#: every test passed there and failed the moment CI hydrated v2 only. A
+#: developer with that leftover cannot otherwise reproduce what CI sees, which
+#: is the condition that produced the bug in the first place.
+V1_SOURCE_OVERRIDE = os.environ.get("SCOUTLENS_V1_SOURCE", "").strip()
+
+
+def _v1_source() -> Path | None:
+    """A hydrated v1 payload if one exists, else the committed fixture.
+
+    Real data wins when it is present — it is the better test. The fixture is
+    what makes the path testable at all in CI, where no v1 payload is
+    obtainable (`scoutlens-jtt.18`).
+    """
+    if V1_SOURCE_OVERRIDE == "fixture":
+        return V1_FIXTURE_PROFILE if V1_FIXTURE_PROFILE.exists() else None
+    if V1_PROFILE.exists():
+        return V1_PROFILE
+    if V1_FIXTURE_PROFILE.exists():
+        return V1_FIXTURE_PROFILE
+    return None
+
 HYDRATE = "uv run --frozen python -m scoutlens.showcase.payload hydrate"
 
 #: Set to "1" where a missing payload is an outage rather than a local choice.
@@ -90,14 +127,18 @@ requires_showcase = _guard(
 #: verified by running it against an emptied checkout. A v1 payload in a working
 #: tree is a leftover from before that repin, and CI has no way to obtain one.
 #:
-#: So an absent v1 is a genuine absence with no remedy, not a dropped step, and
-#: making it an error would turn this guard into a permanently red CI job.
-#: The cost is real and recorded rather than hidden: the audit-baseline cases —
-#: `tests/explanations/test_audit_baseline.py` and the two v1 cases in the eval
-#: corpus — do not run in CI and cannot until a v1 payload is obtainable there.
+#: So an absent v1 PAYLOAD is a genuine absence with no remedy. What changed in
+#: `scoutlens-jtt.18` is that the payload is no longer the only source: the
+#: delegated fixture pack ships a committed, schema-valid v1 profile, so the
+#: audit-baseline path is exercised in CI after all. A hydrated v1 tree still
+#: wins when one exists, because real data is the better test when it is there.
+#:
+#: What this does NOT do is put the fixture into the eval corpus. The recorded
+#: report must describe what the pin produces, and a frontend fixture is not
+#: that — see `D060`.
 requires_v1 = pytest.mark.skipif(
-    not V1_PROFILE.exists(),
-    reason="requires a public/showcase/v1 payload, which the v2 pin cannot hydrate",
+    _v1_source() is None,
+    reason="requires a v1 profile: either a hydrated public/showcase/v1 or the committed fixture",
 )
 
 
@@ -117,7 +158,9 @@ def representation() -> dict[str, Any]:
 
 @pytest.fixture(scope="session")
 def v1_profile() -> dict[str, Any]:
-    return _read(V1_PROFILE)
+    source = _v1_source()
+    assert source is not None, "requires_v1 should have skipped this test"
+    return _read(source)
 
 
 @pytest.fixture()

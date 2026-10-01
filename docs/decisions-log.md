@@ -2569,3 +2569,53 @@ where the file lives, not what it says.
 and are reviewed like any other project document, under `D033`. If the agent
 template ships its own copy, this repository's copy is the one that governs work
 here.
+
+---
+
+## D060 — 2026-10-01 — The v1 audit path is tested from a fixture; the report still describes the pin
+
+**Decision:** give the v1 cosine audit-baseline path CI coverage from a
+committed fixture, and leave the recorded eval report v2-only. Those are two
+different questions and `scoutlens-jtt.18` conflated them.
+
+**What changed.** `tests/explanations/conftest.py` resolves a v1 profile from
+the hydrated payload when one exists and otherwise from
+`web/e2e/fixtures/lab-max-content/`, a delegated fixture pack that is committed,
+checksum-verified and schema-valid v1. So `test_audit_baseline.py` and the three
+`@requires_v1` tests in `test_bundle.py` now run in CI — twenty tests that
+previously skipped everywhere except a machine with a leftover payload.
+
+**What did not change.** `REPRODUCIBLE_DIMENSIONS` still excludes
+`SEMANTICS_AUDIT_BASELINE`, and `build_corpus()` still omits the audit cases.
+
+**Why those are different questions.** The audit-baseline behaviour is a
+property of the validator: *a cosine citation is legitimate in a v1 bundle and
+forbidden in a v2 one*. That is true or false regardless of whose numbers the
+profile carries, so a synthetic profile tests it exactly as well as a real one.
+The recorded report is a different kind of claim — it says what the corpus
+produced from the data the pin yields, and `config/showcase-payload-pack.json`
+yields v2 only.
+
+**Why not fill the dimension from the fixture.** It would work, and `jtt.18`'s
+AC2 asked for it. It would also make a published artifact depend on a test asset
+owned by another workstream: regenerating the fixture pack for a frontend reason
+would silently change a number in `artifacts/ai-evals/grounded-explanations-v1.json`.
+A cross-workstream tripwire on a recorded measurement is worse than an empty
+dimension that says why it is empty. **A code-path property belongs in a test,
+not in a measurement.**
+
+**What this does not claim.** The fixture profiles are synthetic max-content
+records built to stretch the UI. They establish that the v1 code path works and
+that the v2/v1 asymmetry holds; they establish nothing about real v1 data, and
+no number derived from them is published.
+
+**A guard against the way this went wrong before.** `SCOUTLENS_V1_SOURCE=fixture`
+forces the fixture even where a hydrated v1 tree exists. The eval corpus was
+first written on a machine with a leftover v1 payload: every test passed there
+and failed the moment CI hydrated v2 only. Without the override a developer in
+that state cannot reproduce what CI sees, which is the exact condition that
+produced the original bug.
+
+**How to apply:** if a v1 payload ever becomes obtainable from the pin, prefer
+it and revisit the dimension. Until then, do not reach for the fixture to fill a
+measurement.
