@@ -2619,3 +2619,56 @@ produced the original bug.
 **How to apply:** if a v1 payload ever becomes obtainable from the pin, prefer
 it and revisit the dimension. Until then, do not reach for the fixture to fill a
 measurement.
+
+---
+
+## D061 — 2026-10-01 — Artifact digests hash raw bytes, because a release asset already says so
+
+**Decision:** leave `run_manifest`'s `config_sha256` and input digests hashing
+raw bytes, accept that they are platform-dependent, and correct the claim that
+implied otherwise. `scoutlens-jtt.19` asked whether they should identify content
+rather than the checkout's line endings. They should, in the abstract. They
+cannot here.
+
+**The cost of changing them is a dataset re-release, not a refactor.** The chain
+is short and every link is pinned:
+
+```
+config/experiment.json
+  --raw sha256-->  producer.config_sha256 in public/showcase/v2/manifest.json
+  --sha256 of that file-->  manifest_sha256 in config/showcase-payload-pack.json
+  --pins-->  the published archive that `payload hydrate` downloads
+```
+
+Measured: the published manifest carries `6b04c4eb…`, which is the **raw**
+digest of `config/experiment.json` on a Windows checkout, not the
+newline-normalised `62052f0f…`. Normalising the first link moves every link
+after it — a new archive, a new pin, and a new dataset identity quoted in the
+case study and the v1.0.0 release notes. For a provenance field's encoding.
+
+Adding `eol=lf` to `.gitattributes` has the same consequence by a different
+route: it renormalises the file, so the bytes change and the digest with them.
+
+**What was actually wrong, stated precisely.** `run_manifest.py` claimed *"two
+artifacts with equal manifests minus `generated_at` were produced by the same
+code, config, and data."* That is **true**, and it is the direction that
+matters for catching drift. What it invited was the converse: that *unequal*
+manifests mean something changed. They do not, across platforms. Equality is
+sound; inequality is not evidence. The docstring now says so.
+
+**Why this is not inconsistent with the release-candidate manifest.**
+`scoutlens.release.manifest` does normalise newlines, and declares it in a
+`digest_mode` field. That manifest was introduced after publication and nothing
+downstream of it is content-addressed, so it was free to choose. The two
+policies coexist deliberately, and the newer one labels itself so they are never
+confused.
+
+**What would justify revisiting.** A dataset re-release happening for a
+scientific reason — new data, a changed config, a new representation. The
+normalisation should ride along with it at zero marginal cost. Doing it on its
+own is spending a published identity to buy nothing a reader can see.
+
+**How to apply:** `tests/evaluation/test_config_digest_policy.py` pins the raw
+behaviour and the whole chain, so a well-meant "normalise it like the release
+manifest" fails loudly with the reason attached. Do not regenerate artifacts to
+change a digest's encoding.
