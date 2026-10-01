@@ -421,24 +421,65 @@ def test_a_secret_marker_in_the_html_still_fails() -> None:
         assert not result.ok, f"{marker} passed the secret scan"
 
 
-def test_hard_cached_html_still_fails(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Reported, not enforced, where the host decides — but `immutable` HTML is a defect."""
-    _install(
-        monkeypatch,
-        Host(_site(), headers={"cache-control": "public, max-age=31536000, immutable"}),
-    )
+def _caching(monkeypatch: pytest.MonkeyPatch, header: str | None) -> list:
+    headers = {} if header is None else {"cache-control": header}
+    _install(monkeypatch, Host(_site(), headers=headers))
     _, home = smoke.check_routes(BASE)
-    results = smoke.check_caching(BASE, home)
+    return smoke.check_caching(BASE, home)
+
+
+def test_hard_cached_html_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A stale HTML document IS wrong: it can reference assets a deploy removed."""
+    results = _caching(monkeypatch, "public, max-age=31536000, immutable")
     assert not results[0].ok
     assert "immutable" in results[0].detail
 
 
-def test_a_missing_asset_cache_header_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
-    _install(monkeypatch, Host(_site(), headers={}))
+def test_html_cached_for_a_week_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`immutable` is not the only way to cache HTML too hard."""
+    results = _caching(monkeypatch, "max-age=604800")
+    assert not results[0].ok
+
+
+def test_the_production_policy_passes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """What GitHub Pages actually serves, measured: `max-age=600` on both."""
+    results = _caching(monkeypatch, "max-age=600")
+    assert _failures(results) == []
+
+
+def test_a_host_improvement_passes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`scoutlens-uze.18`. The asset floor must not punish a better host.
+
+    Pinning the observed value would turn the outcome this project would prefer,
+    and cannot ask GitHub Pages for, into a red build. If the host ever starts
+    sending `immutable` on hashed assets, that is the goal, not a regression.
+    """
+    _install(monkeypatch, Host(_site(), headers={"cache-control": "max-age=31536000, immutable"}))
     _, home = smoke.check_routes(BASE)
     results = smoke.check_caching(BASE, home)
+    assert results[1].ok, "an immutable hashed asset must pass the floor"
+    # ...while the same header on the HTML is still a failure, above.
+
+
+def test_uncacheable_assets_fail(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The regression the floor exists to catch: the host dropping caching."""
+    assert not _caching(monkeypatch, "no-store")[1].ok
+    assert not _caching(monkeypatch, "max-age=30")[1].ok
+
+
+def test_a_missing_asset_cache_header_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    results = _caching(monkeypatch, None)
     assert not results[1].ok
     assert "(none)" in results[1].detail
+
+
+def test_the_max_age_parser_reads_real_headers() -> None:
+    assert smoke._max_age("max-age=600") == 600
+    assert smoke._max_age("public, max-age=31536000, immutable") == 31536000
+    assert smoke._max_age("max-age = 42") == 42
+    assert smoke._max_age("no-store") is None
+    # `s-maxage` is a different directive and must not be mistaken for it.
+    assert smoke._max_age("s-maxage=99") is None
 
 
 def test_the_retry_statuses_are_only_the_ones_propagation_explains() -> None:
