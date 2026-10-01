@@ -134,8 +134,35 @@ project would choose, and nothing here can change it.
 
 That is the concrete trigger for revisiting Cloudflare Pages: it allows header
 rules, and immutable caching on hashed assets is the first thing worth setting.
-Recorded as `scoutlens-uze.18` rather than acted on, because a four-page static
-site does not justify a second vendor today.
+
+**Decision, 2026-10-01 (`scoutlens-uze.18`): accept the host's caching.** Not
+deferred — decided, so that the next person to notice `max-age=600` finds an
+answer rather than an open question.
+
+The reasoning, and what would change it:
+
+- **The cost is a credential, and that is the real objection.** Cloudflare Pages
+  needs a second vendor account and a deploy token held as a repository secret.
+  This project's posture is that a clean clone needs no credential and the
+  default path is fully offline; spending that for a cache header on a
+  four-page static site is a bad trade.
+- **The impact is bounded and known.** Filenames are content-addressed, so a
+  stale copy is never *wrong*. The host sends `ETag`/`Last-Modified`, so a
+  repeat visitor pays a conditional request, not a download.
+- **What would change the decision**: a custom domain arriving for other
+  reasons, since the CDN comes with it and the marginal cost drops to nothing;
+  or payload growth making the revalidation cost visible in the Lighthouse
+  budget, which would show up as a measurement rather than an opinion.
+
+**The gate now asserts this rather than reporting it.**
+`.github/scripts/smoke-production.py` checks a *floor*, not the observed value:
+hashed assets must be `immutable` or carry `max-age >= 600`, and HTML must not
+be `immutable` and must stay under a day. Pinning `max-age=600` exactly would
+turn a host improvement into a red build — and the outcome this project would
+prefer, and cannot ask GitHub Pages for, is precisely that the value goes up.
+
+That asymmetry is deliberate: a stale *asset* is never wrong, a stale *HTML*
+document is, because it can reference assets a later deploy removed.
 
 **The lesson worth keeping**: this is exactly the claim that could only be
 settled in production, and the local server was actively misleading about it.

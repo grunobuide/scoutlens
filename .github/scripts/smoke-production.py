@@ -201,12 +201,42 @@ def check_assets(base: str, home: str) -> list[Result]:
     return [Result("assets", True, f"{len(refs)} referenced, {min(len(refs), 8)} fetched")]
 
 
-def check_caching(base: str, home: str) -> list[Result]:
-    """Immutable assets should be cacheable; HTML should not be cached hard.
+#: What the cache headers must satisfy, as a floor rather than an exact value
+#: (`scoutlens-uze.18`).
+#:
+#: This project does not set these headers — GitHub Pages does, and allows no
+#: override — so the gate asserts what the site RELIES ON, not what the host
+#: currently happens to send. Pinning the exact observed value would turn a host
+#: improvement into a red build, which is the wrong incentive for a number
+#: nobody here controls.
+#:
+#: Hashed assets: at least ten minutes. The filenames are content-addressed, so
+#: a stale copy is never wrong; the floor exists to catch the host dropping
+#: caching altogether. `immutable`, or a year, passes — that is the outcome this
+#: project would prefer and cannot ask for.
+#:
+#: HTML: must NOT be immutable and must stay under a day. A stale HTML document
+#: IS wrong, because it can reference assets a later deploy removed.
+MIN_ASSET_MAX_AGE = 600
+MAX_HTML_MAX_AGE = 86_400
 
-    Reported rather than enforced where the host decides the policy: GitHub Pages
-    sets its own headers and this project does not control them. A finding here
-    is a fact to record in the hosting ADR, not necessarily a defect.
+MAX_AGE = re.compile(r"\bmax-age\s*=\s*(\d+)")
+
+
+def _max_age(header: str) -> int | None:
+    """Seconds from a Cache-Control header, or None when it does not say."""
+    match = MAX_AGE.search(header)
+    return int(match.group(1)) if match else None
+
+
+def check_caching(base: str, home: str) -> list[Result]:
+    """Assert the cache policy the site depends on, as a floor.
+
+    This used to report rather than assert, because the host owns the values.
+    That left the one claim the project had already got wrong — the hosting ADR
+    said hashed assets were served `immutable`, measured from the local dev
+    server, which sets those headers itself — with nothing to catch it but a
+    human reading output. It asserts now (`scoutlens-uze.18`).
     """
     results: list[Result] = []
     try:
@@ -215,11 +245,13 @@ def check_caching(base: str, home: str) -> list[Result]:
         return [Result("cache headers", False, str(error))]
 
     html_cache = html_headers.get("cache-control", "(none)")
+    html_age = _max_age(html_cache)
+    html_ok = "immutable" not in html_cache and (html_age is None or html_age <= MAX_HTML_MAX_AGE)
     results.append(
         Result(
             "html is not cached hard",
-            "immutable" not in html_cache,
-            f"Cache-Control: {html_cache}",
+            html_ok,
+            f"Cache-Control: {html_cache} (must not be immutable, max-age <= {MAX_HTML_MAX_AGE})",
         )
     )
 
@@ -232,15 +264,21 @@ def check_caching(base: str, home: str) -> list[Result]:
         asset_url = urljoin(base, refs[0])
         try:
             _, asset_headers, _ = fetch(asset_url)
+            asset_cache = asset_headers.get("cache-control", "(none)")
+            asset_age = _max_age(asset_cache)
+            cacheable = "immutable" in asset_cache or (
+                asset_age is not None and asset_age >= MIN_ASSET_MAX_AGE
+            )
             results.append(
                 Result(
-                    "asset cache header present",
-                    "cache-control" in asset_headers,
-                    f"Cache-Control: {asset_headers.get('cache-control', '(none)')}",
+                    "hashed assets are cacheable",
+                    cacheable,
+                    f"Cache-Control: {asset_cache} "
+                    f"(need immutable or max-age >= {MIN_ASSET_MAX_AGE})",
                 )
             )
         except OSError as error:
-            results.append(Result("asset cache header present", False, str(error)))
+            results.append(Result("hashed assets are cacheable", False, str(error)))
     return results
 
 
