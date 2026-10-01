@@ -8,8 +8,20 @@ artifact embeds a `_manifest` recording exactly what produced it —
 config (values + file hash), code (git commit + source-tree hash),
 environment (Python / Polars / platform), and a sha256 per consumed input
 file. The dirty flag prevents an uncommitted run from presenting HEAD as
-the whole source state. Two artifacts with equal manifests minus
-`generated_at` were produced by the same code, config, and data.
+the whole source state.
+
+**What a manifest comparison does and does not prove** (`scoutlens-jtt.19`,
+`D061`). Two artifacts with equal manifests minus `generated_at` were produced
+by the same code, config and data: equality is sound. **Inequality is not.**
+`config_sha256` and the input digests hash raw bytes, and
+`config/*.json` carries no `eol=lf` rule, so a Windows checkout holds CRLF
+where a Linux one holds LF and the same config content yields a different
+digest. Measured: `6b04c4eb...` raw against `62052f0f...` newline-normalised.
+
+So a manifest that differs across platforms says nothing about whether
+anything changed. This is accepted rather than fixed, because the raw-byte
+value is already embedded in a published, content-addressed release asset --
+see `D061` for the cascade and for what would justify revisiting it.
 """
 
 from __future__ import annotations
