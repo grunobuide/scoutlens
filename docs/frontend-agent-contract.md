@@ -250,16 +250,45 @@ composed at runtime through template literals. They are **live**. Any future dea
    deleting the guard: a baseline updated on one platform is stale on the other,
    and the stale side stays green locally, so nothing tells you until CI runs.
 
+   **"The image CI uses" is now literal** (`scoutlens-uze.23`). The
+   `web-quality` job runs inside `mcr.microsoft.com/playwright:v1.62.0-noble`,
+   so a container regeneration and CI render identically — verified in CI at a
+   budget of zero, and CI's run and its automatic retry produce byte-identical
+   images.
+
+   That was not always true, and the history matters if anyone proposes moving
+   the job back out of the container. CI used to install a browser onto
+   `ubuntu-latest` while this instruction pointed at the image, and the two font
+   environments rendered the `combined_scaler_diagonal_v1` monospace chip
+   differently — 497 pixels on `desktop-linux/retrieval-neighbors.png`, and
+   nothing else in the suite (`scoutlens-uze.14`). A single element, not a
+   spread. That divergence is what forced the visual budget wide enough to
+   swallow it; removing it let the budget drop from 2,000 pixels to 250
+   (`scoutlens-uze.24`). The image tag here and `@playwright/test` in
+   `web/package.json` must therefore move together.
+
    Regenerate the Linux baselines in the image CI uses:
 
    ```bash
    docker run --rm -v "$PWD":/repo -w /repo/web      mcr.microsoft.com/playwright:v1.62.0-noble      npx playwright test --project=<project> <spec> --update-snapshots
    ```
 
-   On Windows this needs `MSYS_NO_PATHCONV=1` before `docker`, and the host
-   `node_modules` will not resolve inside the container - install to a
-   container-local directory (`pnpm install --modules-dir /tmp/nm`) rather than
-   overwriting the host tree.
+   On Windows this needs `MSYS_NO_PATHCONV=1` before `docker` in Git Bash — and
+   nothing in PowerShell, where `MSYS_NO_PATHCONV=1` is not a command and
+   `$(pwd -W)` is a parse error; use `-v "${PWD}:/repo"` there.
+
+   The host `node_modules` will not resolve inside the container, because
+   pnpm's symlinks are Windows-style. The approach that has actually been used
+   is to copy the tree into the container's own filesystem and install there:
+
+   ```bash
+   mkdir -p /work && cp -r /repo/web/. /work/
+   rm -rf /work/node_modules /work/test-results
+   cd /work && pnpm install --frozen-lockfile
+   ```
+
+   Copy the regenerated PNGs back to `/repo/web/e2e/__screenshots__/` at the
+   end. Nothing else from `/work` should return.
 8. **A genuinely platform-specific difference is an exception, not a bypass.**
    It requires a maintainer-applied `visual-platform-specific` label *and* a
    stated reason in the pull request body; either alone fails. The exception is
