@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import requires_showcase, requires_v1
+from conftest import requires_showcase, requires_v1_payload
 
 from scoutlens.explanations.adapters.protocol import (
     AdapterFailure,
@@ -383,7 +383,7 @@ def test_v1_is_reachable_only_by_asking_for_it(artifacts: ShowcaseArtifacts) -> 
         build_bundle(v1_shaped, artifacts.representation())
 
 
-@requires_v1
+@requires_v1_payload
 def test_the_audit_baseline_flag_reaches_v1(capsys: pytest.CaptureFixture) -> None:
     assert main(["explain", "--profile", CANONICAL, "--audit-baseline"]) == EXIT_OK
     out = capsys.readouterr().out

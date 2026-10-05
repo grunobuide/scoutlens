@@ -50,6 +50,12 @@ def _normalised(path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
+def _crlf(path) -> str:
+    """The raw digest a Windows checkout produces, computed on any checkout."""
+    lf = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(lf.replace(b"\n", b"\r\n")).hexdigest()
+
+
 def test_the_run_manifest_hashes_raw_bytes() -> None:
     """The behaviour this file exists to pin.
 
@@ -62,13 +68,26 @@ def test_the_run_manifest_hashes_raw_bytes() -> None:
 
 @requires_published
 def test_the_published_manifest_carries_the_raw_value() -> None:
-    """The first link, and the one that makes this irreversible."""
+    """The first link, and the one that makes this irreversible.
+
+    The published value is the raw digest *of a CRLF checkout* - the Windows
+    machine that exported it. The first version of this test compared it with
+    the raw digest of whatever checkout ran the test, which is the same claim
+    only on Windows: it passed there and failed on every Linux CI run, turning
+    `main` red. That is the platform dependence this file documents, caught in
+    the test written to document it. So the comparison is made against the CRLF
+    form of the content, which every checkout can compute; on a CRLF checkout it
+    is also the raw digest, and that is asserted too.
+    """
     published = json.loads(PUBLISHED_MANIFEST.read_text(encoding="utf-8"))
-    assert published["producer"]["config_sha256"] == _raw(CONFIG_PATH), (
-        "the published showcase manifest no longer matches the raw digest of "
-        "config/experiment.json; either the config changed without a re-export, "
-        "or the digest policy changed without regenerating the payload"
+    assert published["producer"]["config_sha256"] == _crlf(CONFIG_PATH), (
+        "the published showcase manifest no longer matches the raw digest of a "
+        "CRLF checkout of config/experiment.json; either the config changed "
+        "without a re-export, or the digest policy changed without regenerating "
+        "the payload"
     )
+    if b"\r\n" in CONFIG_PATH.read_bytes():
+        assert _raw(CONFIG_PATH) == _crlf(CONFIG_PATH)
 
 
 @requires_published

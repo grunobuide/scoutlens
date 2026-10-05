@@ -13,7 +13,7 @@ import json
 from typing import Any
 
 import pytest
-from conftest import requires_showcase, requires_v1
+from conftest import requires_showcase, requires_v1_payload
 
 from scoutlens.explanations.evals import degrade
 from scoutlens.explanations.evals.corpus import (
@@ -272,7 +272,7 @@ def test_every_accepted_response_matches_the_output_schema(
 # --- the audit-baseline set, which no clean clone can reach -----------------
 
 
-@requires_v1
+@requires_v1_payload
 @pytest.mark.parametrize("case", audit_cases(), ids=lambda case: case.case_id)
 def test_the_audit_cases_still_hold_where_v1_exists(
     case: Any, artifacts: ShowcaseArtifacts
