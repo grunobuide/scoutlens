@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from pathlib import Path
 
 from scoutlens.release.manifest import REPO_ROOT
 
@@ -28,11 +29,18 @@ FIXTURE_VALUES = {
 }
 
 
+#: This file names the dangling paths it exists to forbid, so it is the one
+#: tracked file the sweep must not read. It passed before its first commit only
+#: because `git ls-files` did not list it yet; CI, where it is tracked, failed
+#: on its own docstring.
+SELF = Path(__file__).resolve().relative_to(REPO_ROOT).as_posix()
+
+
 def _tracked() -> list[str]:
     listed = subprocess.run(
         ["git", "ls-files", "-z"], cwd=REPO_ROOT, capture_output=True, check=True
     ).stdout.decode("utf-8")
-    return [path for path in listed.split("\0") if path.endswith(CITED_SUFFIXES)]
+    return [path for path in listed.split("\0") if path.endswith(CITED_SUFFIXES) and path != SELF]
 
 
 def test_no_tracked_file_cites_a_document_the_repository_lacks() -> None:
