@@ -140,6 +140,21 @@ requires_v1 = pytest.mark.skipif(
     _v1_source() is None,
     reason="requires a v1 profile: either a hydrated public/showcase/v1 or the committed fixture",
 )
+#: For the few tests the fixture cannot serve: the CLI and the eval corpus
+#: resolve real profiles *by key* from `public/showcase/v1`, so only a hydrated
+#: v1 tree can run them, and CI never has one.
+#:
+#: `scoutlens-jtt.18` widened `requires_v1` to accept the fixture and left these
+#: on it. They then ran in CI against a tree that is not there, and `main` went
+#: red on both Python versions; locally they passed, because this machine still
+#: has the leftover payload - the exact trap the override above exists for.
+#: `SCOUTLENS_V1_SOURCE=fixture` therefore skips these too, so a developer can
+#: reproduce what CI sees.
+requires_v1_payload = pytest.mark.skipif(
+    V1_SOURCE_OVERRIDE == "fixture"
+    or not all((V1_DIR / "players" / f"{key}.json").exists() for key in ("wy-10131-c-364", "wy-8287-c-795")),
+    reason="requires a hydrated public/showcase/v1; this path resolves profiles by key, so the fixture cannot stand in",
+)
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -182,6 +197,7 @@ __all__ = [
     "reference_output",
     "requires_showcase",
     "requires_v1",
+    "requires_v1_payload",
     "rows_with_status",
     "valid_output",
 ]
