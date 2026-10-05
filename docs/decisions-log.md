@@ -2711,3 +2711,48 @@ pixel budget — `D054`'s point, made again.
 says it is the cosine audit baseline. `web/e2e/rendered-values.spec.ts` opens
 the drawer and asserts that its rows reconstruct the printed score, that the
 card agrees with the drawer, and that no part of it calls the v2 score a cosine.
+
+---
+
+## D063 — 2026-10-05 — The "cosine retrieval" caveat stays for the dataset it shipped in, and the next re-export must reword it
+
+**Decision:** keep the published caveat `within_role_display_differs_from_global_model`
+— "Within-role percentiles aid display; cosine retrieval uses globally
+standardized values." — for dataset `wyscout-2017-18-v2-332766e3a822` only, and
+bind its rewording to the next re-export of the v2 payload rather than forcing a
+re-release for it now (`scoutlens-jtt.23`).
+
+**Why not reword now.** `dataset_version` is the content digest of every
+published artifact, caveat text included (`showcase/builder.py`). One word
+changes the identity, and the identity is quoted by the payload pin, the
+release archive, the release-candidate packet, the v1.0.0 release notes, the
+recorded AI-eval report, the identity-challenge contract and every media file
+showing the version badge. `D061` declined the same trade to change a
+provenance field's encoding; this is a stronger reason than encoding, but not
+strong enough on its own, because of the next point.
+
+**Why it can wait: imprecise, not false.** The v2 contract defines the score as
+"cosine in the space scaled by √w" (§5), so v2 retrieval is a cosine — a
+weighted one. The sentence's actual claim, that the display scale and the model
+scale differ, is true. What `D047` and `D049` forbid is a *name* that claims the
+plain cosine: the score field and the rendered method. Every surface that names
+those on the page already says "Similarity score" and "Learned weighted
+similarity", and `D062` fixed the one that did not. This caveat is the remaining
+imprecision, and it is disclosed here and in `docs/media/README.md`.
+
+**Why it will not be forgotten.** Two tripwires, both bound to the dataset
+version rather than to a date or a promise:
+
+- `tests/showcase/test_caveat_wording.py` fails as soon as the v2 payload is
+  re-exported under any other identity while still saying "cosine" — verified by
+  pointing the manifest at a different version, with the message naming what to
+  do;
+- `web/e2e/rendered-values.spec.ts` reads every sentence the v2 Lab renders and
+  fails on any "cosine" no decision allows. This sentence is allowed only while
+  the served dataset is the exempt one; the v1 audit-baseline sentences are
+  allowed because the v1 baseline genuinely is a cosine.
+
+**How to apply:** at the next v2 re-export, give this caveat a v2-specific
+message without the plain word — v1 keeps the current one, which is exactly
+right for v1's plain-cosine retrieval and is byte-frozen — then delete both
+exemptions in the same change.

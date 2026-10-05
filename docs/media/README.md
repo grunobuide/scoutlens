@@ -177,8 +177,9 @@ longer the one these digests describe.
   the caption says "similarity" on purpose. Filed as `scoutlens-uze.25`.
 - The `caveats` frame holds the published caveat "cosine retrieval uses globally
   standardized values" for the same weighted retrieval. It lives in the pinned
-  payload rather than the page, so rewording it is a re-publication decision,
-  filed as `scoutlens-jtt.23`.
+  payload rather than the page, so rewording it is a re-publication decision:
+  `D063` keeps it for this dataset only and makes the next re-export reword it
+  (`scoutlens-jtt.23`).
 - The `reveal` frame prints the candidate count as 1257, while the `replay`
   frame prints 1,257. Filed as `scoutlens-9a3.17`; the captions do not repeat
   the count.
