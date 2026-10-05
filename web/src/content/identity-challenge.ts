@@ -379,7 +379,9 @@ export function buildIdentityChallenge(input: IdentityChallengeInput): IdentityC
   const identity = profile.identity;
   const displayName = identity.display_name;
   const selfRank = formatRank(global.self_rank);
-  const candidateCount = formatRank(global.candidate_count);
+  // A count, not a resampled rank statistic: formatted the way every other
+  // count in the Lab is, with a thousands separator (scoutlens-9a3.17).
+  const candidateCount = global.candidate_count.toLocaleString("en-US");
   const baselineRank = formatRank(retrieval.baseline_role_minutes.self_rank);
 
   return {

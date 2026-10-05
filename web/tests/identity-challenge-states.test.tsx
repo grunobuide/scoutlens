@@ -91,7 +91,7 @@ describe("the frozen announcements", () => {
     expect(challengeAnnouncement(view(), "reveal")).toBe(
       `Result revealed. ${profile.identity.display_name}, ${profile.identity.role}, ` +
         `${profile.identity.competition.name}. Ranked ${global.self_rank} of ` +
-        `${global.candidate_count}.`,
+        `${global.candidate_count.toLocaleString("en-US")}.`,
     );
   });
 
