@@ -7,6 +7,11 @@ config/showcase-payload-pack.json text eol=lf
 artifacts/ai-evals/*.json text eol=lf
 src/scoutlens/showcase/schemas/*.json text eol=lf
 web/src/contracts/generated/* text eol=lf
+# docs/media/README.md records the caption track's digest, and capture-demo.mjs
+# writes it with LF. A CRLF checkout would change the bytes that digest names -
+# the line-ending trap D061 records, closed here before the digest is published.
+docs/media/*.vtt text eol=lf
+docs/media/*.webm binary
 
 # Shell scripts run on the Linux CI runner. CRLF would make the shebang
 # unreadable there ("bad interpreter: /usr/bin/env bash^M"), and this repo is

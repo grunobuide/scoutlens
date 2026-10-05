@@ -51,9 +51,17 @@ role-and-minutes control puts him 249th. Every number carries its bootstrap
 interval, and the representation that produced it is named on the card.
 
 Further stills, with alt text and the capture command, are in
-[`media/`](media/README.md) — including the mobile layout. There is **no demo
-video**: the stills cover the same content, and calling them a video would be a
-claim this project has not earned.
+[`media/`](media/README.md) — including the mobile layout.
+
+The same profile in motion: a **76-second captioned walkthrough**,
+[`media/lab-walkthrough.webm`](media/lab-walkthrough.webm), from the Lab's
+opening statement through the identity challenge, the retrieval result and its
+interval, the fingerprint, the caveats and the nearest neighbors. Its captions are text in the repository,
+[`media/lab-walkthrough.vtt`](media/lab-walkthrough.vtt). It is illustration
+rather than evidence: it is assembled from screenshots of the deployed site, so
+it shows each state rather than how fast the site reaches it, and every figure a
+caption writes in digits is one its own scene shows on screen.
+[`media/`](media/README.md#walkthrough) says how it is made and checked.
 
 ---
 

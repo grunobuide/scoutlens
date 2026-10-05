@@ -171,14 +171,29 @@ def test_the_confound_is_still_the_headline_limitation(case_study: str) -> None:
     assert "0.5893" in flat
 
 
-def test_the_missing_video_is_still_reported_as_missing(
+def test_the_video_the_documents_name_is_one_that_is_committed(
     case_study: str, media_note: str
 ) -> None:
-    """AC4. A convergence pass may not turn stills into a video by omission."""
-    assert "no demo video" in _prose(case_study)
+    """AC4, after `scoutlens-jtt.20` closed the gap it guarded.
+
+    The original assertion kept "no demo video" in both documents, so that a
+    convergence pass could not turn stills into a video by omission. The gap
+    has since been closed by delivering a video, not by rewording - so the
+    documents may now name one only because it is committed beside them, and the
+    media note keeps the record of the gap rather than erasing it.
+    `test_media_walkthrough.py` holds the video itself to its claims.
+    """
+    for name in ("lab-walkthrough.webm", "lab-walkthrough.vtt"):
+        assert (MEDIA_NOTE.parent / name).is_file(), f"{name} is named but not committed"
+        assert f"media/{name}" in case_study, f"the case study does not link {name}"
     flat_note = " ".join(media_note.split())
-    assert "There is no demo video or GIF" in flat_note
-    assert "scoutlens-jtt.20" in flat_note or "jtt.20" in flat_note
+    assert "scoutlens-jtt.20" in flat_note
+    assert "recorded the walkthrough itself as an open gap" in flat_note
+    # The old sentences must be gone, not left beside the new ones to contradict
+    # them - and the video must still be presented as illustration, not evidence.
+    assert "no demo video" not in _prose(case_study)
+    assert "There is no demo video or GIF" not in flat_note
+    assert "illustration rather than evidence" in _prose(case_study)
 
 
 # --- the media, and where it came from -----------------------------------

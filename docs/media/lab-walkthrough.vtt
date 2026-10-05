@@ -1,0 +1,51 @@
+WEBVTT
+
+NOTE
+Written by web/scripts/capture-demo.mjs (scoutlens-jtt.20) from deployed commit a79868f49cc82cacb51969aef7a9527925e9fee1.
+Frame: 800x540 CSS px at 2x = 1600x1080, 25 fps.
+Smallest asserted text: 10.9 px in an 800 px embed.
+Cue identifiers name the scene. A cue starts only after its scene's on-screen text was asserted.
+
+boundary
+00:00:00.000 --> 00:00:06.000
+The Fingerprint Lab opens with its limit: a statistical fingerprint, not a rating or a recommendation.
+
+question
+00:00:06.480 --> 00:00:12.480
+The question: can 32 measurements from the first half-season find the same player in the second?
+
+query
+00:00:13.320 --> 00:00:18.840
+Period A is the query: one player's first-half fingerprint, without the name.
+
+reveal
+00:00:20.240 --> 00:00:26.760
+Against every eligible second-half profile, the fingerprint ranks him first. A role-and-minutes control ranks him 249th.
+
+interval
+00:00:26.760 --> 00:00:32.760
+The 95% resampling interval, 1–43.5: how stable that rank is across observed matches. Not a forecast.
+
+contributions
+00:00:34.320 --> 00:00:40.320
+What drove the match: each measurement's contribution, under learned weights fitted for 28 of the 32.
+
+replay
+00:00:41.880 --> 00:00:48.400
+The Lab replays the stored result for every profile, beside a context-only control, each with its interval.
+
+map
+00:00:48.880 --> 00:00:54.880
+The full map compares period A with period B across 32 features in 8 families.
+
+caveats
+00:00:55.360 --> 00:01:01.360
+The caveats ship with the result. The strongest: same-season club continuity can make this test easier.
+
+neighbors
+00:01:01.840 --> 00:01:08.360
+The nearest profiles in the same role, the query player excluded. Proximity is descriptive, not a recruitment recommendation.
+
+comparison
+00:01:09.200 --> 00:01:15.720
+Each neighbor opens its evidence: the stored similarity, rebuilt family by family.
