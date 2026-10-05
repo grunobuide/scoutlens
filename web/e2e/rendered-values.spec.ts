@@ -151,3 +151,35 @@ test("a neighbor's contributions reconstruct the score printed beside them", asy
     );
   }
 });
+
+/**
+ * Every "cosine" the v2 Lab is allowed to render, and why (`D063`).
+ *
+ * The narrower assertions above check labels and the drawer. This one reads the
+ * whole page, so a new surface that calls the weighted score a cosine fails here
+ * even though nobody thought to write an assertion for it.
+ */
+const ALLOWED_COSINE: ReadonlyArray<{ pattern: RegExp; why: string }> = [
+  { pattern: /cosine audit baseline/i, why: "the v1 audit baseline genuinely is a cosine (D047)" },
+  { pattern: /frozen cosine contract/i, why: "names the frozen v1 contract, which is cosine" },
+  { pattern: /^Cosine remains the transparent audit baseline/, why: "the advanced audit disclosure" },
+];
+
+/** Allowed only while the dataset that shipped it is the one served. */
+const EXEMPT_DATASET = "wyscout-2017-18-v2-332766e3a822";
+const EXEMPT_CAVEAT = "Within-role percentiles aid display; cosine retrieval uses globally standardized values.";
+
+test("every cosine the v2 Lab renders is one the ledger allows", async ({ page }) => {
+  await openLab(page);
+  const served = (await page.locator("[data-vintage-badge] code").innerText()).trim();
+  const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+  const sentences = text.split(/(?<=[.!?])\s+/).filter((sentence) => /cosine/i.test(sentence));
+
+  const unexplained = sentences.filter((sentence) => {
+    if (ALLOWED_COSINE.some(({ pattern }) => pattern.test(sentence))) return false;
+    // D063: kept for the dataset it shipped in; a re-export must reword it.
+    // endsWith: a caveat's severity label ("CONTEXT") renders in the same run of text.
+    return !(sentence.trim().endsWith(EXEMPT_CAVEAT) && served === EXEMPT_DATASET);
+  });
+  expect(unexplained, "the v2 Lab calls something a cosine that no decision allows").toEqual([]);
+});
