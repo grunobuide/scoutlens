@@ -1,7 +1,15 @@
 /**
- * Prose typography leak gate (`scoutlens-r0`, `docs/product-roadmap.md`).
+ * Prose typography leak gate (PR #97, commit `6ce0eca`).
  *
- * Sentinel defect the R0 epic names: on `/` and `/science/`, a metric
+ * "R0" below is the planning label this defect class carried in a roadmap
+ * that lived only in the session that wrote this gate and was never committed
+ * (`scoutlens-iex.11`). Its rationale, the root-cause analysis and the
+ * tamper rehearsal that proves the gate are in that commit's message, which a
+ * clean clone has: `git show 6ce0eca`. The four computed-style dimensions and
+ * the five widths it names are restated below, so nothing here depends on
+ * the missing document.
+ *
+ * Sentinel defect R0 named: on `/` and `/science/`, a metric
  * explanation's "What this means" disclosure inherited the large numeric
  * value's -0.06em letter-spacing - computed to -2.4px at the value's own
  * 40px font size - because `.experiment-metrics dd` was a bare tag
