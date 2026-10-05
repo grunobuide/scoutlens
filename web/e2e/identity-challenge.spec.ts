@@ -160,3 +160,22 @@ test("Explore every fingerprint reaches the Lab explorer", async ({ page }) => {
   await link.click();
   await expect(page.locator("#lab-explorer")).toBeInViewport();
 });
+
+test("the challenge prints counts the way the rest of the Lab does", async ({ page }) => {
+  // `scoutlens-9a3.17`. The reveal said "rank 1 of 1257" a few hundred pixels
+  // above a replay card saying "of 1,257", and the query said "1140 minutes"
+  // above a period card saying "1,140 minutes". Compared against the Lab on
+  // the same page rather than against literals, so the assertion follows the
+  // data and fails only on a disagreement between the two surfaces.
+  await gotoLab(page, "?challenge=reveal");
+  const labCount = (
+    await page.locator('.retrieval-outcome[data-retrieval-scope="global"] .retrieval-outcome__rank span').innerText()
+  ).replace(/^of /, "");
+  await expect(page.locator(".challenge-panel__heading")).toHaveText(new RegExp(`of ${labCount}\.$`));
+  await expect(page.locator("[data-challenge-rank]")).toContainText(`of ${labCount}`);
+
+  await gotoLab(page, "?challenge=query");
+  const labMinutes = (await page.locator(".period-context-card").first().innerText()).match(/([\d,]+) minutes/)?.[1];
+  expect(labMinutes, "the Lab's period-A card states no minutes").toBeTruthy();
+  await expect(page.locator(".challenge-panel__periods")).toContainText(`${labMinutes} minutes`);
+});

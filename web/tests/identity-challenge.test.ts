@@ -154,11 +154,11 @@ describe("the challenge reproduces the stored artifact", () => {
     expect(view.copy.queryCta).toBe("Reveal the result");
     expect(view.copy.evidenceHeading).toBe("What drove the match");
     expect(view.copy.revealHeading).toBe(
-      `The fingerprint found them at rank ${global.self_rank} of ${global.candidate_count}.`,
+      `The fingerprint found them at rank ${global.self_rank} of ${global.candidate_count.toLocaleString("en-US")}.`,
     );
     expect(view.copy.revealBaseline).toBe(`A role-and-minutes baseline ranked them ${baseline}.`);
     expect(view.copy.degradedResult).toContain(published.profile.identity.display_name);
-    expect(view.copy.degradedResult).toContain(`${global.self_rank} of ${global.candidate_count}`);
+    expect(view.copy.degradedResult).toContain(`${global.self_rank} of ${global.candidate_count.toLocaleString("en-US")}`);
     // The orientation question is the artifact's, not a copy of it in code.
     expect(view.copy.orientationQuestion).toBe(
       published.research.narrative_steps.find((step) => step.kind === "question")?.title,

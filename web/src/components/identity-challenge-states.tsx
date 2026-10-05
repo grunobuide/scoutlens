@@ -273,7 +273,7 @@ export function challengeAnnouncement(
     return (
       `Result revealed. ${view.identity.displayName}, ${view.identity.role}, ` +
       `${view.identity.competition}. Ranked ${view.retrieval.selfRank} of ` +
-      `${view.retrieval.candidateCount}.`
+      `${view.retrieval.candidateCount.toLocaleString("en-US")}.`
     );
   }
   if (state === "evidence") {
@@ -388,7 +388,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
           </h2>
           <p className="challenge-panel__periods">
             {view.periods.a.label} · {view.periods.a.matchCount} matches ·{" "}
-            {view.periods.a.minutes} minutes
+            {view.periods.a.minutes.toLocaleString("en-US")} minutes
           </p>
           <p className="challenge-panel__body">{view.copy.queryBody}</p>
           <ChallengeFingerprint
@@ -423,14 +423,14 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
           </p>
           <p className="challenge-panel__periods">
             {view.periods.b.label} · {view.periods.b.matchCount} matches ·{" "}
-            {view.periods.b.minutes} minutes
+            {view.periods.b.minutes.toLocaleString("en-US")} minutes
           </p>
 
           <dl className="challenge-result">
             <div>
               <dt>Fingerprint rank</dt>
               <dd data-challenge-rank>
-                {view.retrieval.selfRank} of {view.retrieval.candidateCount}
+                {view.retrieval.selfRank} of {view.retrieval.candidateCount.toLocaleString("en-US")}
                 {uncertainty.rankCi95 === null ? null : (
                   <span className="challenge-result__interval" data-challenge-interval>
                     {" "}

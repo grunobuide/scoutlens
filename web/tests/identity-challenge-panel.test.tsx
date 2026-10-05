@@ -125,7 +125,7 @@ describe("the degraded state", () => {
     expect(degraded).toContain("data-challenge-degraded");
     expect(text(degraded)).toContain(
       `${profile.identity.display_name}'s second-half profile was ranked ` +
-        `${global.self_rank} of ${global.candidate_count} by fingerprint similarity, ` +
+        `${global.self_rank} of ${global.candidate_count.toLocaleString("en-US")} by fingerprint similarity, ` +
         `versus ${baseline} by the role-and-minutes baseline.`,
     );
   });
