@@ -8,6 +8,7 @@ import type {
   EvidenceItem,
 } from "@/contracts/generated/showcase";
 import {
+  evidenceContribution,
   familyLabel,
   formatContribution,
   formatScore,
@@ -86,6 +87,10 @@ export function NeighborComparisonDrawer({
     }
   }, []);
 
+  // The score this drawer reconstructs, named the way its major publishes it.
+  // v2's score is weighted and may not be called a cosine (D047); v1's is one.
+  // Derived from the same discriminant as the value, so the two cannot drift.
+  const scoreName = neighborScoreLabel(neighbor).toLowerCase();
   const fingerprintCaveat = caveatFor(profile, "fingerprint_not_style_proof");
   const recruitmentCaveat = caveatFor(profile, "similarity_not_recruitment");
 
@@ -129,8 +134,8 @@ export function NeighborComparisonDrawer({
               {profile.identity.display_name} / {neighbor.display_name}
             </h2>
             <p id="neighbor-drawer-summary">
-              The selected query remains fixed. This drawer explains the stored additive cosine
-              evidence for neighbor rank {neighbor.rank}.
+              The selected query remains fixed. This drawer explains the stored additive evidence
+              behind the {scoreName} for neighbor rank {neighbor.rank}.
             </p>
           </div>
           <button
@@ -159,7 +164,7 @@ export function NeighborComparisonDrawer({
         <section className="neighbor-drawer__families" aria-labelledby="family-contributions-heading">
           <header>
             <p className="eyebrow">Eight-family reconstruction</p>
-            <h3 id="family-contributions-heading">Where the cosine score comes from</h3>
+            <h3 id="family-contributions-heading">Where the {scoreName} comes from</h3>
             <p>
               Positive values are alignment, including low-with-low agreement. Negative values are
               disagreement, not weakness.
@@ -169,14 +174,15 @@ export function NeighborComparisonDrawer({
             {evidence.families.map((item) => (
               <li key={item.evidence_id} data-family-contribution={item.family}>
                 <span>{familyLabel(item.family)}</span>
-                <strong className={item.contribution < 0 ? "contribution--negative" : undefined}>
-                  {formatContribution(item.contribution)}
+                <strong className={evidenceContribution(item) < 0 ? "contribution--negative" : undefined}>
+                  {formatContribution(evidenceContribution(item))}
                 </strong>
               </li>
             ))}
           </ol>
           <p className="neighbor-drawer__reconstruction">
-            Family sum {formatContribution(evidence.familySum)} · stored cosine {formatScore(neighborScore(neighbor))}
+            Family sum {formatContribution(evidence.familySum)} · stored {scoreName}{" "}
+            {formatScore(neighborScore(neighbor))}
           </p>
         </section>
 
@@ -188,7 +194,7 @@ export function NeighborComparisonDrawer({
           <div className="neighbor-drawer__table-scroll" role="region" aria-label="Scrollable feature contribution table" tabIndex={0}>
             <table>
               <caption>
-                Global z-scores used by the model and each feature contribution to the stored cosine.
+                Global z-scores used by the model and each feature contribution to the stored {scoreName}.
               </caption>
               <thead>
                 <tr>
@@ -205,8 +211,8 @@ export function NeighborComparisonDrawer({
                     <th scope="row">{featureLabels.get(item.feature_id ?? "") ?? item.feature_id}</th>
                     <td>{item.query_global_z === null ? "—" : formatZScore(item.query_global_z)}</td>
                     <td>{item.candidate_global_z === null ? "—" : formatZScore(item.candidate_global_z)}</td>
-                    <td className={item.contribution < 0 ? "contribution--negative" : undefined}>
-                      {formatContribution(item.contribution)}
+                    <td className={evidenceContribution(item) < 0 ? "contribution--negative" : undefined}>
+                      {formatContribution(evidenceContribution(item))}
                     </td>
                     <td>{evidenceInterpretation(item)}</td>
                   </tr>
@@ -215,7 +221,8 @@ export function NeighborComparisonDrawer({
             </table>
           </div>
           <p className="neighbor-drawer__reconstruction">
-            Feature sum {formatContribution(evidence.featureSum)} · stored cosine {formatScore(neighborScore(neighbor))}
+            Feature sum {formatContribution(evidence.featureSum)} · stored {scoreName}{" "}
+            {formatScore(neighborScore(neighbor))}
           </p>
         </section>
 

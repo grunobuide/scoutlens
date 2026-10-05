@@ -2672,3 +2672,42 @@ own is spending a published identity to buy nothing a reader can see.
 behaviour and the whole chain, so a well-meant "normalise it like the release
 manifest" fails loudly with the reason attached. Do not regenerate artifacts to
 change a digest's encoding.
+
+---
+
+## D062 — 2026-10-05 — v2 neighbor surfaces show each feature's share of the score they print
+
+**Decision:** the neighbor card and the comparison drawer render
+`weighted_contribution` for v2 profiles — through `evidenceContribution`, the
+reader that already ordered and summed them — and name the score after the
+major that publishes it. Until `scoutlens-uze.25` they rendered the raw
+`contribution` field, which in v2 is the unweighted cosine audit view, directly
+above a sum of the weighted one.
+
+**What a reader saw.** For neighbor 1 of the canonical profile, the drawer
+printed eight family rows adding to 0.7358 directly under the heading "Where
+the cosine score comes from" and directly above "Family sum +0.8700 · stored
+cosine 0.8700". Ordering already used the weighted value, so the card's
+"Largest family alignments" named the right families with the wrong numbers.
+The identity challenge never had the defect: it shows weighted contributions,
+and `web/tests/identity-challenge.test.ts` pins that it "never substitutes the
+cosine audit view".
+
+**Why this is not a changed value.** The frontend agent contract denies
+changing any metric value, and none changed: both fields are published by the
+producer and are untouched. The surface now shows the field the v2 contract
+(§5) defines as "that feature's signed share of the score" — the only one that
+satisfies `D047`'s reconstruction rule. Presenting the audit field as the
+explanation of the weighted score was the defect. v1 surfaces are unchanged:
+for a v1 item `evidenceContribution` returns `contribution`, and "cosine" is
+the right name there.
+
+**Why the gate missed it.** `rendered-values.spec.ts` checked `dt` and `th` with
+the drawer closed, and the visual baseline held the wrong numbers inside its
+pixel budget — `D054`'s point, made again.
+
+**How to apply:** a v2 surface that prints a contribution beside a score prints
+`evidenceContribution(item)`. The raw `contribution` belongs only where the page
+says it is the cosine audit baseline. `web/e2e/rendered-values.spec.ts` opens
+the drawer and asserts that its rows reconstruct the printed score, that the
+card agrees with the drawer, and that no part of it calls the v2 score a cosine.
