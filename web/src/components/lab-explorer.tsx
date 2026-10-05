@@ -25,6 +25,7 @@ import {
   buildProfileEvidence,
   buildProfileFilterOptions,
   describeLabError,
+  evidenceContribution,
   filterProfiles,
   formatPercentile,
   formatContribution,
@@ -722,8 +723,11 @@ function StatisticalNeighbors({
       <ol className="neighbor-grid">
         {neighbors.map(({ neighbor, evidence }) => {
           const indexItem = profilesByKey.get(neighbor.profile_key);
-          const alignments = evidence.families.filter((item) => item.contribution > 0).slice(0, 2);
-          const disagreement = evidence.features.find((item) => item.contribution < 0);
+          // Each major's own share of the score it publishes: in v2 the raw
+          // `contribution` is the unweighted cosine audit view, which does not
+          // add up to the similarity score printed above it (scoutlens-uze.25).
+          const alignments = evidence.families.filter((item) => evidenceContribution(item) > 0).slice(0, 2);
+          const disagreement = evidence.features.find((item) => evidenceContribution(item) < 0);
           const titleId = `neighbor-${neighbor.rank}-title`;
           return (
             <li key={neighbor.profile_key}>
@@ -749,14 +753,14 @@ function StatisticalNeighbors({
                     {alignments.map((item) => (
                       <li key={item.evidence_id}>
                         <span>{familyLabel(item.family)}</span>
-                        <strong>{formatContribution(item.contribution)}</strong>
+                        <strong>{formatContribution(evidenceContribution(item))}</strong>
                       </li>
                     ))}
                   </ul>
                   <p>
                     Strongest disagreement · {disagreement === undefined
                       ? "none stored"
-                      : `${featureLabels.get(disagreement.feature_id ?? "") ?? disagreement.feature_id} ${formatContribution(disagreement.contribution)}`}
+                      : `${featureLabels.get(disagreement.feature_id ?? "") ?? disagreement.feature_id} ${formatContribution(evidenceContribution(disagreement))}`}
                   </p>
                 </div>
                 <p className="neighbor-card__stability">

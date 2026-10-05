@@ -92,3 +92,62 @@ test("the served dataset is the major the pin names", async ({ page }) => {
   const pin = page.locator("[data-vintage-badge] code");
   await expect(pin).toContainText("-v2-");
 });
+
+/** Neighbor 1's evidence drawer, open. */
+async function openFirstComparison(page: Page) {
+  await openLab(page);
+  await page
+    .locator('[data-neighbor-rank="1"]')
+    .getByRole("button", { name: "Open evidence comparison" })
+    .click();
+  const drawer = page.getByRole("dialog");
+  await expect(drawer).toBeVisible();
+  return drawer;
+}
+
+const sum = (values: ReadonlyArray<string>): number =>
+  values.reduce((total, value) => total + Number(value.trim()), 0);
+
+test("the comparison drawer never calls the v2 score a cosine", async ({ page }) => {
+  // `scoutlens-uze.25`. The assertion above reads `dt` and `th` with the drawer
+  // CLOSED - a <dialog> rendered on demand is not in the DOM it inspects - so
+  // the drawer's heading, summary and reconstruction lines kept saying "cosine"
+  // about the weighted score for as long as that assertion was green.
+  const drawer = await openFirstComparison(page);
+  expect(await drawer.innerText(), "the drawer names the weighted score a cosine").not.toMatch(/cosine/i);
+});
+
+test("a neighbor's contributions reconstruct the score printed beside them", async ({ page }) => {
+  // D047's normative rule, read off the page: evidence that does not
+  // reconstruct the number it explains is not evidence. In v2 the published
+  // `contribution` is the unweighted cosine audit view and
+  // `weighted_contribution` is each feature's share of `similarity_score`. A
+  // surface that renders the first beside a sum of the second shows eight rows
+  // that do not add up to the total printed under them (`scoutlens-uze.25`).
+  const drawer = await openFirstComparison(page);
+  const score = Number((await drawer.locator(".neighbor-drawer__score dd").first().innerText()).trim());
+
+  const families = await drawer.locator("[data-family-contribution] strong").allInnerTexts();
+  expect(families).toHaveLength(8);
+  // Eight values rounded to 4 dp, plus the rounded score: at most 9 half-units.
+  expect(Math.abs(sum(families) - score), "family rows do not add up to the score").toBeLessThanOrEqual(0.00045);
+
+  const features = await drawer.locator("[data-feature-contribution] td:nth-of-type(3)").allInnerTexts();
+  expect(features).toHaveLength(32);
+  expect(Math.abs(sum(features) - score), "feature rows do not add up to the score").toBeLessThanOrEqual(0.00165);
+
+  // The card and the drawer describe the same neighbor; a family's value may
+  // not change between them.
+  const inDrawer = new Map<string, string>();
+  for (const row of await drawer.locator("[data-family-contribution]").all()) {
+    inDrawer.set((await row.locator("span").innerText()).trim(), (await row.locator("strong").innerText()).trim());
+  }
+  const card = page.locator('[data-neighbor-rank="1"] .neighbor-card__evidence li');
+  expect(await card.count()).toBeGreaterThan(0);
+  for (const row of await card.all()) {
+    const family = (await row.locator("span").innerText()).trim();
+    expect((await row.locator("strong").innerText()).trim(), `${family} differs between card and drawer`).toBe(
+      inDrawer.get(family),
+    );
+  }
+});
