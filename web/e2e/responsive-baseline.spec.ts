@@ -4,7 +4,9 @@ import {
   expectNoPageOverflow,
   expectNoSeriousOrCriticalViolations,
   expectNoTextCollision,
+  FROZEN_WIDTHS,
   type TextPair,
+  ZOOM_200,
 } from "./helpers";
 
 // scoutlens-uze.4 responsive regression gates for the shared shell, landing,
@@ -173,15 +175,18 @@ async function auditRoute(page: Page, route: string): Promise<void> {
 }
 
 for (const route of ["/", "/science/"]) {
+  // `scoutlens-uze.26`: every width of the frozen matrix, not three of them.
+  // 375, 1024 and 1440 had no standing gate on these routes; the only evidence
+  // at those widths was the 2026-08-04 manual audit, which predates the Science
+  // rebuild and the v2 repin.
   test(`${route} has no overflow, edge crossings, unwrapped text or undersized nav targets`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 });
     await expectNoPageOverflow(page);
-    await auditRoute(page, route);
-
-    await page.setViewportSize({ width: 640, height: 512 });
-    await auditRoute(page, route);
-
-    await page.setViewportSize({ width: 768, height: 900 });
+    for (const width of FROZEN_WIDTHS) {
+      await page.setViewportSize({ width, height: 900 });
+      await auditRoute(page, route);
+    }
+    await page.setViewportSize(ZOOM_200);
     await auditRoute(page, route);
   });
 

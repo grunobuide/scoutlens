@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { expectNoPageOverflow, expectNoSeriousOrCriticalViolations } from "./helpers";
+import { expectNoEdgeCrossings, expectNoPageOverflow, expectNoSeriousOrCriticalViolations } from "./helpers";
 
 // The diagonal Lab gate (scoutlens-qop.6.5). Runs only on the `fixtures-v2-*`
 // projects, which serve the test-only static export built from the
@@ -115,8 +115,11 @@ test.describe("the v2 Lab presents the diagonal method", () => {
 // project list; these three states are orthogonal to width and are asserted
 // once each rather than per viewport.
 test.describe("the v2 disclosure survives the degraded states", () => {
-  test("stays readable at 375 and 1440 px", async ({ page }) => {
-    for (const width of [375, 1440]) {
+  // `scoutlens-uze.26` adds 1024 - the last width of the `64rem` block, never
+  // asserted on the max-content fixture - and the edge and axe checks the route
+  // sweep applies elsewhere.
+  test("stays readable at 375, 1024 and 1440 px", async ({ page }) => {
+    for (const width of [375, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`/lab/?player=${MAX_CONTENT}`);
       const disclosure = page.locator(".method-disclosure");
@@ -126,6 +129,8 @@ test.describe("the v2 disclosure survives the degraded states", () => {
         "does not measure player quality, tactical fit or recruitment value",
       );
       await expectNoPageOverflow(page);
+      await expectNoEdgeCrossings(page, `max-content fixture at ${width}`);
+      await expectNoSeriousOrCriticalViolations(page);
     }
   });
 

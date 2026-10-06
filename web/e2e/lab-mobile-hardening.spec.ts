@@ -15,14 +15,24 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { expectNoPageOverflow, expectNoSeriousOrCriticalViolations, waitForStablePage } from "./helpers";
+import {
+  expectNoEdgeCrossings,
+  expectNoPageOverflow,
+  expectNoSeriousOrCriticalViolations,
+  FROZEN_WIDTHS,
+  waitForStablePage,
+  ZOOM_200,
+} from "./helpers";
 
-const WIDTHS = [320, 360, 1280] as const;
+// `scoutlens-uze.26`: the frozen matrix, where this file used to sweep 320,
+// 360 and 1280 only.
+const WIDTHS = FROZEN_WIDTHS;
 const PROFILE = "/lab/?player=wy-8287-c-795";
+const UNSELECTED = "/lab/";
 
-async function openLab(page: Page, width: number): Promise<void> {
+async function openLab(page: Page, width: number, route: string = PROFILE): Promise<void> {
   await page.setViewportSize({ width, height: 900 });
-  await page.goto(PROFILE);
+  await page.goto(route);
   await waitForStablePage(page);
 }
 
@@ -151,15 +161,32 @@ test("the provider-boundary links it excludes meet the 44 px target too (scoutle
   }
 });
 
-test("the Lab holds its overflow and axe baseline at every width", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "desktop", "Asserted once from a resizable context");
+for (const [state, route] of [
+  ["unselected", UNSELECTED],
+  ["selected", PROFILE],
+] as const) {
+  test(`the ${state} Lab holds its overflow, edge and axe baseline at every width`, async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Asserted once from a resizable context");
+    // Eight viewports, each with an axe run: sized for that, not for one page.
+    test.setTimeout(90_000);
 
-  // uze.1's baseline: zero page overflow and zero serious or critical axe
-  // violations across every audited Lab state. The sticky column and the taller
-  // links must not have cost either.
-  for (const width of WIDTHS) {
-    await openLab(page, width);
+    // uze.1's baseline: zero page overflow and zero serious or critical axe
+    // violations across every audited Lab state. The sticky column and the
+    // taller links must not have cost either. `scoutlens-uze.26` adds the
+    // unselected Lab, the remaining frozen widths and 200% zoom, and the edge
+    // check: no content or control outside an internal scroll region may cross
+    // the viewport edge.
+    for (const width of WIDTHS) {
+      await openLab(page, width, route);
+      await expectNoPageOverflow(page);
+      await expectNoEdgeCrossings(page, `${route} at ${width}`);
+      await expectNoSeriousOrCriticalViolations(page);
+    }
+    await page.setViewportSize(ZOOM_200);
+    await page.goto(route);
+    await waitForStablePage(page);
     await expectNoPageOverflow(page);
+    await expectNoEdgeCrossings(page, `${route} at 200% zoom`);
     await expectNoSeriousOrCriticalViolations(page);
-  }
-});
+  });
+}
