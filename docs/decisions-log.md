@@ -2797,3 +2797,41 @@ a quality score, and Gate 2 may well return DROP; that would be published.
 **How to apply:** the next step is Gate 2, run once against this hash. Nothing in
 the published catalog, the showcase or any recorded result changes unless it
 returns KEEP, and then only atomically (the bead's AC7).
+
+---
+
+## D065 — 2026-10-06 — Goalkeeper family: Gate 2 is DROP
+
+**Decision:** the goalkeeper family is not added to the catalog. Gate 2 of
+`scoutlens-e87` ran once against the protocol `D064` froze (sha256
+`d626385c9373a6a1296fb2d20085621a02a6674d04454fecaad7ab68bd866803`) and met two
+of the three KEEP conditions. Evidence: `docs/goalkeeper-retrieval.md`, whose
+recorded run `run_gate2 --check` reproduces.
+
+**The numbers.** 97 goalkeeper queries against the 97-profile goalkeeper pool.
+MRR 0.1290 (published within-role Baseline B) → 0.1712 with the family; ΔMRR
++0.0422, which clears the +0.020 effect size; Recall@10 0.309 → 0.361, so no
+drop. But the 95% paired-bootstrap interval on ΔMRR is −0.0029 to +0.0850, and
+the rule requires its lower bound above zero. DROP.
+
+**Why this is believed.** A second implementation, written from the protocol
+text alone without reading the evaluator, its runner or their tests, reproduced
+every metric and interval bound to full precision and every one of the 97
+per-goalkeeper rank pairs. The baseline arm is the published within-role
+ranking itself (`run_baseline_b_retrieval` with `scope_column="role"`), held
+equal to it by a test.
+
+**What DROP means here.** A null, not a negative: the point estimate is twice
+the minimum effect and 65 of 97 goalkeepers rank better, but 97 queries cannot
+exclude zero. It is not converted into a variant tried on the same goalkeepers
+(project convention); that would be a second look under a new name.
+
+**What would justify revisiting.** More goalkeepers under a new, separately
+recorded protocol — another season or league set — not a respecified family.
+The code and both gates stay in the repository for that. On StatsBomb the
+family is not computable today: the ingestion keeps `Goal Keeper` events only by
+type name, without subtype, outcome or pass body part.
+
+**How to apply:** nothing changes in the catalog, the showcase or any recorded
+result (the bead's AC7 applies only on KEEP). The published caveat
+`goalkeeper_feature_coverage_weak` stays true and stays published.

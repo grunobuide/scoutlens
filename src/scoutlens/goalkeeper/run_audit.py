@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -31,14 +30,15 @@ from scoutlens.evaluation.retrieval import select_eligible_both_periods
 from scoutlens.evaluation.run_manifest import load_experiment_config
 from scoutlens.evaluation.temporal import assign_periods
 from scoutlens.goalkeeper import observability as obs
+from scoutlens.goalkeeper import record
 from scoutlens.goalkeeper.protocol import protocol_hash
 from scoutlens.release.manifest import REPO_ROOT
 
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 RECORD = REPO_ROOT / "docs" / "goalkeeper-observability.md"
 
-RESULT_BLOCK = ("<!-- audit-result:begin -->", "<!-- audit-result:end -->")
-TABLE_BLOCK = ("<!-- audit-table:begin -->", "<!-- audit-table:end -->")
+RESULT_BLOCK = record.markers("audit-result")
+TABLE_BLOCK = record.markers("audit-table")
 
 
 def eligible_goalkeepers(
@@ -108,39 +108,17 @@ def render_markdown(result: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _block(text: str, markers: tuple[str, str]) -> str:
-    begin, end = markers
-    match = re.search(re.escape(begin) + r"\n(.*?)" + re.escape(end), text, flags=re.DOTALL)
-    if match is None:
-        raise ValueError(f"{RECORD.name} has no {begin} ... {end} block")
-    return match.group(1)
-
-
-def recorded_result(record: Path = RECORD) -> dict:
+def recorded_result(path: Path = RECORD) -> dict:
     """The run recorded in the evidence document."""
-    block = _block(record.read_text(encoding="utf-8"), RESULT_BLOCK)
-    return json.loads(block.removeprefix("```json\n").removesuffix("```\n"))
+    return record.read_json(path, RESULT_BLOCK)
 
 
-def recorded_table(record: Path = RECORD) -> str:
-    return _block(record.read_text(encoding="utf-8"), TABLE_BLOCK)
+def recorded_table(path: Path = RECORD) -> str:
+    return record.read(path, TABLE_BLOCK)
 
 
-def write_record(result: dict, record: Path = RECORD) -> None:
-    text = record.read_text(encoding="utf-8")
-    for markers, body in (
-        (RESULT_BLOCK, f"```json\n{render_json(result)}```\n"),
-        (TABLE_BLOCK, render_markdown(result)),
-    ):
-        begin, end = markers
-        text = re.sub(
-            re.escape(begin) + r"\n.*?" + re.escape(end),
-            lambda _: f"{begin}\n{body}{end}",
-            text,
-            count=1,
-            flags=re.DOTALL,
-        )
-    record.write_text(text, encoding="utf-8", newline="\n")
+def write_record(result: dict, path: Path = RECORD) -> None:
+    record.replace(path, {RESULT_BLOCK: record.json_body(result), TABLE_BLOCK: render_markdown(result)})
 
 
 def main(argv: list[str] | None = None) -> int:
