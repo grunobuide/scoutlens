@@ -2835,3 +2835,40 @@ type name, without subtype, outcome or pass body part.
 **How to apply:** nothing changes in the catalog, the showcase or any recorded
 result (the bead's AC7 applies only on KEEP). The published caveat
 `goalkeeper_feature_coverage_weak` stays true and stays published.
+
+## D066 — 2026-10-06 — One thesis and one boundary sentence on every route
+
+**Decision:** the frozen thesis and boundary sentence of
+`docs/public-experience-narrative.md` §2 render verbatim, adjacent, on the
+landing hero, the `/science` orientation and the `/lab` intro, from one
+content constant (`web/src/content/narrative.ts`). `/lab` also states
+`research.supported_claim` and links to the claims matrix on `/science`.
+Route `h1`s stay headlines. (`scoutlens-9a3.18`)
+
+**Why.** The epic's AC2 asks for "one tested plain-language thesis" across
+the landing, `/science` and the guided Lab entry. The 2026-10-06 epic audit
+found three theses and three boundary wordings, one per route, none of them
+§2's; what a reader took away depended on where they came in. §6.2 of the
+narrative listed the landing hero as the thesis's only place, which predates
+the epic's criterion and is what let each route grow its own. §6.2 now names
+all three.
+
+**What changed in the wording.** Only the display name: §2 says "ScoutLens",
+the public identity contract substitutes "Yumusarái Labs" and permits no
+other edit. The landing's former boundary ("Not a recruitment
+recommendation") and the Lab's ("not a quality score … or automated verdict")
+are replaced by §2's. The Lab's rating disclaimer is not lost: it is stated
+where a rank or percentile is printed — the retrieval boundary ("not a player
+rating"), the neighbour caveats and the quantity explainers of
+`scoutlens-9a3.19`.
+
+**Why the h1s did not become the thesis.** §2 allows an abbreviation where
+one line is required, provided the boundary stays in the same reading
+context. The landing `h1` is that abbreviation, and carries the two periods
+`scoutlens-9a3.14` put into it after the n=1 run; `/science` and `/lab` name
+their route's job. Production smoke tests pin all three.
+
+**How to apply:** a route that needs the thesis renders `ThesisStatement`;
+nothing may sit between its two paragraphs. Editing either sentence means
+editing §2 first: `web/tests/narrative.test.tsx` and
+`e2e/claims-consistency.spec.ts` read the document.

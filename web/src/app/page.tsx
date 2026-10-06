@@ -7,6 +7,7 @@ import {
   FingerprintPreview,
   ProvenanceDrawer,
 } from "@/components/research-story";
+import { ThesisStatement } from "@/components/thesis-statement";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
 import { formatMetric, requireMetric } from "@/content/showcase-story";
 
@@ -43,12 +44,13 @@ export default async function HomePage() {
             A player leaves a reproducible fingerprint—and it still identifies them half a
             season later.
           </h1>
-          <p className="lede">
-            Yumusarái Labs tests whether event-derived profiles can retrieve the same player across two chronological halves—then exposes the controls that narrow what that result means.
-          </p>
-          <p className="hero__boundary">
-            Evidence of individual signal. Not proof of playing style. Not a recruitment recommendation.
-          </p>
+          {/*
+            `scoutlens-9a3.18` (D066): the lede and the boundary are the frozen
+            thesis and boundary sentence, shared with /science and /lab. The h1
+            above stays the route's headline - an abbreviation section 2
+            allows - and still carries the two periods 9a3.14 put into it.
+          */}
+          <ThesisStatement thesisClassName="lede" boundaryClassName="hero__boundary" />
           <div className="actions" aria-label="Explore Yumusarái Labs">
             <Link className="button button--primary" href="/lab/">
               Explore every fingerprint

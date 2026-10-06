@@ -247,6 +247,12 @@ test("the challenge panel matches its responsive baselines", async ({ page }, te
   // here.
   for (const width of WIDTHS) {
     await openChallenge(page, "reveal", width);
+    // `scoutlens-9a3.18`: once the Lab intro grew, the panel starts below the
+    // fold at narrow widths. Playwright then scrolls before stitching a capture
+    // taller than the viewport, and the fixed skip link - parked just above the
+    // viewport, not hidden - is painted into the middle of the panel. It is page
+    // chrome, not panel content, so it is left out of this screenshot-only test.
+    await page.addStyleTag({ content: ".skip-link { visibility: hidden; }" });
     await expect(page.locator(PANEL)).toHaveScreenshot(`challenge-reveal-${width}.png`, {
       caret: "hide",
     });

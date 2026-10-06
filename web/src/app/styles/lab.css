@@ -17,6 +17,39 @@
   max-width: 13ch;
 }
 
+/* `scoutlens-9a3.18`: the shared thesis, then its boundary (below), then the
+   artifact's supported claim with the way to what it does not support. */
+.lab-page-intro__thesis {
+  max-width: 48rem;
+  color: var(--ink-800);
+}
+
+.lab-page-intro__claim {
+  max-width: 48rem;
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+
+.lab-page-intro__claim > .eyebrow {
+  margin: 0;
+}
+
+.lab-page-intro__claim > p:not(.eyebrow) {
+  margin: 0.35rem 0 0;
+  color: var(--ink-800);
+}
+
+.lab-page-intro__claim > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--teal);
+  font-weight: 650;
+}
+
 .lab-page-intro__boundary {
   max-width: 48rem;
   margin-bottom: 0;

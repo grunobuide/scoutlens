@@ -103,6 +103,12 @@
   margin-top: 1.5rem;
 }
 
+/* `scoutlens-9a3.18`: the shared thesis, between the orientation and the
+   boundary it must sit beside. */
+.science-orientation__thesis {
+  color: var(--ink-800);
+}
+
 .science-orientation__boundary {
   font-weight: 650;
   color: var(--ink-700);
