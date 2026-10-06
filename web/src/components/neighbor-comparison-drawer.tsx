@@ -51,6 +51,15 @@ function evidenceInterpretation(item: EvidenceItem): string {
   return "Neutral contribution";
 }
 
+/**
+ * The negative colour follows the sign a reader can see. A contribution below
+ * display precision prints as 0.0000, and colouring it negative would say with
+ * colour what the text does not (`scoutlens-uze.27`).
+ */
+function contributionClass(item: EvidenceItem): string | undefined {
+  return formatContribution(evidenceContribution(item)).startsWith("-") ? "contribution--negative" : undefined;
+}
+
 function stabilityText(neighbor: AnyStatisticalNeighbor): string {
   const stability = neighbor.stability;
   if (stability.status === "pending") {
@@ -174,9 +183,7 @@ export function NeighborComparisonDrawer({
             {evidence.families.map((item) => (
               <li key={item.evidence_id} data-family-contribution={item.family}>
                 <span>{familyLabel(item.family)}</span>
-                <strong className={evidenceContribution(item) < 0 ? "contribution--negative" : undefined}>
-                  {formatContribution(evidenceContribution(item))}
-                </strong>
+                <strong className={contributionClass(item)}>{formatContribution(evidenceContribution(item))}</strong>
               </li>
             ))}
           </ol>
@@ -211,9 +218,7 @@ export function NeighborComparisonDrawer({
                     <th scope="row">{featureLabels.get(item.feature_id ?? "") ?? item.feature_id}</th>
                     <td>{item.query_global_z === null ? "—" : formatZScore(item.query_global_z)}</td>
                     <td>{item.candidate_global_z === null ? "—" : formatZScore(item.candidate_global_z)}</td>
-                    <td className={evidenceContribution(item) < 0 ? "contribution--negative" : undefined}>
-                      {formatContribution(evidenceContribution(item))}
-                    </td>
+                    <td className={contributionClass(item)}>{formatContribution(evidenceContribution(item))}</td>
                     <td>{evidenceInterpretation(item)}</td>
                   </tr>
                 ))}

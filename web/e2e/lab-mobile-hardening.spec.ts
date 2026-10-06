@@ -19,6 +19,7 @@ import {
   expectNoEdgeCrossings,
   expectNoPageOverflow,
   expectNoSeriousOrCriticalViolations,
+  focusRingReport,
   FROZEN_WIDTHS,
   waitForStablePage,
   ZOOM_200,
@@ -98,8 +99,16 @@ test("the scroller keeps its region role, name and focusability", async ({ page 
 test("every Lab-owned control meets the 44 px target", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "Geometry is asserted once from a resizable context");
 
-  for (const width of WIDTHS) {
-    await openLab(page, width);
+  // `scoutlens-uze.27`: and at 200% zoom, which the epic's AC3 names and the
+  // width loop alone never reached.
+  for (const width of [...WIDTHS, "zoom200"] as const) {
+    if (width === "zoom200") {
+      await page.setViewportSize(ZOOM_200);
+      await page.goto(PROFILE);
+      await waitForStablePage(page);
+    } else {
+      await openLab(page, width);
+    }
 
     const undersized = await page.evaluate(() =>
       [...document.querySelectorAll("main a, main button")]
@@ -188,5 +197,14 @@ for (const [state, route] of [
     await expectNoPageOverflow(page);
     await expectNoEdgeCrossings(page, `${route} at 200% zoom`);
     await expectNoSeriousOrCriticalViolations(page);
+
+    // `scoutlens-uze.27`: every reachable focusable at 200% zoom shows a ring -
+    // the whole walk, not the first four.
+    const rings = await focusRingReport(page);
+    expect(rings.length, "nothing focusable was found").toBeGreaterThan(10);
+    expect(
+      rings.filter((ring) => !ring.visible).map((ring) => ring.label),
+      `${route} focusables without a visible focus ring at 200% zoom`,
+    ).toEqual([]);
   });
 }
