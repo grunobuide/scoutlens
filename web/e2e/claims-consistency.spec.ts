@@ -236,6 +236,85 @@ test("the supported and unsupported claims are the artifact's, verbatim", async 
   }
 });
 
+/**
+ * One thesis and one boundary sentence on every route (`scoutlens-9a3.18`, D066).
+ *
+ * The landing, /science and /lab each worded their own thesis and boundary,
+ * so what a reader took away depended on where they arrived. The owner is
+ * section 2 of docs/public-experience-narrative.md, read here from disk; the
+ * one permitted difference is the display name the public identity contract
+ * substitutes for "ScoutLens".
+ */
+const DISPLAY_NAME = "Yumusarái Labs";
+
+function frozenQuote(label: string): string {
+  const lines = readFileSync(join(REPOSITORY_ROOT, "docs", "public-experience-narrative.md"), "utf8").split(/\r?\n/);
+  const start = lines.findIndex((line) => line.startsWith(`**${label}`));
+  if (start < 0) {
+    throw new Error(`the narrative has no "${label}" label`);
+  }
+  const quote: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.startsWith(">")) {
+      quote.push(line.replace(/^>\s?/, ""));
+    } else if (quote.length > 0) {
+      break;
+    }
+  }
+  return quote.join(" ").replace(/\s+/g, " ").trim();
+}
+
+const THESIS = frozenQuote("Thesis").replace("ScoutLens", DISPLAY_NAME);
+const BOUNDARY = frozenQuote("Boundary sentence");
+
+async function expectTheThesis(page: Page, route: string): Promise<void> {
+  const thesis = page.locator("main [data-thesis]");
+  const boundary = page.locator("main [data-thesis-boundary]");
+  await expect(thesis, `${route} renders one thesis`).toHaveCount(1);
+  await expect(boundary, `${route} renders one boundary`).toHaveCount(1);
+  await expect(thesis, `${route} thesis`).toHaveText(THESIS);
+  await expect(boundary, `${route} boundary`).toHaveText(BOUNDARY);
+  await expect(thesis).toBeVisible();
+  await expect(boundary).toBeVisible();
+  // Section 2: the boundary is "never separated by other copy".
+  const adjacent = await thesis.evaluate(
+    (node) => node.nextElementSibling?.hasAttribute("data-thesis-boundary") ?? false,
+  );
+  expect(adjacent, `${route} puts something between the thesis and its boundary`).toBe(true);
+}
+
+test("every route states the narrative's one thesis and one boundary, adjacent", async ({ page }) => {
+  for (const route of ROUTES) {
+    await page.goto(route);
+    await waitForStablePage(page);
+    await expectTheThesis(page, route);
+  }
+});
+
+test("the Lab states the supported claim verbatim and links to what it does not support", async ({
+  page,
+  request,
+}) => {
+  const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
+
+  await page.goto("/lab/");
+  await waitForStablePage(page);
+  const claim = page.locator("main [data-supported-claim]");
+  await expect(claim).toHaveText(research.supported_claim);
+  await expect(claim).toBeVisible();
+
+  const link = page.getByRole("link", { name: "Where the evidence stops →" });
+  await expect(link).toHaveAttribute("href", "/science/#claims-heading");
+
+  // The matrix the link promises: every unsupported claim, under that anchor.
+  await page.goto("/science/");
+  const matrix = page.locator("section.claims-matrix", { has: page.locator("#claims-heading") });
+  await expect(matrix).toHaveCount(1);
+  for (const unsupported of research.unsupported_claims) {
+    await expect(matrix).toContainText(unsupported);
+  }
+});
+
 test("the data vintage is identical on every route that shows it", async ({ page, request }) => {
   const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
 
@@ -387,6 +466,20 @@ test.describe("without JavaScript", () => {
     await expect(badge).toContainText(manifest.dataset_version);
   });
 
+  test("every route states the same thesis and boundary before hydration", async ({ page, request }) => {
+    // `scoutlens-9a3.18`: the thesis test above runs with JavaScript; this is
+    // the same assertion on the served HTML, for all three routes, plus the
+    // Lab's supported claim - the Lab's interactive surface needs hydration,
+    // its claim must not.
+    const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
+    for (const route of ROUTES) {
+      await page.goto(route);
+      await expectTheThesis(page, route);
+    }
+    await page.goto("/lab/");
+    await expect(page.locator("main [data-supported-claim]")).toHaveText(research.supported_claim);
+  });
+
   test("the /science AI boundary survives the first paint", async ({ page }) => {
     await page.goto("/science/");
     const main = page.locator("main");
@@ -526,9 +619,12 @@ test.describe("the hero's temporal framing", () => {
     await page.goto("/");
     await waitForStablePage(page);
 
+    // `scoutlens-9a3.18` made the lede the frozen thesis, which says "that same
+    // player" and "two halves of one season". The property is unchanged: the
+    // same player, and both periods.
     const lede = page.locator("main .lede");
-    await expect(lede).toContainText("the same player");
-    await expect(lede).toContainText("two chronological halves");
+    await expect(lede).toContainText("same player");
+    await expect(lede).toContainText(/two (chronological )?halves/);
   });
 
   test("the headline precedes the lede, and the claim is still rendered once", async ({

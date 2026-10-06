@@ -27,6 +27,10 @@ test("complete selected-player flow works by keyboard at desktop and 360 px", as
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "How it works" })).toBeFocused();
   await page.keyboard.press("Tab");
+  // `scoutlens-9a3.18`: the intro states the supported claim and links to the
+  // claims it does not support, before the challenge begins.
+  await expect(page.getByRole("link", { name: "Where the evidence stops →" })).toBeFocused();
+  await page.keyboard.press("Tab");
   // The identity challenge panel sits above the Lab explorer and its CTA is the
   // first focusable element in it (identity-challenge-contract.md section 6.1:
   // "CTA button is the first focusable element in the challenge panel. Tab

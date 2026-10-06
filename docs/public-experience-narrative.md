@@ -95,6 +95,11 @@ proof of playing style."); `research.unsupported_claims` (style proof;
 neighbor-as-recommendation/replacement; prediction of future performance,
 fitness, value, or transfer success).
 
+**Where it renders.** Verbatim and adjacent on the landing hero, the `/science`
+orientation and the `/lab` intro, with the public display name substituted for
+"ScoutLens" and no other change ([D066](decisions-log.md); the tests read this
+section).
+
 **Meeting A/B wording rules.** Where a single sentence is required (opengraph,
 release tagline, case-study one-liner), the thesis may be abbreviated, but the
 boundary sentence must still appear within the same reading context (same
@@ -179,8 +184,8 @@ field, never from a duplicated constant.
 
 | Message | Single owner | Places it may render |
 |---|---|---|
-| Thesis + boundary sentence | `research.supported_claim` (+ sheltering copy in §2) | Landing hero; case study; release media |
-| Claim matrix (supported / not supported) | `research.supported_claim` + `research.unsupported_claims` | Landing `ClaimsMatrix`, `/science` |
+| Thesis + boundary sentence | `research.supported_claim` (+ sheltering copy in §2) | Landing hero, `/science` orientation, `/lab` intro — verbatim from `web/src/content/narrative.ts` ([D066](decisions-log.md)); case study; release media |
+| Claim matrix (supported / not supported) | `research.supported_claim` + `research.unsupported_claims` | Landing `ClaimsMatrix`, `/science`; `/lab` states the supported claim and links to the `/science` matrix (D066) |
 | Data vintage | `manifest.dataset_version` | Hero chip; provenance `Dataset pin` |
 | Headline evidence pair | Experiments `wyscout_global_gate2` + `wyscout_role_team_minutes` | Landing evidence band, `/science` stages 02–03 |
 | Confound | Caveat `same_season_team_confound` | Beside every headline evidence rendering |

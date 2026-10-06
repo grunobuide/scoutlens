@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
 import { IdentityChallengePanel } from "@/components/identity-challenge-panel";
 import { LabExplorer, LabProblemPanel } from "@/components/lab-explorer";
+import { ThesisStatement } from "@/components/thesis-statement";
 import { loadIdentityChallenge } from "@/content/load-identity-challenge";
 import { loadShowcaseLab } from "@/content/load-showcase-lab";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
@@ -38,10 +40,19 @@ export default async function LabPage() {
           Search every eligible player × competition profile, then inspect how the same 32
           event-derived measurements move between the first and second half of the season.
         </p>
-        <p className="lab-page-intro__boundary">
-          This is a statistical fingerprint—not a quality score, style proof, recruitment ranking,
-          or automated verdict.
-        </p>
+        {/*
+          `scoutlens-9a3.18` (D066): the same thesis and boundary as the landing
+          and /science, then the artifact's supported claim and the way to the
+          claims it does not support. This intro used to word a boundary of its
+          own; ratings are disclaimed where they could be misread instead - the
+          retrieval boundary, the neighbour caveats and the quantity explainers.
+        */}
+        <ThesisStatement thesisClassName="lab-page-intro__thesis" boundaryClassName="lab-page-intro__boundary" />
+        <aside className="lab-page-intro__claim" aria-labelledby="lab-claim-heading">
+          <p className="eyebrow" id="lab-claim-heading">Supported claim</p>
+          <p data-supported-claim>{story.research.supported_claim}</p>
+          <Link href="/science/#claims-heading">Where the evidence stops →</Link>
+        </aside>
       </header>
 
       <IdentityChallengePanel data={challenge} />

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
 import { ClaimsMatrix, ExperimentCard, FingerprintPreview, ProvenanceDrawer } from "@/components/research-story";
+import { ThesisStatement } from "@/components/thesis-statement";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
 
 export const metadata: Metadata = {
@@ -32,10 +33,15 @@ export default async function SciencePage() {
             {story.manifest.population.feature_count} simple measurements of how they act can find
             that same player again in the second half.
           </p>
-          <p className="science-orientation__boundary">
-            This is evidence of individual signal — not proof of playing style, not a
-            recommendation, and not a prediction.
-          </p>
+          {/*
+            `scoutlens-9a3.18` (D066): the orientation states how the test works;
+            the thesis that follows states what it shows, and the boundary is
+            the same sentence every route prints.
+          */}
+          <ThesisStatement
+            thesisClassName="science-orientation__thesis"
+            boundaryClassName="science-orientation__boundary"
+          />
         </div>
       </header>
 
