@@ -47,7 +47,11 @@ determinism claim above says re-runs differ only when the site does, and this is
 that claim being checked rather than asserted.
 
 The same held for the rename capture before it, where the two shots scrolled
-past the site header came back identical because the wordmark was not in frame.
+past the site header came back identical because the wordmark was not in frame —
+and again on 2026-10-06 (`scoutlens-jtt.24`), when all five were re-captured
+against deploy `50c721f` and every digest above came back unchanged: none of the
+stills frames the drawer, the neighbor cards' contributions or the challenge's
+reveal, the three surfaces that changed.
 
 ## Walkthrough
 
@@ -117,9 +121,9 @@ under 10 px. A wider embed only enlarges it.
 
 | | |
 |---|---|
-| Source commit | `a79868f49cc82cacb51969aef7a9527925e9fee1` — read from the served page by the script, and written into the caption file's header |
-| Deployed by | `deploy` run [36933101622](https://github.com/grunobuide/scoutlens/actions/runs/36933101622), 2026-10-01, smoke 10/10 |
-| Captured from | <https://grunobuide.github.io/scoutlens/>, 2026-10-05 |
+| Source commit | `50c721f24556a9b16c9b45b0d412ae11b080b089` — read from the served page by the script, and written into the caption file's header |
+| Deployed by | `deploy` run [37376765957](https://github.com/grunobuide/scoutlens/actions/runs/37376765957), 2026-10-05, smoke 10/10 |
+| Captured from | <https://grunobuide.github.io/scoutlens/>, 2026-10-06 (`scoutlens-jtt.24`; first captured from `a79868f` on 2026-10-05) |
 | Command | `node scripts/capture-demo.mjs` |
 | Profile | `wy-8287-c-795` (L. Modrić, Spanish first division, 2017/18) |
 | Frame | 800×540 CSS px at `deviceScaleFactor: 2` = 1600×1080, 25 fps, VP8 in WebM, no audio |
@@ -129,15 +133,15 @@ under 10 px. A wider embed only enlarges it.
 | Size | 3.7 MiB |
 
 ```
-1c9fd1f1d2aa110a64749ab12dc7b5aa3ae7c712b782701d0088b542832a03d6  lab-walkthrough.webm
-3719af54858b6995635a3dfd088bd82108c95fec69243f4b09627b7b04fc2b8d  lab-walkthrough.vtt
+f7e08e7d306ed51e5f529cc7782da64faf7dc4054e878acf90fa6c100e43ac04  lab-walkthrough.webm
+6634e9821be1e53075dbf15fcaf6cfe92686580a5a4de6bc9d9d1ecb088c6801  lab-walkthrough.vtt
 ```
 
 **The video is byte-identical across runs — on the same toolchain.** Every pair
-of captures made by the same version of the script against this deployment, on
-this machine, produced the same `lab-walkthrough.webm` down to the digest; that
-held for each of the three versions tried while this one was written, the
-committed one included. The bytes depend on more than the site:
+of captures made by the same version of the script against one deployment, on
+this machine, produced the same `lab-walkthrough.webm` down to the digest: for
+each of the three versions tried while the script was written, and again for
+this re-capture, whose two runs both produced the digests above. The bytes depend on more than the site:
 another OS, Chromium build or ffmpeg build rasterises or encodes the same page
 differently, as this repository's separate Windows and Linux visual baselines
 already show for the stills. The caption file also changes on every deploy,
@@ -168,23 +172,22 @@ is the only container and codec the bundled ffmpeg writes. An embed that must
 reach a browser without WebM support needs a transcode, and that copy is then no
 longer the one these digests describe.
 
-### Three things in frame that are known defects
+### One thing in frame that is a known defect
 
-- The `comparison` drawer heads its breakdown "Where the cosine score comes
-  from", and its summary says it "explains the stored additive cosine evidence"
-  (further down, outside the frame, it also labels the total "stored cosine").
-  The score is the weighted v2 similarity, which `D047` forbids calling cosine;
-  the caption says "similarity" on purpose. Filed as `scoutlens-uze.25`.
 - The `caveats` frame holds the published caveat "cosine retrieval uses globally
   standardized values" for the same weighted retrieval. It lives in the pinned
   payload rather than the page, so rewording it is a re-publication decision:
   `D063` keeps it for this dataset only and makes the next re-export reword it
   (`scoutlens-jtt.23`).
-- The `reveal` frame prints the candidate count as 1257, while the `replay`
-  frame prints 1,257. Filed as `scoutlens-9a3.17`; the captions do not repeat
-  the count.
 
-The video records the site as deployed. When any of these is fixed and
+Two more were in frame in the first capture and are fixed in this one, which is
+why it was re-captured: the `comparison` drawer called the weighted score a
+cosine and printed unweighted audit numbers under it (`scoutlens-uze.25`,
+`D062`) and now reads "Where the similarity score comes from" with rows that add
+up to the score; the `reveal` frame printed the candidate count as 1257
+(`scoutlens-9a3.17`) and now prints 1,257, as the `replay` frame does.
+
+The video records the site as deployed. When the remaining defect is fixed and
 deployed, re-run the command; the digests above will change, and that is
 expected.
 

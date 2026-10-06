@@ -1,7 +1,7 @@
 WEBVTT
 
 NOTE
-Written by web/scripts/capture-demo.mjs (scoutlens-jtt.20) from deployed commit a79868f49cc82cacb51969aef7a9527925e9fee1.
+Written by web/scripts/capture-demo.mjs (scoutlens-jtt.20) from deployed commit 50c721f24556a9b16c9b45b0d412ae11b080b089.
 Frame: 800x540 CSS px at 2x = 1600x1080, 25 fps.
 Smallest asserted text: 10.9 px in an 800 px embed.
 Cue identifiers name the scene. A cue starts only after its scene's on-screen text was asserted.
