@@ -48,7 +48,9 @@ interface Metric {
 interface Experiment {
   experiment_id: string;
   title: string;
+  provider: string;
   report_url: string;
+  source_artifact: string;
   metrics: readonly Metric[];
 }
 
@@ -60,7 +62,44 @@ interface ResearchSummary {
 
 interface Manifest {
   dataset_version: string;
-  source: { season: string; licence: string; licence_url: string; source_url: string };
+  source: {
+    provider: string;
+    season: string;
+    licence: string;
+    licence_url: string;
+    source_url: string;
+    redistribution_note: string;
+  };
+  population: { minutes_threshold_per_period: number };
+}
+
+interface PlayerIndex {
+  profiles: ReadonlyArray<{ profile_key: string }>;
+}
+
+/**
+ * The provider's display name. The manifest carries a code; the site's one
+ * table (web/src/content/provenance.ts) turns it into words, and this mirrors
+ * it the way `formatMetric` above mirrors the published formatting rule.
+ */
+const PROVIDER_LABEL: Readonly<Record<string, string>> = {
+  wyscout_pappalardo: "Wyscout / Pappalardo",
+  statsbomb_open_data: "StatsBomb Open Data",
+};
+
+/**
+ * A selected /lab URL whose profile is not the server-rendered featured one,
+ * so the Lab fetches it client-side - the case `scoutlens-9a3.22` found
+ * untested. Taken from the served index, not typed here.
+ */
+async function selectedLabRoute(request: APIRequestContext): Promise<string> {
+  const index = await fetchArtifact<PlayerIndex>(request, "players.index.json");
+  const manifest = await fetchArtifact<{ featured_profile: { profile_key: string } }>(request, "manifest.json");
+  const other = index.profiles.find((profile) => profile.profile_key !== manifest.featured_profile.profile_key);
+  if (other === undefined) {
+    throw new Error("the index has no profile besides the featured one");
+  }
+  return `/lab/?player=${other.profile_key}`;
 }
 
 test.beforeEach(async ({}, testInfo) => {
@@ -331,20 +370,26 @@ test("the data vintage is identical on every route that shows it", async ({ page
   // 2. Equality to a shared source is a stronger statement than equality to
   //    each other: three routes agreeing on a *stale* pin would satisfy
   //    "identical across routes" and fail this.
-  let routesWithBadge = 0;
-
-  for (const route of ROUTES) {
+  //
+  // `scoutlens-9a3.22`: every route must render the badge - a route without one
+  // used to be skipped, so losing it passed - and a selected /lab URL is
+  // asserted too. `scoutlens-9a3.20`: the badge now names the provider and the
+  // population threshold, read from the manifest.
+  const routes = [...ROUTES, await selectedLabRoute(request)];
+  for (const route of routes) {
     await page.goto(route);
     await waitForStablePage(page);
 
-    const badge = page.locator("[data-vintage-badge]");
-    if ((await badge.count()) === 0) {
-      continue;
-    }
-    routesWithBadge += 1;
-
+    const badge = page.locator("main [data-vintage-badge]");
+    await expect(badge, `${route} renders no data-vintage badge`).toHaveCount(1);
+    await expect(badge.locator(".data-vintage__provider"), `${route} provider`).toHaveText(
+      PROVIDER_LABEL[manifest.source.provider] ?? `(no label for ${manifest.source.provider})`,
+    );
     await expect(badge.locator(".data-vintage__season"), `${route} season`).toHaveText(
       manifest.source.season,
+    );
+    await expect(badge.locator(".data-vintage__threshold"), `${route} threshold`).toHaveText(
+      `players with at least ${manifest.population.minutes_threshold_per_period} minutes in each half`,
     );
     await expect(badge.locator(".data-vintage__licence"), `${route} licence`).toHaveText(
       manifest.source.licence,
@@ -353,8 +398,158 @@ test("the data vintage is identical on every route that shows it", async ({ page
       manifest.dataset_version,
     );
   }
+});
 
-  expect(routesWithBadge, "no route renders a data-vintage badge").toBeGreaterThan(0);
+/**
+ * Every element that prints a result, in any route or state. The union is
+ * deliberately broad: the assertion below is "provenance comes before the
+ * earliest of these", and a narrow list would let a new number slip in above
+ * the badge unseen.
+ */
+const RESULT_SELECTOR = [
+  "main .signal-caveat",
+  "main .fingerprint-plot p",
+  "main .experiment-metric__value",
+  "main [data-quantity]",
+  "main [data-challenge-rank]",
+  "main [data-challenge-result]",
+].join(", ");
+
+test("the provider and the population threshold come before the first result on every route", async ({
+  page,
+  request,
+}) => {
+  // `scoutlens-9a3.20`. Both used to appear only in the provider section after
+  // every result, so a reader met "Rank 1 of 1,257" before learning whose data
+  // it was or who counts as eligible. The challenge's reveal state puts a rank
+  // ahead of the Lab explorer, so it is a route of its own here.
+  const routes = [...ROUTES, "/lab/?challenge=reveal", await selectedLabRoute(request)];
+  for (const route of routes) {
+    await page.goto(route);
+    await waitForStablePage(page);
+    await expect(page.locator(RESULT_SELECTOR).first(), `${route} prints no result at all`).toBeAttached();
+
+    const order = await page.evaluate((selector) => {
+      const all = [...document.querySelectorAll("*")];
+      const position = (element: Element | null) => (element === null ? -1 : all.indexOf(element));
+      return {
+        provider: position(document.querySelector("main .data-vintage__provider")),
+        threshold: position(document.querySelector("main .data-vintage__threshold")),
+        firstResult: position(document.querySelector(selector)),
+        firstResultText: (document.querySelector(selector)?.textContent ?? "").trim().slice(0, 60),
+      };
+    }, RESULT_SELECTOR);
+
+    expect(order.provider, `${route} renders no provider`).toBeGreaterThan(-1);
+    expect(order.threshold, `${route} renders no threshold`).toBeGreaterThan(-1);
+    expect(order.provider, `${route}: "${order.firstResultText}" precedes the provider`).toBeLessThan(order.firstResult);
+    expect(order.threshold, `${route}: "${order.firstResultText}" precedes the threshold`).toBeLessThan(order.firstResult);
+  }
+});
+
+test("the provider section states the manifest's redistribution note and the temporal limit on every route", async ({
+  page,
+  request,
+}) => {
+  // `scoutlens-9a3.22`. Both were rendered and neither was asserted, and the
+  // note was rendered wrong: glued to the line before it ("aggregates:ScoutLens
+  // publishes ..."), which a containment check alone would have passed. So the
+  // sentence before it is part of the expectation.
+  const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
+  const routes = [...ROUTES, await selectedLabRoute(request)];
+  for (const route of routes) {
+    await page.goto(route);
+    await waitForStablePage(page);
+    const boundary = page.locator("main [data-provider-boundary]");
+    await expect(boundary, `${route} renders no provider section`).toHaveCount(1);
+    await expect(boundary, `${route} redistribution note`).toContainText(
+      `Published under ${manifest.source.licence}. ${manifest.source.redistribution_note}`,
+    );
+    // Component copy, not an artifact field: the site's own statement of what a
+    // historical benchmark cannot promise.
+    await expect(boundary, `${route} temporal limit`).toContainText(
+      "It is not current scouting information and does not guarantee that historical results transfer to today's football.",
+    );
+  }
+});
+
+/**
+ * StatsBomb appears only as aggregate replication (`docs/showcase-artifact-
+ * contract.md` invariant 12; `docs/statsbomb-provenance.md`: redistribution of
+ * the data is prohibited). The exporter enforces it in the artifacts; this
+ * enforces it in what the pages link and load.
+ */
+const STATSBOMB_LINKS = [
+  // ProvenanceDrawer's attribution and licence links. No artifact field holds
+  // them, so they are restated here; a new StatsBomb link must be added on
+  // purpose, which is the point.
+  "https://github.com/statsbomb/open-data",
+  "https://github.com/statsbomb/open-data/blob/master/LICENSE.pdf",
+];
+const PER_ENTITY_STATSBOMB = [
+  /raw\.githubusercontent\.com\/statsbomb\//i,
+  /github\.com\/statsbomb\/open-data\/(blob|tree|raw)\/[^/]+\/data\//i,
+  /\/(events|lineups|three-sixty)\/\d+\.json/i,
+  /\/matches\/\d+\/\d+\.json/i,
+];
+
+test("no route links, loads or keys anything per-player from StatsBomb", async ({ page, request }) => {
+  // `scoutlens-9a3.22`.
+  const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
+  // This repository's own aggregate reports and artifacts, as the experiment
+  // cards and the provenance drawer link them.
+  const repository = "https://github.com/grunobuide/scoutlens/blob/main/";
+  const allowed = new Set([
+    ...STATSBOMB_LINKS,
+    ...research.experiments.flatMap((experiment) => [
+      `${repository}${experiment.report_url}`,
+      `${repository}${experiment.source_artifact}`,
+    ]),
+  ]);
+  const profileKey = /^wy-\d+-c-\d+$/;
+
+  const routes = [...ROUTES, "/lab/?challenge=reveal", await selectedLabRoute(request)];
+  for (const route of routes) {
+    const requested: string[] = [];
+    const record = (req: { url(): string }) => requested.push(req.url());
+    page.on("request", record);
+    await page.goto(route);
+    await waitForStablePage(page);
+    page.off("request", record);
+
+    const references = await page.evaluate(() =>
+      [...document.querySelectorAll("[href], [src], [action]")].map(
+        (node) => node.getAttribute("href") ?? node.getAttribute("src") ?? node.getAttribute("action") ?? "",
+      ),
+    );
+
+    const unexpected = references.filter((url) => /statsbomb/i.test(url) && !allowed.has(url));
+    expect(unexpected, `${route} links StatsBomb beyond the aggregate allowlist`).toEqual([]);
+    const perEntity = references.filter((url) => PER_ENTITY_STATSBOMB.some((pattern) => pattern.test(url)));
+    expect(perEntity, `${route} links a per-match or raw StatsBomb file`).toEqual([]);
+    expect(
+      requested.filter((url) => /statsbomb/i.test(url)),
+      `${route} loads something from or about StatsBomb`,
+    ).toEqual([]);
+
+    // Every profile the page links or selects is a Wyscout unit; there is no
+    // other key shape a StatsBomb profile could hide behind.
+    const keys = [...references, page.url()]
+      .map((url) => /[?&]player=([^&#]+)/.exec(url)?.[1])
+      .filter((key): key is string => key !== undefined)
+      .map((key) => decodeURIComponent(key));
+    for (const key of keys) {
+      expect(key, `${route} links a profile key that is not a Wyscout unit`).toMatch(profileKey);
+    }
+  }
+
+  // Non-vacuous: the allowlist is in use, so the filter above is reading links.
+  await page.goto("/");
+  await waitForStablePage(page);
+  const linked = await page.evaluate(() =>
+    [...document.querySelectorAll("a[href]")].map((node) => node.getAttribute("href") ?? ""),
+  );
+  expect(linked.filter((url) => /statsbomb/i.test(url)).length, "the landing links no StatsBomb attribution").toBeGreaterThan(0);
 });
 
 test("source and licence links point where the artifact says", async ({ page, request }) => {
@@ -464,6 +659,26 @@ test.describe("without JavaScript", () => {
     await expect(badge).toContainText(manifest.source.season);
     await expect(badge).toContainText(manifest.source.licence);
     await expect(badge).toContainText(manifest.dataset_version);
+  });
+
+  test("every route names the provider and the population threshold before hydration", async ({
+    page,
+    request,
+  }) => {
+    // `scoutlens-9a3.20`: provenance a reader needs before the first number
+    // must be in the served HTML, on every route.
+    const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
+    for (const route of ROUTES) {
+      await page.goto(route);
+      const badge = page.locator("main [data-vintage-badge]");
+      await expect(badge, `${route} badge`).toHaveCount(1);
+      await expect(badge.locator(".data-vintage__provider")).toHaveText(
+        PROVIDER_LABEL[manifest.source.provider] ?? `(no label for ${manifest.source.provider})`,
+      );
+      await expect(badge.locator(".data-vintage__threshold")).toContainText(
+        String(manifest.population.minutes_threshold_per_period),
+      );
+    }
   });
 
   test("every route states the same thesis and boundary before hydration", async ({ page, request }) => {

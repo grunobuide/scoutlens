@@ -58,6 +58,7 @@ import {
   type QuantityId,
 } from "@/content/evidence-explanations";
 import { QuantityGlossary, quantityTag } from "./quantity-glossary";
+import { eligibilityRule } from "@/content/provenance";
 import type {
   AnyFeatureCatalogArtifact,
   AnyPlayerIndexItem,
@@ -232,9 +233,14 @@ export function LabExplorer({
             <p className="eyebrow">Complete eligible catalog</p>
             <h2 id="player-selector-heading">Choose a player × competition profile</h2>
           </div>
+          {/*
+            `scoutlens-9a3.20`: the season and the threshold were typed into this
+            line. They are the published profile's now, like the count beside
+            them, so a re-export cannot leave the heading describing the old one.
+          */}
           <p>
-            {profiles.length.toLocaleString("en-US")} profiles · 2017/18 · at least 450 minutes in
-            each chronological period
+            {profiles.length.toLocaleString("en-US")} profiles · {initialProfile.identity.season} ·{" "}
+            {eligibilityRule(initialProfile.cohort.minutes_threshold_per_period)}
           </p>
         </header>
 

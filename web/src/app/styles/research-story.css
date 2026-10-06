@@ -495,9 +495,15 @@
   letter-spacing: 0.02em;
 }
 
+/* `scoutlens-9a3.20`: whose data and who counts, beside the season. */
+.data-vintage__provider,
 .data-vintage__season {
   color: var(--ink-700);
   font-weight: 600;
+}
+
+.data-vintage__threshold {
+  color: var(--ink-600);
 }
 
 .data-vintage__licence {

@@ -2872,3 +2872,31 @@ their route's job. Production smoke tests pin all three.
 nothing may sit between its two paragraphs. Editing either sentence means
 editing §2 first: `web/tests/narrative.test.tsx` and
 `e2e/claims-consistency.spec.ts` read the document.
+
+## D067 — 2026-10-06 — The data-vintage chip names the provider and the population rule
+
+**Decision:** the chip that opens every route (`DataVintageBadge`, the
+"data-vintage chip (I)" of `docs/public-experience-narrative.md` §7.1) states,
+in order: the benchmark purpose, the provider, the season, the population rule
+("players with at least N minutes in each half"), the licence and the dataset
+pin. Provider and threshold are read from the manifest; the provider code
+becomes words through one typed table (`web/src/content/provenance.ts`) that
+throws on a code it does not know. (`scoutlens-9a3.20`)
+
+**Why.** The epic's AC5 asks for provider, vintage, threshold, licence and
+purpose "at the point of first interpretation". The 2026-10-06 audit found
+provider and threshold only in the provider section, after every result on
+every route: a reader met "Rank 1 of 1,257" before learning whose data it was
+or who counts as eligible. The chip already preceded every number on every
+route, so it is where the two facts go; the provider section stays the full
+audit, unchanged in place.
+
+**What it is not.** No new content above the thesis beyond the chip §7.1
+already allows, no link in the chip (it would owe a 44 px target at every
+width), and no second `<code>` (three locators read the pin as the chip's only
+one). The redistribution note stays in the provider section, once.
+
+**How to apply:** `e2e/claims-consistency.spec.ts` asserts, on every route and
+state that prints a result, that the chip's provider and threshold precede
+the earliest result in document order, with and without JavaScript. A surface
+that adds a number above the chip fails it.
