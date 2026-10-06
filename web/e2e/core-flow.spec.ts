@@ -87,9 +87,15 @@ test("complete selected-player flow works by keyboard at desktop and 360 px", as
   const scienceLink = page.getByRole("link", {
     name: "Inspect the retrieval method and aggregate evidence →",
   });
+  // `scoutlens-9a3.19`: the drawer explains its own numbers, so its "What these
+  // numbers mean" disclosure is one more stop between the table and the link.
+  // Closed, its source links are not reachable; the trap still wraps.
+  const glossary = dialog.locator("[data-quantity-glossary] > summary");
   await expect(closeComparison).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(contributionTable).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(glossary).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(scienceLink).toBeFocused();
   await page.keyboard.press("Tab");

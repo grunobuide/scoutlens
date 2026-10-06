@@ -7,11 +7,21 @@ import { loadIdentityChallenge } from "@/content/load-identity-challenge";
 import { loadShowcaseLab } from "@/content/load-showcase-lab";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
 
-export const metadata: Metadata = {
-  title: "Fingerprint Lab",
-  description:
-    "Search 1,257 player profiles and compare 32 event-derived measurements across two chronological periods.",
-};
+// `scoutlens-9a3.19`: the counts are read from the published index and
+// catalog. They were retyped here, so a re-export with a different population
+// would have kept describing the old one - the literal scan in
+// tests/evidence-explanations.test.ts found it.
+export async function generateMetadata(): Promise<Metadata> {
+  const lab = await loadShowcaseLab();
+  const counted =
+    lab.status === "ready"
+      ? `${lab.profiles.length.toLocaleString("en-US")} player profiles and compare ${lab.catalog.features.length}`
+      : "player profiles and compare";
+  return {
+    title: "Fingerprint Lab",
+    description: `Search ${counted} event-derived measurements across two chronological periods.`,
+  };
+}
 
 export default async function LabPage() {
   const lab = await loadShowcaseLab();

@@ -47,9 +47,17 @@ import {
   SCORE_LABEL,
   neighborScore,
   neighborScoreLabel,
+  neighborScoreQuantity,
   retrievalScore,
   type AnyRetrievalOutcome,
 } from "@/content/showcase-lab";
+import {
+  explainCaveat,
+  explainFeature,
+  scoreQuantity,
+  type QuantityId,
+} from "@/content/evidence-explanations";
+import { QuantityGlossary, quantityTag } from "./quantity-glossary";
 import type {
   AnyFeatureCatalogArtifact,
   AnyPlayerIndexItem,
@@ -474,12 +482,27 @@ function FingerprintMapRow({ row, scope }: { row: FingerprintRow; scope: Percent
         <span className="lab-fingerprint-mark lab-fingerprint-mark--a" aria-hidden="true">A</span>
         <span className="lab-fingerprint-mark lab-fingerprint-mark--b" aria-hidden="true">B</span>
       </div>
-      <p className="lab-fingerprint-row__values" aria-hidden="true">
+      <p className="lab-fingerprint-row__values" aria-hidden="true" data-quantity={quantityTag(percentileQuantity(scope))}>
         <span>A {formatPercentile(periodA)}</span>
         <span>B {formatPercentile(periodB)}</span>
       </p>
     </div>
   );
+}
+
+function percentileQuantity(scope: PercentileScope): QuantityId {
+  return scope === "within_role" ? "within_role_percentile" : "global_percentile";
+}
+
+/**
+ * The caveats the neighbour surfaces must print. Resolved once, with the rest
+ * of the profile's evidence, so a payload missing one reaches the Lab's
+ * incompatible-data panel instead of rendering an empty paragraph where the
+ * boundary belongs.
+ */
+interface NeighborBoundaries {
+  fingerprint: Caveat;
+  recruitment: Caveat;
 }
 
 function modelEvidence(value: FeatureValue): string {
@@ -549,11 +572,15 @@ function RetrievalOutcomeCard({
   detail,
   outcome,
   scoreLabel,
+  rankId,
+  scoreId,
 }: {
   label: string;
   detail: string;
   outcome: AnyRetrievalOutcome;
   scoreLabel: string;
+  rankId: QuantityId;
+  scoreId: QuantityId;
 }) {
   const score = retrievalScore(outcome);
   return (
@@ -562,18 +589,20 @@ function RetrievalOutcomeCard({
         <p>{label}</p>
         <span>{detail}</span>
       </header>
-      <p className="retrieval-outcome__rank">
+      <p className="retrieval-outcome__rank" data-quantity={quantityTag(rankId)}>
         Rank {outcome.self_rank}
         <span>of {outcome.candidate_count.toLocaleString("en-US")}</span>
       </p>
       <dl>
-        <div><dt>Reciprocal rank</dt><dd>{outcome.reciprocal_rank.toFixed(4)}</dd></div>
+        <div><dt>Reciprocal rank</dt><dd data-quantity={quantityTag("reciprocal_rank")}>{outcome.reciprocal_rank.toFixed(4)}</dd></div>
         <div>
           <dt>{scoreLabel}</dt>
-          <dd>{score === null ? "Not used" : formatScore(score)}</dd>
+          <dd data-quantity={quantityTag(scoreId)}>{score === null ? "Not used" : formatScore(score)}</dd>
         </div>
       </dl>
-      <p className="retrieval-outcome__stability">{rankStabilityText(outcome)}</p>
+      <p className="retrieval-outcome__stability" data-quantity={quantityTag("rank_interval", "resampled_recall")}>
+        {rankStabilityText(outcome)}
+      </p>
     </article>
   );
 }
@@ -623,10 +652,19 @@ function MethodDisclosurePanel({
   );
 }
 
-function RetrievalReplay({ profile, scoreLabel }: { profile: AnyPlayerProfileArtifact; scoreLabel: string }) {
-  const teamConfound = caveatFor(profile, "same_season_team_confound");
+function RetrievalReplay({
+  profile,
+  scoreLabel,
+  scoreId,
+  teamConfound,
+}: {
+  profile: AnyPlayerProfileArtifact;
+  scoreLabel: string;
+  scoreId: QuantityId;
+  teamConfound: Caveat;
+}) {
   return (
-    <section className="retrieval-replay" aria-labelledby="retrieval-replay-heading">
+    <section className="retrieval-replay" aria-labelledby="retrieval-replay-heading" data-quantity-scope>
       <header className="lab-narrative-heading">
         <div>
           <p className="eyebrow">Stored experiment replay</p>
@@ -651,25 +689,35 @@ function RetrievalReplay({ profile, scoreLabel }: { profile: AnyPlayerProfileArt
           detail="All eligible profiles"
           outcome={profile.retrieval.global}
           scoreLabel={scoreLabel}
+          rankId="self_rank"
+          scoreId={scoreId}
         />
         <RetrievalOutcomeCard
           label="Within role"
           detail={`Only ${profile.identity.role.toLowerCase()} profiles`}
           outcome={profile.retrieval.within_role}
           scoreLabel={scoreLabel}
+          rankId="self_rank"
+          scoreId={scoreId}
         />
         <RetrievalOutcomeCard
           label="Role + minutes baseline"
           detail="Context-only control"
           outcome={profile.retrieval.baseline_role_minutes}
           scoreLabel={scoreLabel}
+          rankId="baseline_self_rank"
+          scoreId={scoreId}
         />
       </div>
+
+      <QuantityGlossary
+        ids={["self_rank", "baseline_self_rank", "reciprocal_rank", scoreId, "rank_interval", "resampled_recall"]}
+      />
 
       <aside className="retrieval-boundary" aria-label="Identity retrieval interpretation boundary">
         <div>
           <strong>The rank is an identity-test result, not a player rating.</strong>
-          <p>{teamConfound?.message}</p>
+          <p>{teamConfound.message}</p>
         </div>
         <Link href="/science/#stage-02">How the aggregate retrieval test was computed →</Link>
       </aside>
@@ -682,20 +730,17 @@ function StatisticalNeighbors({
   profile,
   profilesByKey,
   neighbors,
+  boundaries,
 }: {
   catalog: AnyFeatureCatalogArtifact;
   profile: AnyPlayerProfileArtifact;
   profilesByKey: ReadonlyMap<string, AnyPlayerIndexItem>;
   neighbors: ReadonlyArray<NeighborEvidence>;
+  boundaries: NeighborBoundaries;
 }) {
   const [selected, setSelected] = useState<NeighborEvidence | null>(null);
   const returnFocus = useRef<HTMLButtonElement | null>(null);
-  const featureLabels = useMemo(
-    () => new Map(catalog.features.map((feature) => [feature.feature_id, feature.short_label])),
-    [catalog],
-  );
-  const fingerprintCaveat = caveatFor(profile, "fingerprint_not_style_proof");
-  const recruitmentCaveat = caveatFor(profile, "similarity_not_recruitment");
+  const scoreIds = [...new Set(neighbors.map(({ neighbor }) => neighborScoreQuantity(neighbor)))];
 
   const closeComparison = () => {
     setSelected(null);
@@ -703,7 +748,7 @@ function StatisticalNeighbors({
   };
 
   return (
-    <section className="statistical-neighbors" aria-labelledby="statistical-neighbors-heading">
+    <section className="statistical-neighbors" aria-labelledby="statistical-neighbors-heading" data-quantity-scope>
       <header className="lab-narrative-heading">
         <div>
           <p className="eyebrow">Self-excluded exploration</p>
@@ -716,8 +761,8 @@ function StatisticalNeighbors({
       </header>
 
       <div className="neighbor-boundaries">
-        <p>{fingerprintCaveat?.message}</p>
-        <p>{recruitmentCaveat?.message}</p>
+        <p>{boundaries.fingerprint.message}</p>
+        <p>{boundaries.recruitment.message}</p>
       </div>
 
       <ol className="neighbor-grid">
@@ -740,14 +785,17 @@ function StatisticalNeighbors({
                   </div>
                 </header>
                 <dl className="neighbor-card__context">
-                  <div><dt>{neighborScoreLabel(neighbor)}</dt><dd>{formatScore(neighborScore(neighbor))}</dd></div>
+                  <div>
+                    <dt>{neighborScoreLabel(neighbor)}</dt>
+                    <dd data-quantity={quantityTag(neighborScoreQuantity(neighbor))}>{formatScore(neighborScore(neighbor))}</dd>
+                  </div>
                   <div>
                     <dt>Period-B minutes</dt>
-                    <dd>{indexItem?.period_contexts.b.minutes.toLocaleString("en-US") ?? "Unavailable"}</dd>
+                    <dd data-context="minutes">{indexItem?.period_contexts.b.minutes.toLocaleString("en-US") ?? "Unavailable"}</dd>
                   </div>
                     <div><dt>Team context</dt><dd>{neighbor.teams.map((team) => team.name).join(" / ")}</dd></div>
                 </dl>
-                <div className="neighbor-card__evidence">
+                <div className="neighbor-card__evidence" data-quantity={quantityTag("contribution")}>
                   <p>Largest family alignments</p>
                   <ul>
                     {alignments.map((item) => (
@@ -760,10 +808,10 @@ function StatisticalNeighbors({
                   <p>
                     Strongest disagreement · {disagreement === undefined
                       ? "none stored"
-                      : `${featureLabels.get(disagreement.feature_id ?? "") ?? disagreement.feature_id} ${formatContribution(evidenceContribution(disagreement))}`}
+                      : `${explainFeature(catalog, disagreement.feature_id ?? "").short_label} ${formatContribution(evidenceContribution(disagreement))}`}
                   </p>
                 </div>
-                <p className="neighbor-card__stability">
+                <p className="neighbor-card__stability" data-quantity={quantityTag("selection_stability")}>
                   Selection stability · {neighbor.stability.status === "pending" ? "pending, no interval" : neighbor.stability.status === "insufficient" ? "insufficient resamples" : `available · rank interval ${formatRankBound(neighbor.stability.rank_ci_95?.[0])}–${formatRankBound(neighbor.stability.rank_ci_95?.[1])}`}
                 </p>
                 <button
@@ -783,6 +831,8 @@ function StatisticalNeighbors({
         })}
       </ol>
 
+      <QuantityGlossary ids={[...scoreIds, "contribution", "selection_stability"]} />
+
       {selected === null ? null : (
         <Suspense fallback={<p className="neighbor-drawer-loading" role="status">Preparing exact contribution evidence…</p>}>
           <NeighborComparisonDrawer
@@ -791,6 +841,7 @@ function StatisticalNeighbors({
             neighbor={selected.neighbor}
             evidence={selected.evidence}
             candidateMinutes={profilesByKey.get(selected.neighbor.profile_key)?.period_contexts.b.minutes ?? null}
+            boundaries={boundaries}
             onClose={closeComparison}
           />
         </Suspense>
@@ -823,11 +874,17 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
           throw new Error(`Neighbor ${neighbor.profile_key} does not resolve to the catalog`);
         }
       }
+      const boundaries: NeighborBoundaries = {
+        fingerprint: explainCaveat(profile.caveats, "fingerprint_not_style_proof"),
+        recruitment: explainCaveat(profile.caveats, "similarity_not_recruitment"),
+      };
       return {
         rows,
         families: groupFingerprintRows(rows),
         evidence,
         profilesByKey,
+        boundaries,
+        teamConfound: explainCaveat(profile.caveats, "same_season_team_confound"),
         problem: null,
       };
     } catch (error) {
@@ -836,13 +893,20 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         families: [],
         evidence: null,
         profilesByKey: new Map<string, AnyPlayerIndexItem>(),
+        boundaries: null,
+        teamConfound: null,
         problem: describeLabError(error),
       };
     }
   }, [catalog, profile, profiles]);
 
-  if (fingerprint.problem !== null) {
-    return <LabProblemPanel problem={fingerprint.problem} datasetVersion={profile.dataset_version} />;
+  if (fingerprint.problem !== null || fingerprint.boundaries === null || fingerprint.teamConfound === null) {
+    return (
+      <LabProblemPanel
+        problem={fingerprint.problem ?? describeLabError(null)}
+        datasetVersion={profile.dataset_version}
+      />
+    );
   }
 
   const visibleCaveats = profile.caveats.filter((caveat) => requiredCaveats.has(caveat.code));
@@ -891,11 +955,16 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         This is DOM order, and it is also the reading and visual order at every
         width - no CSS `order` is used anywhere in the Lab.
       */}
-      <RetrievalReplay profile={profile} scoreLabel={scoreLabel} />
+      <RetrievalReplay
+        profile={profile}
+        scoreLabel={scoreLabel}
+        scoreId={scoreQuantity(major)}
+        teamConfound={fingerprint.teamConfound}
+      />
       <MethodDisclosurePanel major={major} weightedFeatureCount={weightedFeatureCount ?? null} />
 
       <div className="lab-analysis-grid">
-        <section className="fingerprint-lab-card" aria-labelledby="fingerprint-map-heading">
+        <section className="fingerprint-lab-card" aria-labelledby="fingerprint-map-heading" data-quantity-scope>
           <header className="fingerprint-lab-card__header">
             <div>
               <p className="eyebrow">32-feature map</p>
@@ -932,6 +1001,8 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
             <span><i className="legend-mark legend-mark--b" /> Period B</span>
             <span>0 — percentile — 100</span>
           </div>
+
+          <QuantityGlossary ids={["within_role_percentile", "global_percentile"]} />
 
           <div className="lab-fingerprint-map">
             {fingerprint.families.map((family) => (
@@ -970,9 +1041,10 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         profile={profile}
         profilesByKey={fingerprint.profilesByKey}
         neighbors={fingerprint.evidence!.neighbors}
+        boundaries={fingerprint.boundaries}
       />
 
-      <section className="fingerprint-table-section" aria-labelledby="fingerprint-table-heading">
+      <section className="fingerprint-table-section" aria-labelledby="fingerprint-table-heading" data-quantity-scope>
         <header>
           <div>
             <p className="eyebrow">Equivalent value view</p>
@@ -980,6 +1052,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
           </div>
           <p>Raw values are descriptive. Global z-scores are the model inputs; percentiles are display context.</p>
         </header>
+        <QuantityGlossary ids={[percentileQuantity(scope), "model_z_score"]} />
         <div className="fingerprint-table-scroll" role="region" aria-label="Scrollable 32-feature value table" tabIndex={0}>
           <table className="fingerprint-value-table">
             <caption>
@@ -990,10 +1063,10 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
                 <th scope="col">Feature</th>
                 <th scope="col">A raw</th>
                 <th scope="col">B raw</th>
-                <th scope="col">A {scope === "within_role" ? "role" : "global"} pct.</th>
-                <th scope="col">B {scope === "within_role" ? "role" : "global"} pct.</th>
-                <th scope="col">A global z</th>
-                <th scope="col">B global z</th>
+                <th scope="col" data-quantity={quantityTag(percentileQuantity(scope))}>A {scope === "within_role" ? "role" : "global"} pct.</th>
+                <th scope="col" data-quantity={quantityTag(percentileQuantity(scope))}>B {scope === "within_role" ? "role" : "global"} pct.</th>
+                <th scope="col" data-quantity={quantityTag("model_z_score")}>A global z</th>
+                <th scope="col" data-quantity={quantityTag("model_z_score")}>B global z</th>
                 <th scope="col">A support</th>
                 <th scope="col">B support</th>
                 <th scope="col">Uncertainty</th>
@@ -1004,11 +1077,15 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
                 <tr className="fingerprint-table-family">
                   <th scope="rowgroup" colSpan={10}>{family.label}</th>
                 </tr>
-                {family.rows.map((row) => (
+                {family.rows.map((row) => {
+                  // The catalog's own label and description, through the one
+                  // resolver every surface uses (`scoutlens-9a3.19`).
+                  const feature = explainFeature(catalog, row.definition.feature_id);
+                  return (
                   <tr key={row.definition.feature_id}>
                     <th scope="row">
-                      {row.definition.label}
-                      <small>{row.definition.description}</small>
+                      {feature.label}
+                      <small>{feature.plain_meaning}</small>
                     </th>
                     <td>{formatRawValue(row.periodA, row.definition)}</td>
                     <td>{formatRawValue(row.periodB, row.definition)}</td>
@@ -1020,7 +1097,8 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
                     <td>{formatSupport(row.periodB)}</td>
                     <td>A {featureUncertaintyCell(row.periodA)} · B {featureUncertaintyCell(row.periodB)}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             ))}
           </table>

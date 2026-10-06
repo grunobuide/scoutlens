@@ -53,26 +53,22 @@ export function ExperimentCard({
       <dl className="experiment-metrics">
         {metrics.map((metric) => {
           const interval = formatMetricInterval(metric);
-          let explanation: ReturnType<typeof explainMetric> | null = null;
-          try {
-            explanation = explainMetric(metric);
-          } catch {
-            explanation = null;
-          }
+          // Fail closed (`scoutlens-9a3.19`): this used to catch the resolver's
+          // throw and render the number with no explanation. A metric the
+          // registry cannot explain now stops the static build instead.
+          const explanation = explainMetric(metric);
           return (
             <div key={metric.metric_id}>
               <dt>{metric.label}</dt>
               <dd className="experiment-metric__value">{formatMetric(metric)}</dd>
               {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
-              {explanation === null ? null : (
-                <dd className="experiment-metric__explanation">
-                  <details>
-                    <summary>What this means</summary>
-                    <p>{explanation.plain_meaning}</p>
-                    <p className="experiment-metric__boundary">{explanation.interpretation_boundary}</p>
-                  </details>
-                </dd>
-              )}
+              <dd className="experiment-metric__explanation">
+                <details>
+                  <summary>What this means</summary>
+                  <p>{explanation.plain_meaning}</p>
+                  <p className="experiment-metric__boundary">{explanation.interpretation_boundary}</p>
+                </details>
+              </dd>
             </div>
           );
         })}

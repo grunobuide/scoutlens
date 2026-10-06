@@ -34,6 +34,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // upper bound here renders as "43.524999999999998" without this.
 import { formatRank } from "@/components/rank-format";
 
+import { QuantityGlossary, quantityTag } from "@/components/quantity-glossary";
+import { explainEvidence, explainFamily } from "@/content/evidence-explanations";
 import type { IdentityChallengeView } from "@/content/identity-challenge";
 import {
   formatPercentile,
@@ -41,7 +43,7 @@ import {
   percentileFor,
   type FingerprintRow,
 } from "@/content/showcase-lab";
-import type { Caveat, EvidenceItem } from "@/contracts/generated/showcase-v2";
+import type { Caveat, EvidenceItem, FeatureDefinition } from "@/contracts/generated/showcase-v2";
 
 /** The states §1's URL table names. `orientation` is the parameterless default. */
 export type ChallengeState = "orientation" | "query" | "reveal" | "evidence";
@@ -179,6 +181,7 @@ export function ChallengeFingerprint({
     <div
       className="challenge-fingerprint"
       data-challenge-fingerprint={showPeriodB ? "ab" : "a"}
+      data-quantity={quantityTag("within_role_percentile")}
       aria-label={caption}
       role="group"
     >
@@ -230,18 +233,26 @@ function resultCaveats(view: IdentityChallengeView): readonly Caveat[] {
   ];
 }
 
-function ContributionRow({ item }: { item: EvidenceItem }) {
+function ContributionRow({
+  item,
+  features,
+}: {
+  item: EvidenceItem;
+  features: readonly FeatureDefinition[];
+}) {
+  // §3.4 reads a row as "feature label, family": the catalog's label, resolved
+  // through the registry, never the raw `feature_id` this row used to print
+  // (the contract forbids inferring a label from an id - `scoutlens-9a3.19`).
+  const labels = explainEvidence(features, item);
   return (
     <li className="challenge-contribution" data-evidence-id={item.evidence_id}>
-      <span className="challenge-contribution__label">
-        {item.feature_id ?? item.family}
-      </span>
-      <span className="challenge-contribution__family">{item.family}</span>
+      <span className="challenge-contribution__label">{labels.label}</span>
+      <span className="challenge-contribution__family">{labels.family_label}</span>
       <span className="challenge-contribution__interpretation">{item.interpretation}</span>
-      <span className="challenge-contribution__value">
+      <span className="challenge-contribution__value" data-quantity={quantityTag("contribution")}>
         {item.weighted_contribution.toFixed(3)}
       </span>
-      <span className="challenge-contribution__weight">
+      <span className="challenge-contribution__weight" data-quantity={quantityTag("feature_weight")}>
         {/*
           §3.4: `feature_weight` is the authority, and a null weight is not a
           zero. Four of the 32 displayed features carry no weight entry at all;
@@ -341,9 +352,10 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
 
   const caveats = resultCaveats(view);
   const uncertainty = view.retrieval.uncertainty;
+  const features = rows.map((row) => row.definition);
 
   return (
-    <div className="challenge-states" data-challenge-state={state}>
+    <div className="challenge-states" data-challenge-state={state} data-quantity-scope>
       {/*
         §6.5: no animation accompanies a transition, so there is nothing for
         prefers-reduced-motion to suppress. The announcement region is polite
@@ -396,6 +408,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
             showPeriodB={false}
             caption="First-half fingerprint, 32 measurements, within-role percentile"
           />
+          <QuantityGlossary ids={["within_role_percentile"]} />
           <CaveatList
             caveats={caveatsFor(view, [
               "fingerprint_not_style_proof",
@@ -429,7 +442,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
           <dl className="challenge-result">
             <div>
               <dt>Fingerprint rank</dt>
-              <dd data-challenge-rank>
+              <dd data-challenge-rank data-quantity={quantityTag("self_rank", "rank_interval")}>
                 {view.retrieval.selfRank} of {view.retrieval.candidateCount.toLocaleString("en-US")}
                 {uncertainty.rankCi95 === null ? null : (
                   <span className="challenge-result__interval" data-challenge-interval>
@@ -442,7 +455,9 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
             </div>
             <div>
               <dt>Role-and-minutes baseline</dt>
-              <dd data-challenge-baseline>{view.retrieval.baselineSelfRank}</dd>
+              <dd data-challenge-baseline data-quantity={quantityTag("baseline_self_rank")}>
+                {view.retrieval.baselineSelfRank}
+              </dd>
             </div>
             <div>
               {/*
@@ -451,7 +466,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
                 carry a name claiming plain cosine (D047).
               */}
               <dt>Learned weighted similarity</dt>
-              <dd data-challenge-similarity>
+              <dd data-challenge-similarity data-quantity={quantityTag("similarity_score")}>
                 {view.retrieval.similarityScore === null
                   ? "not published for this profile"
                   : view.retrieval.similarityScore.toFixed(3)}
@@ -459,11 +474,11 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
             </div>
             <div>
               <dt>Retrieval method</dt>
-              <dd data-challenge-method>{view.retrieval.method}</dd>
+              <dd data-challenge-method data-context="identifier">{view.retrieval.method}</dd>
             </div>
             <div>
               <dt>Representation</dt>
-              <dd data-challenge-representation>{view.retrieval.representationId}</dd>
+              <dd data-challenge-representation data-context="identifier">{view.retrieval.representationId}</dd>
             </div>
           </dl>
 
@@ -477,10 +492,13 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
               <ul className="challenge-families" data-challenge-families>
                 {view.revealFamilies.map((item) => (
                   <li key={item.evidence_id} data-evidence-id={item.evidence_id}>
-                    {item.family}
+                    {explainFamily(item.family).label}
                   </li>
                 ))}
               </ul>
+              <QuantityGlossary
+                ids={["self_rank", "rank_interval", "baseline_self_rank", "similarity_score", "within_role_percentile"]}
+              />
             </>
           ) : (
             <>
@@ -491,16 +509,19 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
               </p>
               <ol className="challenge-contributions" data-challenge-contributions>
                 {view.featureContributions.map((item) => (
-                  <ContributionRow key={item.evidence_id} item={item} />
+                  <ContributionRow key={item.evidence_id} item={item} features={features} />
                 ))}
               </ol>
               <ul className="challenge-families" data-challenge-families>
                 {view.families.map((item) => (
                   <li key={item.evidence_id} data-evidence-id={item.evidence_id}>
-                    {item.family}
+                    {explainFamily(item.family).label}
                   </li>
                 ))}
               </ul>
+              <QuantityGlossary
+                ids={["self_rank", "rank_interval", "baseline_self_rank", "similarity_score", "contribution", "feature_weight"]}
+              />
             </>
           )}
 
