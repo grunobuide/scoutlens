@@ -21,6 +21,64 @@ export async function expectNoSeriousOrCriticalViolations(page: Page): Promise<v
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 }
 
+/**
+ * The frozen viewport list, docs/frontend-qa-audit.md §2 (`scoutlens-uze.26`).
+ *
+ * 1024 is the last width of the `64rem` block and 375 a common phone the
+ * `48rem` block must also hold; until uze.26 no standing gate ran at 1024, and
+ * 1440 only for one fixture's page overflow. One constant, so a spec cannot
+ * quietly sweep a subset and still read as "every width".
+ */
+export const FROZEN_WIDTHS = [320, 360, 375, 768, 1024, 1280, 1440] as const;
+
+/** 200% browser zoom as WCAG 1.4.10 exercises it: half of 1280x1024. */
+export const ZOOM_200 = { width: 640, height: 512 } as const;
+
+/**
+ * Elements whose box crosses the viewport's left or right edge, ignoring the
+ * inside of internal horizontal scroll regions.
+ *
+ * A table that scrolls inside its own region is a deliberate design (the 32-
+ * feature table's sticky column, `scoutlens-uze.5.1`); its cells lie beyond
+ * the viewport by construction and are reachable through the region, which
+ * `lab-mobile-hardening.spec.ts` holds focusable and named. What must never
+ * cross the edge is anything outside such a region - that is content or a
+ * control a reader cannot reach.
+ */
+export async function expectNoEdgeCrossings(page: Page, label: string): Promise<void> {
+  const crossings = await page.evaluate(() => {
+    const clientWidth = document.documentElement.clientWidth;
+    const scrolls = (element: Element): boolean => {
+      const overflowX = getComputedStyle(element).overflowX;
+      return (overflowX === "auto" || overflowX === "scroll") && element.scrollWidth > element.clientWidth;
+    };
+    const bad: string[] = [];
+    for (const element of document.querySelectorAll<HTMLElement>("body *")) {
+      const rect = element.getBoundingClientRect();
+      if (rect.width < 2 || rect.height < 2) {
+        continue;
+      }
+      if (rect.left >= -1 && rect.right <= clientWidth + 1) {
+        continue;
+      }
+      let ancestor = element.parentElement;
+      let inScroller = false;
+      while (ancestor !== null && ancestor !== document.body) {
+        if (scrolls(ancestor)) {
+          inScroller = true;
+          break;
+        }
+        ancestor = ancestor.parentElement;
+      }
+      if (!inScroller) {
+        bad.push(`${element.tagName.toLowerCase()}.${String(element.className).slice(0, 50)}`);
+      }
+    }
+    return bad;
+  });
+  expect(crossings, `${label}: elements crossing the viewport edge outside a scroll region`).toEqual([]);
+}
+
 export async function expectNoPageOverflow(page: Page): Promise<void> {
   const widths = await page.evaluate(() => ({
     client: document.documentElement.clientWidth,
