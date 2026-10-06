@@ -79,6 +79,52 @@ export async function expectNoEdgeCrossings(page: Page, label: string): Promise<
   expect(crossings, `${label}: elements crossing the viewport edge outside a scroll region`).toEqual([]);
 }
 
+/**
+ * Whether each focusable element shows a focus indicator when focused.
+ *
+ * `limit` samples the first N, which is what the per-width sweeps have always
+ * done; omit it to walk every focusable that a keyboard can actually reach -
+ * rendered, not disabled, not removed from the tab order (`scoutlens-uze.27`
+ * walks all of them at 200% zoom, where reflow is most likely to clip a ring).
+ */
+export async function focusRingReport(page: Page, limit?: number): Promise<Array<{ label: string; visible: boolean }>> {
+  return page.evaluate((count) => {
+    // A full walk opens every disclosure first: a link inside a closed
+    // <details> cannot take focus, and walking past it would leave the content
+    // a reader reaches by opening it unchecked.
+    if (count === undefined) {
+      for (const details of document.querySelectorAll("details")) {
+        details.open = true;
+      }
+    }
+    const candidates = [
+      ...document.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, summary, [tabindex], [role=button]"),
+    ].filter((el) => {
+      if (el.getAttribute("tabindex") === "-1" || (el as HTMLButtonElement).disabled) {
+        return false;
+      }
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && getComputedStyle(el).visibility !== "hidden";
+    });
+    return candidates.slice(0, count ?? candidates.length).map((el) => {
+      el.focus();
+      // Focus has to land for the ring to mean anything; an element that cannot
+      // take it is reported, not skipped.
+      const style = getComputedStyle(el);
+      const visible =
+        document.activeElement === el &&
+        ((style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0) || style.boxShadow !== "none");
+      return { label: `${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 30)}"`, visible };
+    });
+  }, limit);
+}
+
+/** The 200% zoom cell of the frozen matrix, recognised from the viewport. */
+export function isZoom200(page: Page): boolean {
+  const size = page.viewportSize();
+  return size?.width === ZOOM_200.width && size?.height === ZOOM_200.height;
+}
+
 export async function expectNoPageOverflow(page: Page): Promise<void> {
   const widths = await page.evaluate(() => ({
     client: document.documentElement.clientWidth,

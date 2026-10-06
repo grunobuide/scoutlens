@@ -22,13 +22,21 @@ listed runs inside `pnpm release:check`; there is no separate command.
 | # | Dimension | Owned by |
 |---|---|---|
 | D1 | Page scroll width | `expectNoPageOverflow` — used by `responsive-baseline`, `core-flow`, `404-page`, `lab-fixtures`, `lab-v2-diagonal`, `lab-mobile-hardening`, `lab-content-order`, `identity-challenge-responsive` |
-| D2 | Essential element bounding boxes | `probeEdgeCrossings` in `responsive-baseline`; panel containment in `identity-challenge-responsive`; **dialog containment in `dialog-geometry`** |
+| D2 | Essential element bounding boxes | `probeEdgeCrossings` in `responsive-baseline`; `expectNoEdgeCrossings` (outside internal scroll regions) in `lab-mobile-hardening` and `lab-v2-diagonal` (`scoutlens-uze.26`); panel containment in `identity-challenge-responsive`; **dialog containment in `dialog-geometry`** |
 | D3 | Text-on-text collision | `expectNoTextCollision` (`scoutlens-uze.6.1`), used by `text-collision`, `responsive-baseline` and `dialog-geometry`; plus `frozen-question` for F-1 at thirteen widths |
-| D4 | Focus visibility and order | `probeFocusRings` in `responsive-baseline`; keyboard walk in `core-flow`; focus movement in `identity-challenge`; focus return in `dialog-geometry` |
-| D5 | Touch-target size | `probeNavTargets` in `responsive-baseline`; the enumerating check in `lab-mobile-hardening`; CTA and row checks in `identity-challenge-responsive`; `probeProviderBoundaryTargets` (`responsive-baseline`) and the dedicated `lab-mobile-hardening` check (`scoutlens-uze.6.5`) for the three shared provider-boundary links |
+| D4 | Focus visibility and order | `focusRingReport` — sampled per width in `responsive-baseline`, and at 200% zoom a full walk of every reachable focusable, disclosures opened, on `/`, `/science/`, both Lab states and the max-content fixture (`scoutlens-uze.27`); keyboard walk in `core-flow`; focus movement in `identity-challenge`; focus return in `dialog-geometry` |
+| D5 | Touch-target size | `probeNavTargets` in `responsive-baseline`, at ≤400 px **and at 200% zoom** (`scoutlens-uze.27`); the enumerating check in `lab-mobile-hardening`; CTA and row checks in `identity-challenge-responsive`; `probeProviderBoundaryTargets` (`responsive-baseline`) and the dedicated `lab-mobile-hardening` check (`scoutlens-uze.6.5`) for the three shared provider-boundary links |
 | D6 | Internal scroll labelling | `lab-mobile-hardening` asserts the 32-value scroller keeps `role`, accessible name and `tabindex`, and that its row header stays readable while scrolled |
-| D7 | 200% reflow | 640×512 in `responsive-baseline` (landing, science) and `lab-v2-diagonal` (Lab) |
+| D7 | 200% reflow | 640×512 in `responsive-baseline` (landing, science), `lab-mobile-hardening` (both Lab states) and `lab-v2-diagonal` (max-content) |
 | D8 | Automated accessibility | `expectNoSeriousOrCriticalViolations` — `quality-contract` (three routes + open dialog), and since `scoutlens-uze.6.2` also `responsive-baseline` at **every reflow width**, plus `lab-mobile-hardening`, `lab-v2-diagonal`, `404-page`, `identity-challenge-responsive` |
+
+**Widths.** Since `scoutlens-uze.26` every route sweep runs the full frozen list
+— 320, 360, 375, 768, 1024, 1280, 1440 and 200% zoom — from one constant,
+`FROZEN_WIDTHS` in `e2e/helpers.ts`. Before it, nothing ran at 1024 and 1440 only
+for one fixture's page overflow.
+
+**Hover and colour**, outside the audit's eight dimensions but in the uze epic's
+AC3, are owned by `colour-hover-independence` — see §3.6.
 
 **The gap D8 used to have.** Until `scoutlens-uze.6.2`, axe ran only at the
 project viewports — 1280 and 360. The narrow-width walk asserted geometry and no
@@ -205,6 +213,37 @@ the first place, during the `scoutlens-jtt.7.1` audit.
 
 Revisit when PR #99058 lands in a release: pin that version and make the
 Windows branch fail too.
+
+### 3.6 Colour and hover independence — gated, with one manual check left
+
+`scoutlens-uze.27`. `colour-hover-independence.spec.ts` holds two properties for
+rules and components that do not exist yet, not only for today's:
+
+- **Hover.** Every `:hover` rule in the stylesheets each route actually loads may
+  set only cosmetic properties — colour, background, border colour, shadow,
+  transform, decoration, outline, cursor, transition. A rule that hid or revealed
+  anything on hover fails it (tamper-rehearsed with `opacity: 0`). No component
+  attaches a mouse or pointer hover handler in JavaScript; a `grep` of `src/`
+  for `onMouseEnter`, `onMouseOver`, `onPointerEnter`, `onPointerOver` or
+  `addEventListener('mouse…'/'pointer…')` finds none.
+- **Colour.** Under emulated `forced-colors: active`, every colour-coded mark
+  keeps its meaning in text: the fingerprint and challenge period marks their
+  letter, the legend its period names, every caveat its severity word, every
+  signed contribution its sign. That last one found a real mismatch: a
+  contribution below display precision printed `0.0000` in the negative colour.
+  The class now follows the sign a reader can see.
+
+**The manual check that remains.** Chromium's `forced-colors` emulation swaps in
+a forced palette; it does not reproduce a real operating-system high-contrast
+theme's chosen colours or macOS "Increase contrast". Before a release that
+changes colour tokens, open `/lab/?player=wy-8287-c-795` once under a Windows
+high-contrast theme and confirm the period marks, the legend and the evidence
+drawer's signed values remain distinguishable. Nothing else in AC3 is manual.
+
+**Found by the 200% walk, not by the gate written for it.** Opening every
+disclosure before the focus walk let axe audit them open for the first time: the
+signal card's "What this means" text used light-card inks on its dark
+background and failed contrast (serious). Fixed in `science.css`.
 
 ## 4. Baselines and their review protocol
 

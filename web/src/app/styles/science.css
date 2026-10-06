@@ -216,6 +216,20 @@
   font-weight: 550;
 }
 
+/* `scoutlens-uze.27`: the signal card is dark (#18241f), and its explanation's
+   summary was given a light colour above - but the prose it opens kept the
+   light-card inks, --ink-600 and --ink-700, near-invisible on that background
+   (axe color-contrast, serious). Every axe run audited these disclosures
+   closed, so nothing saw it until the 200% zoom walk opened them first. The
+   card's own secondary-text treatment, reused. */
+.experiment-card--signal .experiment-metric__explanation p {
+  color: rgb(255 255 255 / 68%);
+}
+
+.experiment-card--signal .experiment-metric__boundary {
+  color: var(--white);
+}
+
 @media (max-width: 48rem) {
   .split-definition {
       grid-template-columns: 1fr;

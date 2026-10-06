@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { expectNoEdgeCrossings, expectNoPageOverflow, expectNoSeriousOrCriticalViolations } from "./helpers";
+import {
+  expectNoEdgeCrossings,
+  expectNoPageOverflow,
+  expectNoSeriousOrCriticalViolations,
+  focusRingReport,
+} from "./helpers";
 
 // The diagonal Lab gate (scoutlens-qop.6.5). Runs only on the `fixtures-v2-*`
 // projects, which serve the test-only static export built from the
@@ -145,6 +150,22 @@ test.describe("the v2 disclosure survives the degraded states", () => {
       "does not measure player quality, tactical fit or recruitment value",
     );
     await expectNoPageOverflow(page);
+
+    // `scoutlens-uze.27`: with the longest names the fixture can hold, every
+    // reachable focusable still shows a ring and every control keeps a 44 x 44
+    // target at 200% zoom.
+    const rings = await focusRingReport(page);
+    expect(
+      rings.filter((ring) => !ring.visible).map((ring) => ring.label),
+      "max-content focusables without a visible focus ring at 200% zoom",
+    ).toEqual([]);
+    const undersized = await page.evaluate(() =>
+      [...document.querySelectorAll("main a, main button")]
+        .map((element) => ({ element, box: element.getBoundingClientRect() }))
+        .filter(({ box }) => box.width > 0 && (box.width < 44 || box.height < 44))
+        .map(({ element, box }) => `${Math.round(box.width)}x${Math.round(box.height)} "${(element.textContent ?? "").trim().slice(0, 40)}"`),
+    );
+    expect(undersized, "max-content controls under 44 x 44 at 200% zoom").toEqual([]);
   });
 
   test("reaches the neural-null rationale by keyboard alone", async ({ page }) => {

@@ -4,7 +4,9 @@ import {
   expectNoPageOverflow,
   expectNoSeriousOrCriticalViolations,
   expectNoTextCollision,
+  focusRingReport,
   FROZEN_WIDTHS,
+  isZoom200,
   type TextPair,
   ZOOM_200,
 } from "./helpers";
@@ -84,23 +86,6 @@ async function probeProviderBoundaryTargets(page: Page): Promise<Array<{ text: s
   );
 }
 
-async function probeFocusRings(page: Page, stops: number): Promise<Array<boolean>> {
-  return page.evaluate((count) => {
-    const results: boolean[] = [];
-    const els = [
-      ...document.querySelectorAll<HTMLElement>("a, button, input, select, summary, [tabindex], [role=button]"),
-    ];
-    for (const el of els.slice(0, count)) {
-      el.focus();
-      const style = getComputedStyle(el);
-      const visible =
-        (style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0) || style.boxShadow !== "none";
-      results.push(visible);
-    }
-    return results;
-  }, stops);
-}
-
 /**
  * Text pairs guarded on the routes this spec walks (`scoutlens-uze.6.2`).
  *
@@ -139,7 +124,10 @@ async function auditRoute(page: Page, route: string): Promise<void> {
   const unwrapped = await probeUnwrappedText(page);
   expect(unwrapped, `${route} unwrapped long text`).toEqual([]);
 
-  if (width <= 400) {
+  // `scoutlens-uze.27`: 200% zoom is a touch context too - the epic's AC3 holds
+  // 44 x 44 there, and this guard used to skip it because 640 > 400.
+  const zoomed = isZoom200(page);
+  if (width <= 400 || zoomed) {
     const targets = await probeNavTargets(page);
     for (const target of targets) {
       expect(target.h, `${route} nav target "${target.text}" hit area`).toBeGreaterThanOrEqual(44);
@@ -158,8 +146,15 @@ async function auditRoute(page: Page, route: string): Promise<void> {
     }
   }
 
-  const rings = await probeFocusRings(page, width <= 400 ? 6 : 4);
-  expect(rings, `${route} visible focus rings`).toEqual(rings.map(() => true));
+  // At 200% zoom every reachable focusable is walked, not a sample of four -
+  // and the walk opens every <details> first, so the axe run below audits the
+  // disclosures open. That is how `scoutlens-uze.27` found the signal card's
+  // "What this means" text failing contrast: every earlier axe run saw it closed.
+  const rings = await focusRingReport(page, zoomed ? undefined : width <= 400 ? 6 : 4);
+  expect(
+    rings.filter((ring) => !ring.visible).map((ring) => ring.label),
+    `${route} focusables without a visible focus ring${zoomed ? " at 200% zoom" : ""}`,
+  ).toEqual([]);
 
   // `scoutlens-uze.6.2`. This function already walked 320, 640x512 and 768, but
   // axe only ever ran at the project viewports (1280 and 360) in
