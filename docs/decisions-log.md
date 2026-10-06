@@ -2756,3 +2756,44 @@ version rather than to a date or a promise:
 message without the plain word — v1 keeps the current one, which is exactly
 right for v1's plain-cosine retrieval and is byte-frozen — then delete both
 exemptions in the same change.
+
+---
+
+## D064 — 2026-10-05 — Goalkeeper family: Gate 1 is GO, and Gate 2 is frozen before it runs
+
+**Decision:** `scoutlens-e87` passes its observability gate. The Wyscout event
+schema directly records three distinct goalkeeper behaviours — shot-stopping
+(`gk_save_pct`, `gk_reflex_save_share`), sweeping (`gk_leaving_line_p90`) and
+distribution mode (`gk_hand_pass_share`) — each with an auditable event/tag
+denominator and supported for at least 97.9% of the 194 eligible
+goalkeeper-periods (97 units). Evidence and recorded run:
+`docs/goalkeeper-observability.md`, reproduced by
+`python -m scoutlens.goalkeeper.run_audit --check`.
+
+**Gate 2 is frozen before any retrieval outcome exists.** Protocol
+`scoutlens.goalkeeper.protocol.PROTOCOL`, sha256
+`d626385c9373a6a1296fb2d20085621a02a6674d04454fecaad7ab68bd866803`: goalkeeper
+period-A queries against the goalkeeper period-B pool; the published within-role
+Baseline B against one candidate arm (the same 32 features plus the family,
+standardised on eligible goalkeeper-periods); KEEP only with ΔMRR ≥ +0.020, a 95%
+paired-bootstrap lower bound above 0 and no Recall@10 drop. This record is the
+key `assert_gate2_unlocked` looks for, so a changed protocol cannot run under
+this one's name.
+
+**Why the gate was this strict.** The rule — directly recorded only, at least
+20 denominator events for a proportion, at least 90% coverage, at least three
+distinct concepts, nothing the catalog already measures — was fixed in code
+before support was counted. `Launch` and pass accuracy qualify on every count
+except novelty and are excluded for that reason. Positioning, shot quality,
+cross claiming, one-on-ones, goal-kick accuracy (0 of 24,736 goal kicks tagged)
+and penalty saving are recorded as unobservable rather than approximated.
+
+**What GO does not mean.** Measurable is not meaningful. `gk_save_pct` mixes the
+goalkeeper with the unobserved difficulty of the shots faced, and
+`gk_leaving_line_p90` with the team's defensive line — same-season team context
+of the kind `same_season_team_confound` already names. No goalkeeper feature is
+a quality score, and Gate 2 may well return DROP; that would be published.
+
+**How to apply:** the next step is Gate 2, run once against this hash. Nothing in
+the published catalog, the showcase or any recorded result changes unless it
+returns KEEP, and then only atomically (the bead's AC7).
