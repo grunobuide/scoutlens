@@ -17,6 +17,7 @@ import type {
   AnyPlayerIndexItem,
   AnyPlayerProfileArtifact,
 } from "@/contracts/showcase-repository";
+import { explainFamily, scoreQuantity, type QuantityId } from "@/content/evidence-explanations";
 
 export type AnyEvidenceItem = EvidenceItem | EvidenceItemV2;
 export type AnyFeatureDefinition = FeatureDefinition | FeatureDefinitionV2;
@@ -65,6 +66,11 @@ export const SCORE_LABEL: Readonly<Record<1 | 2, string>> = {
  */
 export function neighborScoreLabel(neighbor: AnyStatisticalNeighbor): string {
   return "similarity_score" in neighbor ? SCORE_LABEL[2] : SCORE_LABEL[1];
+}
+
+/** The explanation for that same value, from the same discriminant. */
+export function neighborScoreQuantity(neighbor: AnyStatisticalNeighbor): QuantityId {
+  return scoreQuantity("similarity_score" in neighbor ? 2 : 1);
 }
 
 /**
@@ -253,8 +259,13 @@ export function buildFingerprintRows(
   });
 }
 
+/**
+ * The label a feature family is shown under. Resolved through the explanation
+ * registry, which throws for a family it does not know: the contract forbids
+ * inferring a label from an id (`scoutlens-9a3.19`).
+ */
 export function familyLabel(family: string): string {
-  return family.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return explainFamily(family).label;
 }
 
 export function groupFingerprintRows(
@@ -556,7 +567,8 @@ export function describeLabError(error: unknown): LabProblem {
       code === "unsupported_schema_major" ||
       code === "artifact_kind" ||
       code === "dataset_mismatch" ||
-      code === "invalid_json"
+      code === "invalid_json" ||
+      code === "explanation_missing"
     ) {
       return {
         kind: "incompatible-data",

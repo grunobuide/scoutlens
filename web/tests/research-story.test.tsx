@@ -7,6 +7,17 @@ import { describe, expect, it } from "vitest";
 import { ClaimsMatrix, ExperimentCard } from "@/components/research-story";
 import type { ResearchExperiment, ResearchSummaryArtifact } from "@/contracts/generated/showcase";
 import { formatMetric, requireMetric } from "@/content/showcase-story";
+import { ExplanationNotFoundError, explainMetric } from "@/content/evidence-explanations";
+
+/** What React's server renderer does to text content. */
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;");
+}
 
 function experimentWith(fingerprintMrr: number): ResearchExperiment {
   return {
@@ -67,6 +78,28 @@ describe("evidence-first research story", () => {
     expect(firstHtml).toContain("0.4321");
     expect(firstHtml).not.toContain("0.8765");
     expect(secondHtml).toContain("0.8765");
+  });
+
+  it("refuses to render a metric the registry cannot explain (scoutlens-9a3.19)", () => {
+    // This card used to catch the resolver's throw and print the number with
+    // no explanation. A metric without one now stops the static build.
+    const experiment = experimentWith(0.4321);
+    const unexplained = {
+      ...experiment,
+      metrics: [{ ...experiment.metrics[0]!, metric_id: "no_such_metric" }],
+    } as ResearchExperiment;
+    expect(() =>
+      renderToStaticMarkup(<ExperimentCard experiment={unexplained} research={researchWith(unexplained)} />),
+    ).toThrow(ExplanationNotFoundError);
+  });
+
+  it("puts the registry's meaning and boundary behind a native disclosure for every metric", () => {
+    const experiment = experimentWith(0.4321);
+    const html = renderToStaticMarkup(<ExperimentCard experiment={experiment} research={researchWith(experiment)} />);
+    const explanation = explainMetric({ metric_id: "fingerprint_mrr" });
+    expect(html).toContain("<details><summary>What this means</summary>");
+    expect(html).toContain(escapeHtml(explanation.plain_meaning));
+    expect(html).toContain(escapeHtml(explanation.interpretation_boundary));
   });
 
   it("renders the production headline directly from research-summary.json", async () => {

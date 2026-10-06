@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import type {
   Caveat,
@@ -16,8 +16,11 @@ import {
   type ContributionEvidence,
   neighborScore,
   neighborScoreLabel,
+  neighborScoreQuantity,
   type AnyStatisticalNeighbor,
 } from "@/content/showcase-lab";
+import { explainEvidence } from "@/content/evidence-explanations";
+import { QuantityGlossary, quantityTag } from "./quantity-glossary";
 
 import { formatRank } from "./rank-format";
 import type {
@@ -31,11 +34,9 @@ interface NeighborComparisonDrawerProps {
   neighbor: AnyStatisticalNeighbor;
   evidence: ContributionEvidence;
   candidateMinutes: number | null;
+  /** Resolved by the Lab with the profile's evidence; required, never optional. */
+  boundaries: { fingerprint: Caveat; recruitment: Caveat };
   onClose: () => void;
-}
-
-function caveatFor(profile: AnyPlayerProfileArtifact, code: string): Caveat | undefined {
-  return profile.caveats.find((caveat) => caveat.code === code);
 }
 
 function evidenceInterpretation(item: EvidenceItem): string {
@@ -79,14 +80,11 @@ export function NeighborComparisonDrawer({
   neighbor,
   evidence,
   candidateMinutes,
+  boundaries,
   onClose,
 }: NeighborComparisonDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const featureLabels = useMemo(
-    () => new Map(catalog.features.map((feature) => [feature.feature_id, feature.label])),
-    [catalog],
-  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -100,8 +98,7 @@ export function NeighborComparisonDrawer({
   // v2's score is weighted and may not be called a cosine (D047); v1's is one.
   // Derived from the same discriminant as the value, so the two cannot drift.
   const scoreName = neighborScoreLabel(neighbor).toLowerCase();
-  const fingerprintCaveat = caveatFor(profile, "fingerprint_not_style_proof");
-  const recruitmentCaveat = caveatFor(profile, "similarity_not_recruitment");
+  const scoreId = neighborScoreQuantity(neighbor);
 
   return (
     <dialog
@@ -109,6 +106,7 @@ export function NeighborComparisonDrawer({
       className="neighbor-drawer"
       aria-labelledby="neighbor-drawer-title"
       aria-describedby="neighbor-drawer-summary"
+      data-quantity-scope
       onClose={onClose}
       onKeyDown={(event) => {
         const dialog = dialogRef.current;
@@ -159,15 +157,18 @@ export function NeighborComparisonDrawer({
 
         <section className="neighbor-drawer__score" aria-label="Stored comparison context">
           <dl>
-            <div><dt>{neighborScoreLabel(neighbor)}</dt><dd>{formatScore(neighborScore(neighbor))}</dd></div>
-            <div><dt>Neighbor rank</dt><dd>{neighbor.rank} of five shown</dd></div>
+            <div>
+              <dt>{neighborScoreLabel(neighbor)}</dt>
+              <dd data-quantity={quantityTag(scoreId)}>{formatScore(neighborScore(neighbor))}</dd>
+            </div>
+            <div><dt>Neighbor rank</dt><dd data-context="position">{neighbor.rank} of five shown</dd></div>
             <div><dt>Candidate period</dt><dd>Period B</dd></div>
             <div>
               <dt>Candidate minutes</dt>
-              <dd>{candidateMinutes === null ? "Unavailable" : candidateMinutes.toLocaleString("en-US")}</dd>
+              <dd data-context="minutes">{candidateMinutes === null ? "Unavailable" : candidateMinutes.toLocaleString("en-US")}</dd>
             </div>
           </dl>
-          <p>{stabilityText(neighbor)}</p>
+          <p data-quantity={quantityTag("selection_stability")}>{stabilityText(neighbor)}</p>
         </section>
 
         <section className="neighbor-drawer__families" aria-labelledby="family-contributions-heading">
@@ -179,7 +180,7 @@ export function NeighborComparisonDrawer({
               disagreement, not weakness.
             </p>
           </header>
-          <ol>
+          <ol data-quantity={quantityTag("contribution")}>
             {evidence.families.map((item) => (
               <li key={item.evidence_id} data-family-contribution={item.family}>
                 <span>{familyLabel(item.family)}</span>
@@ -206,16 +207,16 @@ export function NeighborComparisonDrawer({
               <thead>
                 <tr>
                   <th scope="col">Feature</th>
-                  <th scope="col">Query A z</th>
-                  <th scope="col">Neighbor B z</th>
-                  <th scope="col">Contribution</th>
+                  <th scope="col" data-quantity={quantityTag("model_z_score")}>Query A z</th>
+                  <th scope="col" data-quantity={quantityTag("model_z_score")}>Neighbor B z</th>
+                  <th scope="col" data-quantity={quantityTag("contribution")}>Contribution</th>
                   <th scope="col">Reading</th>
                 </tr>
               </thead>
               <tbody>
                 {evidence.features.map((item) => (
                   <tr key={item.evidence_id} data-feature-contribution={item.feature_id ?? undefined}>
-                    <th scope="row">{featureLabels.get(item.feature_id ?? "") ?? item.feature_id}</th>
+                    <th scope="row">{explainEvidence(catalog.features, item).label}</th>
                     <td>{item.query_global_z === null ? "—" : formatZScore(item.query_global_z)}</td>
                     <td>{item.candidate_global_z === null ? "—" : formatZScore(item.candidate_global_z)}</td>
                     <td className={contributionClass(item)}>{formatContribution(evidenceContribution(item))}</td>
@@ -231,9 +232,11 @@ export function NeighborComparisonDrawer({
           </p>
         </section>
 
+        <QuantityGlossary ids={[scoreId, "contribution", "model_z_score", "selection_stability"]} />
+
         <aside className="neighbor-drawer__boundary" aria-label="Interpretation boundary">
-          <p>{fingerprintCaveat?.message}</p>
-          <p>{recruitmentCaveat?.message}</p>
+          <p>{boundaries.fingerprint.message}</p>
+          <p>{boundaries.recruitment.message}</p>
           <Link href="/science/#stage-02">Inspect the retrieval method and aggregate evidence →</Link>
         </aside>
       </div>

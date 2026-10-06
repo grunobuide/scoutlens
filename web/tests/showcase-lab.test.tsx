@@ -12,6 +12,7 @@ import type {
   PlayerProfileArtifact,
 } from "@/contracts/generated/showcase";
 import { loadShowcaseLab } from "@/content/load-showcase-lab";
+import { explainCaveat } from "@/content/evidence-explanations";
 import {
   SCORE_LABEL,
   neighborScoreLabel,
@@ -232,6 +233,10 @@ describe("searchable period fingerprint Lab", () => {
         neighbor={selection.neighbor}
         evidence={selection.evidence}
         candidateMinutes={indexItem?.period_contexts.b.minutes ?? null}
+        boundaries={{
+          fingerprint: explainCaveat(profile.caveats, "fingerprint_not_style_proof"),
+          recruitment: explainCaveat(profile.caveats, "similarity_not_recruitment"),
+        }}
         onClose={() => undefined}
       />,
     );

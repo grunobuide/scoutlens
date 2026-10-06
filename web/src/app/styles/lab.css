@@ -1363,6 +1363,62 @@
   color: var(--muted);
 }
 
+/* `scoutlens-9a3.19`: the per-section "What these numbers mean" disclosure
+   (components/quantity-glossary.tsx), shared by the Lab, the comparison
+   drawer and the identity challenge. Closed, it is one line naming every
+   term; the summary keeps the 44 px target the Lab's controls meet. */
+.quantity-glossary {
+  max-width: 48rem;
+  margin: 1rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+/* The summary keeps its native list-item display, and with it the disclosure
+   marker that says it opens. */
+.quantity-glossary > summary {
+  min-height: 2.75rem;
+  padding-block: 0.4rem;
+  cursor: pointer;
+  color: var(--teal);
+  font-weight: 650;
+}
+
+.quantity-glossary__terms {
+  display: block;
+  color: var(--ink-600);
+  font-weight: 450;
+}
+
+.quantity-glossary > dl {
+  display: grid;
+  gap: 1rem;
+  margin: 0.5rem 0 0;
+}
+
+.quantity-glossary dt {
+  color: var(--ink-950);
+  font-weight: 700;
+}
+
+.quantity-glossary dd {
+  margin: 0.25rem 0 0;
+  color: var(--ink-600);
+  overflow-wrap: anywhere;
+}
+
+.quantity-glossary .quantity-glossary__boundary {
+  color: var(--ink-800);
+  font-weight: 550;
+}
+
+.quantity-glossary dd > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--teal);
+}
+
 @media (max-width: 64rem) {
   .lab-filter-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
