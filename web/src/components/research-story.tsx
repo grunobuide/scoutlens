@@ -219,6 +219,11 @@ export function ProvenanceDrawer({ story }: { story: ShowcaseStory }) {
           <div>
             <h3>Research decisions</h3>
             <ul>
+              {/*
+                `scoutlens-9a3.23`: the ledger every report cites by D-number was
+                linked from nowhere on /science.
+              */}
+              <li><a href={repositoryHref("docs/decisions-log.md")}>docs/decisions-log.md (every numbered decision)</a></li>
               {reportLinks.map((path) => <li key={path}><a href={repositoryHref(path)}>{path}</a></li>)}
             </ul>
           </div>
