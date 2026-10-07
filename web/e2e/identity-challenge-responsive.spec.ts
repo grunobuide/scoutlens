@@ -82,11 +82,12 @@ test("the fingerprint rows meet the 44 px row target on touch", async ({ page },
   await openChallenge(page, "query", 360);
   const rows = page.locator("[data-challenge-fingerprint-row]");
   await expect(rows).toHaveCount(32);
-  for (const index of [0, 15, 31]) {
-    const box = await rows.nth(index).boundingBox();
-    expect(box, `row ${index} has no box`).not.toBeNull();
-    expect(box!.height, `row ${index} is under 44 px tall`).toBeGreaterThanOrEqual(44);
-  }
+  // `scoutlens-9a3.27`: every row, not a sample of three - §6.4 says all of
+  // them, and a row squeezed by a long label could sit between the samples.
+  const heights = await rows.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
+  expect(heights).toHaveLength(32);
+  const short = heights.map((height, index) => ({ height, index })).filter(({ height }) => height < 44);
+  expect(short, "fingerprint rows under 44 px tall").toEqual([]);
 });
 
 test("the 320 px reading order is the DOM order section 6.6 fixes", async ({ page }, testInfo) => {

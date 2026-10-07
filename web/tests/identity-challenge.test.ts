@@ -204,6 +204,26 @@ describe("the challenge reproduces the stored artifact", () => {
     expect(view.retrieval.uncertainty.rankCi95).toEqual([3, 19]);
     expect(view.retrieval.uncertainty.caveat?.code).toBe("uncertainty_sampling_only");
   });
+
+  it("renders an insufficient rank with no interval and never borrows the pending caveat (D068)", () => {
+    // §3.3 asks for "the artifact-provided caveat explaining why", but contract
+    // 2.0.0 defines no caveat code for `insufficient`, so there is nothing to
+    // render - D068 records that gap rather than letting the challenge word
+    // one. What the challenge must not do is the §3.3 prohibition: substitute
+    // the pending message.
+    const input = clone();
+    input.profile.uncertainty.status = "insufficient";
+    input.profile.retrieval.global.uncertainty.status = "insufficient";
+    input.profile.retrieval.global.uncertainty.rank_ci_95 = null;
+
+    const view = expectAvailable(input);
+    expect(view.retrieval.uncertainty.status).toBe("insufficient");
+    expect(view.retrieval.uncertainty.rankCi95).toBeNull();
+    expect(view.retrieval.uncertainty.caveat).toBeNull();
+    expect(view.caveats.map((caveat) => caveat.code)).not.toContain("uncertainty_sampling_only");
+    // The rank itself is still the artifact's.
+    expect(view.retrieval.selfRank).toBe(input.profile.retrieval.global.self_rank);
+  });
 });
 
 describe("the challenge computes nothing", () => {
