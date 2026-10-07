@@ -2900,3 +2900,39 @@ one). The redistribution note stays in the provider section, once.
 state that prints a result, that the chip's provider and threshold precede
 the earliest result in document order, with and without JavaScript. A surface
 that adds a number above the chip fails it.
+
+## D068 — 2026-10-07 — The identity challenge is the featured profile's, and `?player` is the explorer's
+
+**Decision:** the identity challenge on `/lab/` shows the featured profile
+(`manifest.featured_profile`) and only it. The URL's `challenge` parameter is the
+challenge's state; `player` belongs to the Lab explorer below. The challenge
+never writes `player`, a profile chosen in the explorer does not reset it, and
+an unknown `player` key leaves it untouched. Contract 2.0.0's `insufficient`
+uncertainty row cannot render "the artifact-provided caveat" because the
+contract defines no caveat code for that state; until one exists, the rank
+renders without an interval and with no uncertainty caveat, never the pending
+one. (`scoutlens-9a3.27`; amends `docs/identity-challenge-contract.md` §1, §2,
+§3.3, §4, §6.2 and §8.)
+
+**Why.** The contract described a per-profile challenge in its URL table and
+profile-switch rule, but it was implemented for the featured profile only. In
+between, the code did something neither design wanted. Every transition set
+`player` to the featured key, so with another profile open in the explorer, a
+shared link silently pointed at the featured one, and on reload the explorer
+switched to it. `/lab/?player=X&challenge=reveal` revealed the featured player
+above an explorer showing X. The epic 9a3 closure audit (2026-10-07) found
+both.
+
+**Why not follow `?player`.** A challenge per profile would need a client-side
+profile, representation and caveat load with the loading, mismatch and
+unknown-key states of §8. That is a second data path in a component the budget
+(`D052`) built to cost no new initial JavaScript. It would also dilute what §2
+makes the point: an editorially chosen, disclosed profile, never one the reader
+might take as a ranking. The two sections now each name their own player.
+
+**How to apply:** `e2e/identity-challenge.spec.ts` › "the challenge leaves the
+explorer's ?player to the explorer (D068)" holds the URL rule across
+transitions and a reload. `tests/identity-challenge.test.ts` › "renders an
+insufficient rank with no interval and never borrows the pending caveat" holds
+the uncertainty rule. A per-profile challenge is a new contract decision, not a
+fix to this one.

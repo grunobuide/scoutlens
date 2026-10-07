@@ -61,9 +61,14 @@ the full Lab; it is not a separate route.
 | State | URL | Behavior |
 |---|---|---|
 | Orientation (default) | `/lab/` | Challenge panel visible; full Lab explorer below |
-| Query (period A shown) | `/lab/?player=<key>&challenge=query` | Period A fingerprint visible, identity hidden |
-| Reveal | `/lab/?player=<key>&challenge=reveal` | Full identity, self-rank, baseline, evidence |
+| Query (period A shown) | `/lab/?challenge=query` | Period A fingerprint visible, identity hidden |
+| Reveal | `/lab/?challenge=reveal` | Full identity, self-rank, baseline, evidence |
 | Degraded (no JS) | `/lab/` | Static orientation card with a link to the featured profile's full evidence in the Lab explorer |
+
+**Amended by [D068](decisions-log.md):** the `challenge` parameter is the
+challenge's and `player` is the Lab explorer's. The challenge always shows the
+featured profile and never writes `player`; a `player` beside `challenge` in a
+URL is the explorer's selection, which the explorer below renders as usual.
 
 **Rejected alternatives:**
 
@@ -84,8 +89,11 @@ the full Lab; it is not a separate route.
 state: the choice is editorial, not based on retrieval rank or player quality.
 
 **Profile switching:** after the reveal, the user may search and select any
-eligible profile from the full Lab explorer below. Selecting a new profile
-resets the challenge to the query state for that profile. The challenge never
+eligible profile from the full Lab explorer below. ~~Selecting a new profile
+resets the challenge to the query state for that profile.~~ **Superseded by
+[D068](decisions-log.md):** the challenge is the featured profile's alone, and
+selecting a profile in the explorer leaves it where it is - the explorer and the
+challenge are two sections, each naming its own player. The challenge never
 presents a random profile; the user always knows which player they are
 inspecting after the reveal.
 
@@ -211,7 +219,7 @@ assumed.
 | `status` | Behaviour |
 |---|---|
 | `available` | Render the rank alongside `rank_ci_95` from the same block, and the artifact's `uncertainty_sampling_only` caveat with its full message. |
-| `insufficient` | Render the rank without an interval and the artifact-provided caveat explaining why. Do not substitute a pending message. |
+| `insufficient` | Render the rank without an interval and the artifact-provided caveat explaining why. Do not substitute a pending message. **[D068](decisions-log.md):** contract 2.0.0 defines no caveat code for this state, so until one exists the rank renders without an interval and with no uncertainty caveat - never the pending one. |
 | `pending` | Render the rank without an interval and the `uncertainty_pending` caveat with its full message. |
 
 Under `scoutlens.showcase/2.0.0` the published dataset reports `available` with
@@ -316,7 +324,7 @@ orientation ──"See the fingerprint"──→ query
 query       ──"Reveal the result"───→ reveal
 reveal      ──"See the evidence"────→ evidence
 evidence    ──"Back to result"──────→ reveal
-any state   ──profile switch────────→ query (new profile)
+any state   ──profile switch────────→ (no change; D068)
 any state   ──"Explore every fingerprint"──→ Lab explorer (scroll)
 ```
 
@@ -324,9 +332,10 @@ any state   ──"Explore every fingerprint"──→ Lab explorer (scroll)
 `challenge=reveal`, `challenge=evidence`). Back/forward navigates between
 challenge states. Reloading a deep-linked state restores that state directly.
 
-**Reload/share behavior:** a deep link to `/lab/?player=<key>&challenge=reveal`
-loads the reveal state for that profile without requiring the user to step
-through orientation and query first. The orientation and query states are
+**Reload/share behavior:** a deep link to `/lab/?challenge=reveal` loads the
+reveal state of the featured profile without requiring the user to step through
+orientation and query first; a `player` beside it is the explorer's selection
+and is kept (D068). The orientation and query states are
 entry ramps, not gates.
 
 ## 5. Entry and exit CTAs
@@ -396,9 +405,12 @@ hiding it from everyone else.
 - Entering a new state moves focus to the state's heading (`<h2>`).
 - After the CTA action completes, focus moves to the new state's heading.
 - Escape in query, reveal, or evidence returns to the orientation state and
-  focuses the orientation heading.
-- Profile switch from the Lab explorer resets the challenge and focuses the
-  query state heading.
+  focuses the orientation heading - when focus is inside the challenge panel
+  and no other control has already handled the key. The neighbour drawer's
+  Escape and the search box's are theirs (`scoutlens-9a3.27`).
+- ~~Profile switch from the Lab explorer resets the challenge and focuses the
+  query state heading.~~ Superseded by D068: a profile switch does not touch the
+  challenge.
 
 ### 6.3 Screen-reader announcements
 
@@ -444,7 +456,7 @@ the no-JS experience.
 
 | Condition | Behavior |
 |---|---|
-| Unknown profile key | Challenge panel renders: "This profile was not found in the frozen dataset." with a link back to `/lab/`. Lab explorer shows the problem panel. |
+| Unknown profile key | ~~Challenge panel renders: "This profile was not found in the frozen dataset." with a link back to `/lab/`.~~ The challenge is unaffected - it shows the featured profile (D068). Lab explorer shows the problem panel. |
 | Missing artifact (fetch/load error) | Challenge panel renders: "The evidence for this profile could not be loaded." with the dataset version pin visible. Lab explorer shows the problem panel. |
 | Checksum/schema mismatch | Same as missing artifact, plus the caveat that the dataset version may have changed. Fail closed; do not render partial data. |
 | Uncertainty not `available` | Render the artifact's own uncertainty caveat with its full message. Rank and similarity values are still shown; the caveat explains the missing interval. The challenge never states which uncertainty state applies - it reads `uncertainty.status`. |

@@ -84,9 +84,15 @@ export function stateFromSearch(search: string): ChallengeState {
   return CHALLENGE_STATES.find((state) => state === value) ?? "orientation";
 }
 
-function updateChallengeUrl(profileKey: string, state: ChallengeState): void {
+/**
+ * `D068`: the `challenge` parameter is the challenge's and `player` is the Lab
+ * explorer's. This used to set `player` to the featured key on every
+ * transition, so with another profile open in the explorer below, a shared
+ * link silently pointed at the featured one - and on reload the explorer
+ * switched to it.
+ */
+function updateChallengeUrl(state: ChallengeState): void {
   const url = new URL(window.location.href);
-  url.searchParams.set("player", profileKey);
   if (state === "orientation") {
     url.searchParams.delete("challenge");
   } else {
@@ -305,6 +311,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
   // this guard the first paint would steal focus on every page load, including
   // a deep link, which is a worse experience than the one §6.2 is protecting.
   const shouldFocus = useRef(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [announcement, setAnnouncement] = useState("");
 
 
@@ -331,7 +338,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
   const goTo = useCallback(
     (next: ChallengeState) => {
       shouldFocus.current = true;
-      updateChallengeUrl(view.profileKey, next);
+      updateChallengeUrl(next);
       setState(next);
       setAnnouncement(challengeAnnouncement(view, next));
     },
@@ -341,10 +348,23 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
   useEffect(() => {
     // §6.2: "Escape in query, reveal, or evidence returns to the orientation
     // state and focuses the orientation heading."
+    //
+    // `scoutlens-9a3.27`: only an Escape the challenge owns. The listener is on
+    // window, so it also heard the Escape that closes the neighbour drawer or
+    // that a reader presses in the Lab's search box - and reset the challenge,
+    // pushed a history entry and pulled focus to the top of the page. An Escape
+    // another control has already handled (`defaultPrevented`), or pressed with
+    // focus outside the panel, is not one.
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && state !== "orientation") {
-        goTo("orientation");
+      if (event.key !== "Escape" || state === "orientation" || event.defaultPrevented) {
+        return;
       }
+      const target = event.target instanceof Node ? event.target : null;
+      const inPanel = target !== null && rootRef.current?.closest("section")?.contains(target) === true;
+      if (!inPanel && target !== document.body) {
+        return;
+      }
+      goTo("orientation");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -355,7 +375,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
   const features = rows.map((row) => row.definition);
 
   return (
-    <div className="challenge-states" data-challenge-state={state} data-quantity-scope>
+    <div className="challenge-states" data-challenge-state={state} data-quantity-scope ref={rootRef}>
       {/*
         §6.5: no animation accompanies a transition, so there is nothing for
         prefers-reduced-motion to suppress. The announcement region is polite
@@ -481,6 +501,15 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
               <dd data-challenge-representation data-context="identifier">{view.retrieval.representationId}</dd>
             </div>
           </dl>
+          {/*
+            `scoutlens-9a3.27`: §3.3 asks for the result in a plain sentence with
+            its baseline comparison, and §12 froze that sentence. It was built in
+            the view model and never rendered; the heading states the rank, this
+            states what the control did with the same player.
+          */}
+          <p className="challenge-panel__body" data-challenge-baseline-sentence>
+            {view.copy.revealBaseline}
+          </p>
 
           {state === "reveal" ? (
             <>

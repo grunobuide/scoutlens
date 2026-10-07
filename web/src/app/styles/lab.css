@@ -1707,6 +1707,16 @@
   width: 100%;
 }
 
+/* `scoutlens-9a3.27`: without JavaScript the server-rendered orientation still
+   carried its "See the fingerprint" button, an onClick with nothing to run,
+   beside the degraded card that §7 makes the no-JS experience. The orientation
+   text and the editorial reason stay; only the dead control goes. */
+@media (scripting: none) {
+  .challenge-states [data-challenge-cta] {
+    display: none;
+  }
+}
+
 .challenge-panel__heading {
   max-width: 24ch;
   margin: 0;
