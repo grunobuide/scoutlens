@@ -427,7 +427,7 @@ export function buildIdentityChallenge(input: IdentityChallengeInput): IdentityC
       orientationQuestion: question.title,
       orientationHeading: "Can a player's actions identify them?",
       orientationBody:
-        "We take the first half of their season as a query and test whether 32 " +
+        `We take the first half of their season as a query and test whether ${manifest.population.feature_count} ` +
         "measurements of how they act can find that same player again in the second half.",
       orientationEditorial: manifest.featured_profile.reason,
       orientationCta: "See the fingerprint",

@@ -309,13 +309,26 @@ test("every metric on the landing and /science opens its explanation (AC4)", asy
         label: row.querySelector("dt")?.textContent?.trim() ?? "",
         disclosures: row.querySelectorAll(":scope > dd.experiment-metric__explanation > details").length,
         summary: row.querySelector("dd.experiment-metric__explanation summary")?.textContent?.trim() ?? "",
-        meaning: row.querySelector("dd.experiment-metric__explanation details > p:not(.experiment-metric__boundary)")?.textContent?.trim() ?? "",
+        meaning: row.querySelector("dd.experiment-metric__explanation details > p:first-of-type")?.textContent?.trim() ?? "",
+        // `scoutlens-9a3.25`: all five parts, not meaning and boundary only.
+        computation: row.querySelector("dd.experiment-metric__explanation .experiment-metric__computation")?.textContent?.trim() ?? "",
+        scale: row.querySelector("dd.experiment-metric__explanation .experiment-metric__scale")?.textContent?.trim() ?? "",
         boundary: row.querySelector("dd.experiment-metric__explanation .experiment-metric__boundary")?.textContent?.trim() ?? "",
+        source: row.querySelector("dd.experiment-metric__explanation .experiment-metric__source a")?.getAttribute("href") ?? "",
       })),
     );
     expect(rows.length, `${route} renders no metric`).toBeGreaterThan(0);
     const unexplained = rows
-      .filter((row) => row.disclosures !== 1 || row.summary !== "What this means" || row.meaning.length < 20 || row.boundary.length < 20)
+      .filter(
+        (row) =>
+          row.disclosures !== 1 ||
+          row.summary !== "What this means" ||
+          row.meaning.length < 20 ||
+          row.computation.length < 10 ||
+          row.scale.length < 10 ||
+          row.boundary.length < 20 ||
+          !row.source.startsWith("https://github.com/grunobuide/scoutlens/blob/main/docs/"),
+      )
       .map((row) => row.label);
     expect(unexplained, `${route} metrics without their explanation`).toEqual([]);
   }

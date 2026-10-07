@@ -196,7 +196,7 @@ export function NeighborComparisonDrawer({
 
         <section className="neighbor-drawer__features" aria-labelledby="feature-contributions-heading">
           <header>
-            <p className="eyebrow">32-feature audit</p>
+            <p className="eyebrow">{evidence.features.length}-feature audit</p>
             <h3 id="feature-contributions-heading">Exact additive contributions</h3>
           </header>
           <div className="neighbor-drawer__table-scroll" role="region" aria-label="Scrollable feature contribution table" tabIndex={0}>

@@ -37,7 +37,8 @@ export default async function LabPage() {
         <p className="eyebrow">Interactive evidence surface</p>
         <h1>Compare one player with himself.</h1>
         <p className="lede">
-          Search every eligible player × competition profile, then inspect how the same 32
+          Search every eligible player × competition profile, then inspect how the same{" "}
+          {story.manifest.population.feature_count}{" "}
           event-derived measurements move between the first and second half of the season.
         </p>
         {/*

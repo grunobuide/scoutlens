@@ -477,7 +477,7 @@ function FingerprintMapRow({ row, scope }: { row: FingerprintRow; scope: Percent
     <div className="lab-fingerprint-row" data-fingerprint-row={row.definition.feature_id}>
       <div className="lab-fingerprint-row__label">
         <strong>{row.definition.short_label}</strong>
-        <span>{formatRawValue(row.periodA, row.definition)} → {formatRawValue(row.periodB, row.definition)}</span>
+        <span data-quantity={quantityTag("raw_value")}>{formatRawValue(row.periodA, row.definition)} → {formatRawValue(row.periodB, row.definition)}</span>
       </div>
       <div
         className="lab-fingerprint-track"
@@ -973,7 +973,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         <section className="fingerprint-lab-card" aria-labelledby="fingerprint-map-heading" data-quantity-scope>
           <header className="fingerprint-lab-card__header">
             <div>
-              <p className="eyebrow">32-feature map</p>
+              <p className="eyebrow">{fingerprint.rows.length}-feature map</p>
               <h2 id="fingerprint-map-heading">Period A / B fingerprint</h2>
             </div>
             <fieldset className="percentile-toggle">
@@ -1008,7 +1008,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
             <span>0 — percentile — 100</span>
           </div>
 
-          <QuantityGlossary ids={["within_role_percentile", "global_percentile"]} />
+          <QuantityGlossary ids={["within_role_percentile", "global_percentile", "raw_value"]} />
 
           <div className="lab-fingerprint-map">
             {fingerprint.families.map((family) => (
@@ -1054,12 +1054,14 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         <header>
           <div>
             <p className="eyebrow">Equivalent value view</p>
-            <h2 id="fingerprint-table-heading">All 32 measurements</h2>
+            <h2 id="fingerprint-table-heading">{`All ${fingerprint.rows.length} measurements`}</h2>
           </div>
           <p>Raw values are descriptive. Global z-scores are the model inputs; percentiles are display context.</p>
         </header>
-        <QuantityGlossary ids={[percentileQuantity(scope), "model_z_score"]} />
-        <div className="fingerprint-table-scroll" role="region" aria-label="Scrollable 32-feature value table" tabIndex={0}>
+        <QuantityGlossary
+          ids={[percentileQuantity(scope), "model_z_score", "raw_value", "feature_support", "raw_interval"]}
+        />
+        <div className="fingerprint-table-scroll" role="region" aria-label={`Scrollable ${fingerprint.rows.length}-feature value table`} tabIndex={0}>
           <table className="fingerprint-value-table">
             <caption>
               Period A and period B raw values, displayed percentiles, model z-scores, support and uncertainty.
@@ -1067,15 +1069,15 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
             <thead>
               <tr>
                 <th scope="col">Feature</th>
-                <th scope="col">A raw</th>
-                <th scope="col">B raw</th>
+                <th scope="col" data-quantity={quantityTag("raw_value")}>A raw</th>
+                <th scope="col" data-quantity={quantityTag("raw_value")}>B raw</th>
                 <th scope="col" data-quantity={quantityTag(percentileQuantity(scope))}>A {scope === "within_role" ? "role" : "global"} pct.</th>
                 <th scope="col" data-quantity={quantityTag(percentileQuantity(scope))}>B {scope === "within_role" ? "role" : "global"} pct.</th>
                 <th scope="col" data-quantity={quantityTag("model_z_score")}>A global z</th>
                 <th scope="col" data-quantity={quantityTag("model_z_score")}>B global z</th>
-                <th scope="col">A support</th>
-                <th scope="col">B support</th>
-                <th scope="col">Uncertainty</th>
+                <th scope="col" data-quantity={quantityTag("feature_support")}>A support</th>
+                <th scope="col" data-quantity={quantityTag("feature_support")}>B support</th>
+                <th scope="col" data-quantity={quantityTag("raw_interval")}>Uncertainty</th>
               </tr>
             </thead>
             {fingerprint.families.map((family) => (

@@ -82,7 +82,7 @@ const METRIC_EXPLANATIONS: MetricExplanations = {
     plain_meaning:
       "How high the same player's second-half profile appears when every eligible profile is ordered by fingerprint similarity to their first half.",
     calculation_summary:
-      "Mean reciprocal rank of the true same-player×competition profile under 32-feature cosine similarity with a combined-period z-score scaler.",
+      "Mean reciprocal rank of the true same-player×competition profile under cosine similarity over the full Wyscout feature set, with a combined-period z-score scaler.",
     scale_direction:
       "Score in [0, 1]; higher is better for the identity-retrieval task only — never a quality rating.",
     interpretation_boundary:
@@ -147,7 +147,7 @@ const METRIC_EXPLANATIONS: MetricExplanations = {
     plain_meaning:
       "Fingerprint MRR using the raw ratio features before empirical-Bayes shrinkage is applied.",
     calculation_summary:
-      "Global MRR under the 32-feature cosine fingerprint with un-shrunk ratio features.",
+      "Global MRR under the cosine fingerprint with un-shrunk ratio features.",
     scale_direction:
       "Score in [0, 1]; higher is better for the identity task.",
     interpretation_boundary:
@@ -212,7 +212,76 @@ export interface FeatureExplanation {
   source_link: string;
 }
 
-export function explainMetric(metric: Pick<ResearchMetric, "metric_id">): EvidenceExplanation {
+/**
+ * Where one `metric_id` is computed differently in a particular experiment
+ * (`scoutlens-9a3.25`).
+ *
+ * The defaults above describe the Wyscout global test. `fingerprint_mrr` also
+ * names the within-role test, where candidates are restricted to the query's
+ * role, and the StatsBomb replication, which uses a different provider and the
+ * canonical feature set both providers can compute - so its default meaning
+ * ("every eligible profile", "the full Wyscout feature set") was wrong on
+ * three of the cards that printed it. Each override replaces only the parts
+ * that differ, keyed `experiment_id:metric_id`; a test fails if a key names a
+ * pair the artifact does not publish.
+ */
+type MetricOverride = Partial<Omit<EvidenceExplanation, "scope" | "key">>;
+
+const STATSBOMB_REPORT = "docs/statsbomb-replication.md";
+
+const EXPERIMENT_OVERRIDES: Readonly<Record<string, MetricOverride>> = {
+  "wyscout_within_role_gate2:fingerprint_mrr": {
+    plain_meaning:
+      "How high the same player's second-half profile appears when only profiles of the same nominal role are ordered by fingerprint similarity to their first half.",
+    calculation_summary:
+      "Mean reciprocal rank of the true profile with candidates restricted to the query's nominal role, under the same fingerprint and scaler as the global test.",
+    source_link: "docs/temporal-retrieval-within-role.md",
+  },
+  "statsbomb_global_replication:fingerprint_mrr": {
+    plain_meaning:
+      "The same identity test repeated on an independent provider's data: how high the same player's second-half profile appears among every eligible profile of that dataset.",
+    calculation_summary:
+      "Mean reciprocal rank under cosine similarity over the canonical feature set both providers can compute - its size is in the metric's label - with a combined-period z-score scaler.",
+    interpretation_boundary:
+      "A replication on different players, leagues and season, at a lower magnitude. It is evidence the signal is not one provider's artefact, not a quality rating.",
+    source_link: STATSBOMB_REPORT,
+  },
+  "statsbomb_within_role_replication:fingerprint_mrr": {
+    plain_meaning:
+      "The within-role identity test repeated on an independent provider's data: candidates are restricted to the query's nominal role.",
+    calculation_summary:
+      "Mean reciprocal rank with candidates restricted to the query's role, under the canonical feature set both providers can compute.",
+    interpretation_boundary:
+      "A replication of the within-role result on different data, at a lower magnitude; not a position-quality score.",
+    source_link: STATSBOMB_REPORT,
+  },
+  "statsbomb_transferred_players:fingerprint_mrr": {
+    calculation_summary:
+      "Mean reciprocal rank of the transferred players' own profiles under the canonical feature set both providers can compute, against every eligible profile of that dataset.",
+    interpretation_boundary:
+      "A small replication subset whose interval is wide; inconclusive here, and never evidence about a transfer's success.",
+    source_link: STATSBOMB_REPORT,
+  },
+  "statsbomb_transferred_players:transferred_count": {
+    calculation_summary:
+      "Count of eligible profiles in the independent provider's data whose primary team differs between the two chronological halves.",
+    source_link: STATSBOMB_REPORT,
+  },
+};
+
+export function experimentOverrideKeys(): ReadonlyArray<string> {
+  return Object.keys(EXPERIMENT_OVERRIDES);
+}
+
+/**
+ * The explanation for one metric as one experiment computed it. Without an
+ * experiment id this is the metric's default, which is what the registry's own
+ * completeness tests enumerate.
+ */
+export function explainMetric(
+  metric: Pick<ResearchMetric, "metric_id">,
+  experimentId?: string,
+): EvidenceExplanation {
   const explanation = METRIC_EXPLANATIONS[metric.metric_id];
   if (explanation === undefined) {
     throw new ExplanationNotFoundError(
@@ -221,7 +290,8 @@ export function explainMetric(metric: Pick<ResearchMetric, "metric_id">): Eviden
       `No explanation for required metric id: ${metric.metric_id}`,
     );
   }
-  return explanation;
+  const override = experimentId === undefined ? undefined : EXPERIMENT_OVERRIDES[`${experimentId}:${metric.metric_id}`];
+  return override === undefined ? explanation : { ...explanation, ...override };
 }
 
 export function metricExplanationKeys(): ReadonlyArray<string> {
@@ -348,7 +418,7 @@ const QUANTITY_EXPLANATIONS = {
     key: "similarity_score",
     term: "Similarity score",
     plain_meaning:
-      "How closely two profiles point in the same direction across the 32 standardized measurements, once each measurement is scaled by the weight the model learned for it.",
+      "How closely two profiles point in the same direction across all their standardized measurements, once each measurement is scaled by the weight the model learned for it.",
     calculation_summary:
       "Each measurement's global z-score is multiplied by the square root of its fitted non-negative weight; the score is the dot product of the two scaled profiles divided by the product of their lengths.",
     scale_direction:
@@ -362,7 +432,7 @@ const QUANTITY_EXPLANATIONS = {
     key: "cosine_similarity",
     term: "Cosine",
     plain_meaning:
-      "How closely two profiles point in the same direction across the 32 standardized measurements, with every measurement counted equally.",
+      "How closely two profiles point in the same direction across all their standardized measurements, with every measurement counted equally.",
     calculation_summary:
       "The cosine of the angle between the two global z-score profiles: their dot product divided by the product of their lengths.",
     scale_direction:
@@ -382,7 +452,7 @@ const QUANTITY_EXPLANATIONS = {
     scale_direction:
       "Ranks, so lower is better for the identity task. A narrow interval means the rank barely depends on which matches were observed; bounds can be fractional because they are interpolated.",
     interpretation_boundary:
-      "Stability to resampling this season's matches only. It is not uncertainty about data errors, tactics, injuries, future seasons or player quality.",
+      "Stability to resampling the frozen season's observed matches only. It is not uncertainty about data errors, tactics, injuries, future seasons or player quality.",
     source_link: `${UNCERTAINTY}#summaries-and-numeric-rules`,
   },
   resampled_recall: {
@@ -462,12 +532,70 @@ const QUANTITY_EXPLANATIONS = {
     plain_meaning:
       "How much one measurement, or one family of measurements, adds to or takes away from the score of this pair.",
     calculation_summary:
-      "Each measurement's signed term of the score: its share of the numerator divided by the score's denominator. The terms of all 32 measurements add up to the stored score, and a family's value is the sum of its measurements' terms.",
+      "Each measurement's signed term of the score: its share of the numerator divided by the score's denominator. The terms of every measurement add up to the stored score, and a family's value is the sum of its measurements' terms.",
     scale_direction:
       "Signed. Positive pulls the two profiles together - two values below the average also align - negative pushes them apart, and a value that rounds to zero is neutral.",
     interpretation_boundary:
       "An exact breakdown of one similarity number. A negative value is a disagreement, not a weakness, and no contribution is evidence of playing style.",
     source_link: `${CONTRACT_V2}#5-weighted-retrieval-and-evidence-semantics`,
+  },
+  // `scoutlens-9a3.25`: four more numbers a reader meets - in the Lab's value
+  // table, beside every fingerprint row, and in the landing's preview.
+  raw_value: {
+    scope: "quantity",
+    key: "raw_value",
+    term: "Raw value",
+    plain_meaning:
+      "The measurement itself, as counted in that half of the season: a rate per 90 minutes, a share of attempts, or an average pitch position, in the unit printed beside it.",
+    calculation_summary:
+      "Counted from the provider's event data for the player's matches in that half and normalised as the feature definition says; a ratio with no attempts is shown as not observed.",
+    scale_direction:
+      "In the measurement's own unit. Higher or lower is descriptive - neither direction is better.",
+    interpretation_boundary:
+      "What the player did in these matches, not how good they are; the same number can mean different things in different roles and teams.",
+    source_link: "docs/feature-definitions.md",
+  },
+  feature_support: {
+    scope: "quantity",
+    key: "feature_support",
+    term: "Support",
+    plain_meaning:
+      "How much evidence a value rests on: the minutes played in that half, and for a ratio the number of attempts, and successes, behind it.",
+    calculation_summary:
+      "Read from the same events as the value: minutes from the match records, attempts and successes from the events the ratio counts.",
+    scale_direction:
+      "More minutes or attempts mean a value less driven by a handful of events. It is a count, not a score.",
+    interpretation_boundary:
+      "A small support does not make a value wrong, only noisier; a large one does not make it a strength.",
+    source_link: "docs/feature-definitions.md",
+  },
+  raw_interval: {
+    scope: "quantity",
+    key: "raw_interval",
+    term: "Raw-value interval",
+    plain_meaning:
+      "How far a measurement moves when the half-season's matches are resampled, and how many resampled seasons produced a valid value.",
+    calculation_summary:
+      "Whole matches are redrawn with replacement in every replicate and the value is recomputed; the 2.5th to 97.5th percentiles of the valid replicates are shown, with their count.",
+    scale_direction:
+      "In the measurement's own unit. A narrow interval means the value barely depends on which matches were observed.",
+    interpretation_boundary:
+      "Stability to resampling these matches only - not measurement error in the data, and not a confidence that the player is good at it.",
+    source_link: `${UNCERTAINTY}#summaries-and-numeric-rules`,
+  },
+  family_average_percentile: {
+    scope: "quantity",
+    key: "family_average_percentile",
+    term: "Family average percentile",
+    plain_meaning:
+      "Where the player sits, on average, across the measurements of one family, compared with eligible players of the same nominal role.",
+    calculation_summary:
+      "The mean of the published within-role percentiles of the family's measurements, taken for this preview only; the model never uses it.",
+    scale_direction:
+      "From 0 to 100. High and low are both descriptive; neither end is better, and an average can hide measurements that pull apart.",
+    interpretation_boundary:
+      "A summary drawn for reading, not a family score or a rating; the per-measurement values are in the Lab.",
+    source_link: `${CONTRACT_V1}#feature-catalogjson`,
   },
   feature_weight: {
     scope: "quantity",
