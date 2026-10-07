@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
 import { ClaimsMatrix, ExperimentCard, FingerprintPreview, ProvenanceDrawer } from "@/components/research-story";
+import { formatRank } from "@/components/rank-format";
 import { ThesisStatement } from "@/components/thesis-statement";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
 
@@ -14,6 +15,8 @@ export default async function SciencePage() {
   const story = await loadShowcaseStory();
   const { experiments, research } = story;
   const narrative = [...research.narrative_steps].sort((a, b) => a.order - b.order);
+  const featured = story.featuredProfile;
+  const { global: globalRetrieval, baseline_role_minutes: baselineRetrieval } = featured.retrieval;
 
   return (
     <main id="main-content" className="shell page-shell science-page">
@@ -131,20 +134,49 @@ export default async function SciencePage() {
         <ExperimentCard experiment={experiments.shrinkage} research={research} />
       </ResearchStage>
 
-      <section className="science-worked-example" aria-labelledby="worked-example-heading">
+      {/*
+        `scoutlens-9a3.23`: the example now names both periods, prints the count the
+        way the rest of the site does, and gives each rank its resampled interval -
+        the next section is titled "Every rank travels with its resampled interval",
+        and this example was the one rank on the page that did not. Every value is
+        the featured artifact's, and each carries `data-value` so the e2e test can
+        hold it to that artifact.
+      */}
+      <section className="science-worked-example" aria-labelledby="worked-example-heading" data-worked-example>
         <div className="section-heading">
           <p className="eyebrow">A worked example</p>
           <h2 id="worked-example-heading">One player, two halves, one retrieval result</h2>
         </div>
         <p>
-          {story.featuredName} ({story.featuredTeam}, {story.featuredProfile.identity.role},
-          {" "}{story.featuredProfile.identity.competition.name}) is the editorially featured
-          profile. The fingerprint ranked their second-half profile{" "}
-          {story.featuredProfile.retrieval.global.self_rank} of{" "}
-          {story.featuredProfile.retrieval.global.candidate_count} eligible profiles —
-          compared to {story.featuredProfile.retrieval.baseline_role_minutes.self_rank} under
-          a role-and-minutes baseline. The editorial choice is not based on retrieval rank or
-          player quality.
+          <span data-value="display-name">{story.featuredName}</span> (
+          <span data-value="team">{story.featuredTeam}</span>,{" "}
+          <span data-value="role">{featured.identity.role}</span>,{" "}
+          <span data-value="competition">{featured.identity.competition.name}</span>) is the
+          editorially featured profile. Period A, the{" "}
+          <span data-value="period-a-label">{featured.periods.a.label.toLowerCase()}</span> (
+          <span data-value="period-a-matches">{featured.periods.a.match_count}</span> matches), is
+          the query; period B, the{" "}
+          <span data-value="period-b-label">{featured.periods.b.label.toLowerCase()}</span> (
+          <span data-value="period-b-matches">{featured.periods.b.match_count}</span> matches), is
+          searched. The fingerprint ranked their period-B profile{" "}
+          <span data-value="self-rank">{globalRetrieval.self_rank}</span> of{" "}
+          <span data-value="candidate-count">{globalRetrieval.candidate_count.toLocaleString("en-US")}</span>{" "}
+          eligible profiles
+          {globalRetrieval.uncertainty.rank_ci_95 === null ? null : (
+            <span data-value="self-rank-interval">
+              {" "}(95% resampling interval {formatRank(globalRetrieval.uncertainty.rank_ci_95[0])}–
+              {formatRank(globalRetrieval.uncertainty.rank_ci_95[1])})
+            </span>
+          )}{" "}
+          — compared to <span data-value="baseline-self-rank">{baselineRetrieval.self_rank}</span>
+          {baselineRetrieval.uncertainty.rank_ci_95 === null ? null : (
+            <span data-value="baseline-self-rank-interval">
+              {" "}({formatRank(baselineRetrieval.uncertainty.rank_ci_95[0])}–
+              {formatRank(baselineRetrieval.uncertainty.rank_ci_95[1])})
+            </span>
+          )}{" "}
+          under a role-and-minutes baseline. The editorial choice is not based on retrieval rank
+          or player quality.
         </p>
         <FingerprintPreview story={story} />
       </section>
@@ -167,7 +199,18 @@ export default async function SciencePage() {
         </p>
       </section>
 
+      {/*
+        `scoutlens-9a3.23`: /science stated what the evidence does not support and
+        never what it does - `scoutlens-9a3.12` took the claim out of ClaimsMatrix
+        because the landing hero already carries it, which left this route with
+        none. Section 6.2 of the narrative gives the claim matrix, supported and not
+        supported, to /science; the supported half is the artifact's sentence.
+      */}
       <div className="science-claims">
+        <aside className="science-claims__supported" aria-labelledby="science-claim-heading">
+          <p className="eyebrow" id="science-claim-heading">Supported claim</p>
+          <p data-supported-claim>{research.supported_claim}</p>
+        </aside>
         <ClaimsMatrix research={research} />
       </div>
 

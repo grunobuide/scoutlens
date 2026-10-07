@@ -125,6 +125,14 @@ opening. It follows the real experimental sequence, not a promotional one:
 `same_season_team_confound` and `provider_replication_lower_magnitude`,
 `unsupported_claims[2]`.
 
+**Where it renders.** Its first two sentences are the `/science` orientation,
+verbatim, with the public display name for "ScoutLens" and the season and
+measurement count read from the manifest (`source.season`,
+`population.feature_count`); they precede the first metric. The orientation
+answers what the project asks and how the season is split to ask it; the §2
+thesis and boundary follow it. `e2e/science-evidence-surface.spec.ts` reads this
+section (`scoutlens-9a3.23`).
+
 ## 4. Six timed comprehension questions
 
 Each question has a canonical answer and an evidence link. The times are targets

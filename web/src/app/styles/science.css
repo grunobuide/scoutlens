@@ -99,6 +99,28 @@
   padding-block: clamp(5rem, 9vw, 8rem);
 }
 
+/* `scoutlens-9a3.23`: the supported claim, immediately before the claims the
+   evidence does not support. */
+.science-claims__supported {
+  max-width: 48rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+
+.science-claims__supported > .eyebrow {
+  margin: 0;
+}
+
+.science-claims__supported > p:not(.eyebrow) {
+  margin: 0.35rem 0 0;
+  color: var(--ink-800);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
 .science-orientation {
   margin-top: 1.5rem;
 }

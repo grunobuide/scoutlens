@@ -55,3 +55,21 @@ test("science experiments match the responsive baseline", async ({ page }) => {
     fullPage: false,
   });
 });
+
+// `scoutlens-9a3.23` (9a3.4 AC7): /science had baselines at 1280 and 360 only.
+// The same top-of-page framing at the two remaining frozen widths, taken from
+// the desktop project as the challenge panel's per-width baselines are, so
+// there is one file per width and platform rather than a new project.
+for (const width of [320, 768] as const) {
+  test(`science frozen-question block matches the ${width} px baseline`, async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Per-width baselines are captured once per platform");
+    await page.setViewportSize({ width, height: width === 320 ? 800 : 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/science/");
+    await waitForStablePage(page);
+    await expect(page).toHaveScreenshot(`science-stage-01-${width}.png`, {
+      caret: "hide",
+      fullPage: false,
+    });
+  });
+}
