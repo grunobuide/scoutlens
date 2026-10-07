@@ -29,4 +29,13 @@ declare module "*.mjs" {
     snapshotCount: number;
     unpaired: Array<{ key: string; changed: string[]; missing: string[] }>;
   };
+
+  // scoutlens-uze.29, fixture-traces.mjs.
+  export const FIXTURE_CODE_MARKERS: readonly string[];
+  export const FIXTURE_TRACE_MARKERS: readonly string[];
+  export const SYNTHETIC_KEY_PATTERN: RegExp;
+  export function findFixtureTraces(
+    root: string,
+    markers?: readonly string[],
+  ): Promise<{ traces: Array<{ file: string; trace: string }>; scanned: number }>;
 }

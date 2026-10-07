@@ -3,6 +3,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { FIXTURE_MARKERS, SYNTHETIC_PROFILE_KEYS } from "./fixture-pack.mjs";
+import { findFixtureTraces } from "./fixture-traces.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
@@ -210,6 +211,22 @@ for (const route of routes) {
     if (!html.toLowerCase().includes(disclaimer)) {
       throw new Error(`${route} is missing its currentness disclaimer: ${disclaimer}`);
     }
+  }
+}
+
+// `scoutlens-uze.29`: the route HTML above is three of the export's files. A
+// fixture identity or code path in any other - a JS chunk, an RSC payload, a
+// showcase JSON - would have shipped unseen, so the whole tree is scanned.
+{
+  const { traces, scanned } = await findFixtureTraces(resolve(webRoot, "out"));
+  if (scanned < 100) {
+    throw new Error(`fixture-trace scan read only ${scanned} files; out/ is incomplete`);
+  }
+  if (traces.length > 0) {
+    throw new Error(
+      `the production export carries test-only fixture traces:\n` +
+        traces.map(({ file, trace }) => `  ${file}: ${trace}`).join("\n"),
+    );
   }
 }
 
