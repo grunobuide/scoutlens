@@ -258,6 +258,16 @@
   color: var(--white);
 }
 
+/* `scoutlens-9a3.25`: the disclosure now ends with its method link. */
+.experiment-metric__source a {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.experiment-card--signal .experiment-metric__source a {
+  color: var(--signal);
+}
+
 @media (max-width: 48rem) {
   .split-definition {
       grid-template-columns: 1fr;

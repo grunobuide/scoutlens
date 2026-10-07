@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
 import { ClaimsMatrix, ExperimentCard, FingerprintPreview, ProvenanceDrawer } from "@/components/research-story";
+import { QuantityGlossary, quantityTag } from "@/components/quantity-glossary";
 import { formatRank } from "@/components/rank-format";
 import { ThesisStatement } from "@/components/thesis-statement";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
@@ -142,7 +143,7 @@ export default async function SciencePage() {
         the featured artifact's, and each carries `data-value` so the e2e test can
         hold it to that artifact.
       */}
-      <section className="science-worked-example" aria-labelledby="worked-example-heading" data-worked-example>
+      <section className="science-worked-example" aria-labelledby="worked-example-heading" data-worked-example data-quantity-scope>
         <div className="section-heading">
           <p className="eyebrow">A worked example</p>
           <h2 id="worked-example-heading">One player, two halves, one retrieval result</h2>
@@ -159,18 +160,23 @@ export default async function SciencePage() {
           <span data-value="period-b-label">{featured.periods.b.label.toLowerCase()}</span> (
           <span data-value="period-b-matches">{featured.periods.b.match_count}</span> matches), is
           searched. The fingerprint ranked their period-B profile{" "}
-          <span data-value="self-rank">{globalRetrieval.self_rank}</span> of{" "}
-          <span data-value="candidate-count">{globalRetrieval.candidate_count.toLocaleString("en-US")}</span>{" "}
+          <span data-value="self-rank" data-quantity={quantityTag("self_rank")}>{globalRetrieval.self_rank}</span> of{" "}
+          <span data-value="candidate-count" data-quantity={quantityTag("self_rank")}>
+            {globalRetrieval.candidate_count.toLocaleString("en-US")}
+          </span>{" "}
           eligible profiles
           {globalRetrieval.uncertainty.rank_ci_95 === null ? null : (
-            <span data-value="self-rank-interval">
+            <span data-value="self-rank-interval" data-quantity={quantityTag("rank_interval")}>
               {" "}(95% resampling interval {formatRank(globalRetrieval.uncertainty.rank_ci_95[0])}–
               {formatRank(globalRetrieval.uncertainty.rank_ci_95[1])})
             </span>
           )}{" "}
-          — compared to <span data-value="baseline-self-rank">{baselineRetrieval.self_rank}</span>
+          — compared to{" "}
+          <span data-value="baseline-self-rank" data-quantity={quantityTag("baseline_self_rank")}>
+            {baselineRetrieval.self_rank}
+          </span>
           {baselineRetrieval.uncertainty.rank_ci_95 === null ? null : (
-            <span data-value="baseline-self-rank-interval">
+            <span data-value="baseline-self-rank-interval" data-quantity={quantityTag("rank_interval")}>
               {" "}({formatRank(baselineRetrieval.uncertainty.rank_ci_95[0])}–
               {formatRank(baselineRetrieval.uncertainty.rank_ci_95[1])})
             </span>
@@ -178,6 +184,7 @@ export default async function SciencePage() {
           under a role-and-minutes baseline. The editorial choice is not based on retrieval rank
           or player quality.
         </p>
+        <QuantityGlossary ids={["self_rank", "rank_interval", "baseline_self_rank"]} />
         <FingerprintPreview story={story} />
       </section>
 
@@ -188,7 +195,11 @@ export default async function SciencePage() {
         </div>
         <p>
           Each profile&apos;s rank, median and recall rates are published with intervals
-          from 500 match-bootstrap resamples (preregistered, D031) of the frozen
+          from{" "}
+          {featured.uncertainty.requested_resamples === null
+            ? ""
+            : `${featured.uncertainty.requested_resamples.toLocaleString("en-US")} `}
+          match-bootstrap resamples (preregistered, D031) of the frozen
           population. The intervals describe sampling stability in the observed matches —
           how much a rank moves when whole matches are reshuffled — not causal effects,
           provider annotation error, or future performance. A small number of features

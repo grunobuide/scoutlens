@@ -13,6 +13,7 @@ import {
 } from "@/content/showcase-story";
 import { explainMetric } from "@/content/evidence-explanations";
 import { providerLabel } from "@/content/provenance";
+import { QuantityGlossary, quantityTag } from "@/components/quantity-glossary";
 import type {
   AnyResearchSummaryArtifact,
 } from "@/contracts/showcase-repository";
@@ -53,17 +54,32 @@ export function ExperimentCard({
           // Fail closed (`scoutlens-9a3.19`): this used to catch the resolver's
           // throw and render the number with no explanation. A metric the
           // registry cannot explain now stops the static build instead.
-          const explanation = explainMetric(metric);
+          // `scoutlens-9a3.25`: as this experiment computed it - one metric id can
+          // mean a different population or feature set on another card.
+          const explanation = explainMetric(metric, experiment.experiment_id);
           return (
             <div key={metric.metric_id}>
               <dt>{metric.label}</dt>
               <dd className="experiment-metric__value">{formatMetric(metric)}</dd>
               {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
               <dd className="experiment-metric__explanation">
+                {/*
+                  `scoutlens-9a3.25`: all five parts of the record. This showed the
+                  meaning and the boundary only; how the number was computed, which
+                  way is better and where the method is written down stayed in the
+                  registry with no reader.
+                */}
                 <details>
                   <summary>What this means</summary>
                   <p>{explanation.plain_meaning}</p>
+                  <p className="experiment-metric__computation">{explanation.calculation_summary}</p>
+                  <p className="experiment-metric__scale">{explanation.scale_direction}</p>
                   <p className="experiment-metric__boundary">{explanation.interpretation_boundary}</p>
+                  <p className="experiment-metric__source">
+                    <a href={repositoryHref(explanation.source_link)}>
+                      Method: {explanation.source_link.split("#", 1)[0]?.replace(/^docs\//, "")}
+                    </a>
+                  </p>
                 </details>
               </dd>
             </div>
@@ -116,7 +132,7 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
   const periodB = profile.periods.b;
 
   return (
-    <section className="fingerprint-section shell" aria-labelledby="fingerprint-heading">
+    <section className="fingerprint-section shell" aria-labelledby="fingerprint-heading" data-quantity-scope>
       <div className="section-heading section-heading--fingerprint">
         <div>
           <p className="eyebrow">A real A/B fingerprint</p>
@@ -157,10 +173,14 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
                   style={{ left: `${feature.periodB}%` }}
                 />
               </div>
-              <p><span>{feature.periodA.toFixed(0)}</span><span>{feature.periodB.toFixed(0)}</span></p>
+              <p data-quantity={quantityTag("family_average_percentile")}>
+                <span>{feature.periodA.toFixed(0)}</span>
+                <span>{feature.periodB.toFixed(0)}</span>
+              </p>
             </div>
           ))}
         </div>
+        <QuantityGlossary ids={["family_average_percentile"]} />
         <p className="fingerprint-footnote">
           Family averages across all {story.manifest.population.feature_count} descriptive features, not quality scores. Period A covers {periodA.match_count} matches; period B covers {periodB.match_count}.
         </p>

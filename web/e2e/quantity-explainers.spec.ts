@@ -36,6 +36,12 @@ const V2_QUANTITIES = [
   "model_z_score",
   "contribution",
   "feature_weight",
+  // `scoutlens-9a3.25`: the value table's raw values, support and raw-value
+  // intervals, and the landing and /science preview's family averages.
+  "raw_value",
+  "feature_support",
+  "raw_interval",
+  "family_average_percentile",
 ];
 
 interface Sweep {
@@ -75,6 +81,32 @@ async function sweep(page: Page): Promise<Sweep> {
         problems.push(`untagged number "${(value.textContent ?? "").trim().slice(0, 48)}"`);
       }
     }
+
+    // `scoutlens-9a3.25`: table cells too - a number in a <td> is explained by
+    // its column, so the column header must carry the quantity (or declare
+    // context). The value table's support and interval columns had none.
+    for (const cell of document.querySelectorAll<HTMLTableCellElement>("[data-quantity-scope] td")) {
+      if (!/\d/.test(cell.textContent ?? "") || cell.closest("[data-quantity], [data-context]") !== null) {
+        continue;
+      }
+      const table = cell.closest("table");
+      const header = table?.querySelectorAll("thead th")[cell.cellIndex];
+      if (header === undefined || !header.matches("[data-quantity], [data-context]")) {
+        problems.push(`untagged column "${(header?.textContent ?? "?").trim()}" printing "${(cell.textContent ?? "").trim().slice(0, 32)}"`);
+        continue;
+      }
+      // A column's quantity must be explained in the cell's own section.
+      const scope = cell.closest("[data-quantity-scope]");
+      for (const id of (header.getAttribute("data-quantity") ?? "").split(" ").filter(Boolean)) {
+        seen.push(id);
+        const explained = [...(scope?.querySelectorAll(`[data-quantity-explainer="${id}"]`) ?? [])].some(
+          (entry) => entry.closest("[data-quantity-scope]") === scope,
+        );
+        if (!explained) {
+          problems.push(`column ${id} has no explainer in its section`);
+        }
+      }
+    }
     return { problems, seen };
   });
 }
@@ -94,6 +126,14 @@ test.describe("every Lab and challenge quantity is explained where it is printed
       expect(result.seen.length, `${where} printed no tagged quantity`).toBeGreaterThan(0);
       for (const id of result.seen) seen.add(id);
     };
+
+    // `scoutlens-9a3.25`: the landing and /science print quantities too - the
+    // preview's family averages, and the worked example's ranks.
+    for (const route of ["/", "/science/"]) {
+      await page.goto(route);
+      await waitForStablePage(page);
+      await check(route);
+    }
 
     await page.goto("/lab/");
     await waitForStablePage(page);

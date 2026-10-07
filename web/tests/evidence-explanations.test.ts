@@ -16,6 +16,7 @@ import {
   explainFeature,
   explainMetric,
   explainQuantity,
+  experimentOverrideKeys,
   familyExplanationKeys,
   metricExplanationKeys,
   quantityExplanationKeys,
@@ -207,6 +208,57 @@ describe("scoutlens-9a3.2 evidence explanation catalog", () => {
     expect(missing).toEqual([]);
   });
 
+  it("explains each metric as its own experiment computed it (scoutlens-9a3.25)", async () => {
+    // One metric id names different computations: `fingerprint_mrr` is the
+    // Wyscout global test, the role-restricted test and the StatsBomb
+    // replication. Each card's explanation must fit its experiment.
+    const research = await loadResearch();
+    const problems: string[] = [];
+    for (const experiment of research.experiments) {
+      const restricted = /restricted to/i.test(experiment.population);
+      for (const metric of experiment.metrics) {
+        const text = prose(explainMetric(metric, experiment.experiment_id));
+        const where = `${experiment.experiment_id}:${metric.metric_id}`;
+        if (experiment.provider === "statsbomb_open_data" && /wyscout/i.test(text)) {
+          problems.push(`${where} is explained with Wyscout's data`);
+        }
+        if (restricted && /every eligible profile/i.test(text)) {
+          problems.push(`${where} says every eligible profile, but candidates are restricted to role`);
+        }
+        if (restricted && metric.metric_id === "fingerprint_mrr" && !/role/i.test(text)) {
+          problems.push(`${where} does not say candidates are restricted to role`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it("has no override for an experiment and metric the artifact does not publish", async () => {
+    const research = await loadResearch();
+    const published = new Set(
+      research.experiments.flatMap((experiment) =>
+        experiment.metrics.map((metric) => `${experiment.experiment_id}:${metric.metric_id}`),
+      ),
+    );
+    expect(experimentOverrideKeys().length).toBeGreaterThan(0);
+    expect(experimentOverrideKeys().filter((key) => !published.has(key))).toEqual([]);
+  });
+
+  it("types no feature count into any explanation (scoutlens-9a3.25)", async () => {
+    // The count is the artifact's - the metric label and the manifest carry it.
+    // The registry said "32-feature" on cards whose experiment used 28.
+    const research = await loadResearch();
+    const texts = [
+      ...research.experiments.flatMap((experiment) =>
+        experiment.metrics.map((metric) => prose(explainMetric(metric, experiment.experiment_id))),
+      ),
+      ...quantityExplanationKeys().map((key) => prose(explainQuantity(key))),
+    ];
+    for (const text of texts) {
+      expect(text).not.toMatch(/\b\d+(-feature|\s+(features|measurements|standardized))\b/i);
+    }
+  });
+
   it("fails closed for an unknown feature id", async () => {
     const catalog = await loadCatalog();
     expect(() => explainFeature(catalog, "no_such_feature")).toThrow(ExplanationNotFoundError);
@@ -364,6 +416,26 @@ describe("no published number is retyped into page, component or registry source
     for (const phrase of [`${threshold} minutes`, `${threshold} min`, `${threshold}-minute`]) {
       literals.set(phrase, "manifest.population.minutes_threshold_per_period");
     }
+    // `scoutlens-9a3.25`: the measurement count and the resample count, as
+    // copy prints them around the number ("the same 32 event-derived
+    // measurements", "500 match-bootstrap resamples"). Both were typed in.
+    const features = (await readJson<{ population: { feature_count: number } }>("manifest.json")).population
+      .feature_count;
+    for (const phrase of [
+      `${features} measurements`,
+      `${features}-feature`,
+      `${features} standardized`,
+      `${features} displayed`,
+      `${features} event-derived`,
+    ]) {
+      literals.set(phrase, "manifest.population.feature_count");
+    }
+    const resamples = profile.uncertainty.requested_resamples;
+    if (resamples !== null) {
+      for (const phrase of [`${resamples} match-bootstrap`, `${resamples} resamples`, `${resamples} replicates`]) {
+        literals.set(phrase, "profile.uncertainty.requested_resamples");
+      }
+    }
     for (const neighbor of profile.neighbors) {
       add(formatScore(neighbor.similarity_score), `neighbor ${neighbor.rank} similarity_score`);
     }
@@ -412,9 +484,15 @@ describe("no published number is retyped into page, component or registry source
       // a measured value to explain a decision (page.tsx names the population
       // its comparison is drawn from). Code, copy and metadata are scanned.
       const source = (await readFile(file, "utf8"))
+        // Block comments whole - a JSX `{/* ... */}` comment's inner lines do
+        // not start with a comment marker, so the line filter below misses them.
+        .replace(/\/\*[\s\S]*?\*\//g, "")
         .split(/\r?\n/)
         .filter((line) => !/^\s*(\/\/|\/\*|\*)/.test(line))
-        .join("\n");
+        .join("\n")
+        // JSX wraps copy across lines, so "the same 32" and "event-derived"
+        // can sit on two; the reader sees one space.
+        .replace(/\s+/g, " ");
       for (const [literal, origin] of literals) {
         // Bounded by non-digits, so 0.2539 does not hit inside 10.25391.
         if (new RegExp(`(?<![\\d.])${literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?!\\d)`).test(source)) {

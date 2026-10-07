@@ -161,7 +161,7 @@ function ChallengeFingerprintRow({
           </span>
         ) : null}
       </span>
-      <span className="challenge-fingerprint__value" aria-hidden="true">
+      <span className="challenge-fingerprint__value" aria-hidden="true" data-quantity={quantityTag("raw_value")}>
         {showPeriodB
           ? `${formatRawValue(row.periodA, row.definition as never)} → ${formatRawValue(row.periodB, row.definition as never)}`
           : formatRawValue(row.periodA, row.definition as never)}
@@ -426,9 +426,9 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
           <ChallengeFingerprint
             rows={rows}
             showPeriodB={false}
-            caption="First-half fingerprint, 32 measurements, within-role percentile"
+            caption={`First-half fingerprint, ${rows.length} measurements, within-role percentile`}
           />
-          <QuantityGlossary ids={["within_role_percentile"]} />
+          <QuantityGlossary ids={["within_role_percentile", "raw_value"]} />
           <CaveatList
             caveats={caveatsFor(view, [
               "fingerprint_not_style_proof",
@@ -516,7 +516,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
               <ChallengeFingerprint
                 rows={rows}
                 showPeriodB
-                caption="First and second half fingerprint, 32 measurements, within-role percentile"
+                caption={`First and second half fingerprint, ${rows.length} measurements, within-role percentile`}
               />
               <ul className="challenge-families" data-challenge-families>
                 {view.revealFamilies.map((item) => (
@@ -526,13 +526,13 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
                 ))}
               </ul>
               <QuantityGlossary
-                ids={["self_rank", "rank_interval", "baseline_self_rank", "similarity_score", "within_role_percentile"]}
+                ids={["self_rank", "rank_interval", "baseline_self_rank", "similarity_score", "within_role_percentile", "raw_value"]}
               />
             </>
           ) : (
             <>
               <p className="challenge-panel__body">
-                Weights are fitted for {view.fittedFeatureCount} of the 32 displayed
+                Weights are fitted for {view.fittedFeatureCount} of the {rows.length} displayed
                 measurements. A fitted weight may be exactly zero, so a measurement can be
                 inside the fitted set and carry no influence on the ranking.
               </p>

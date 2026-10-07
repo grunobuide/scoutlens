@@ -9,6 +9,7 @@ import type {
   ResearchExperiment,
   ResearchMetric,
 } from "@/contracts/generated/showcase";
+import { explainFamily } from "@/content/evidence-explanations";
 
 export const EXPERIMENT_IDS = {
   global: "wyscout_global_gate2",
@@ -105,7 +106,7 @@ function selectFingerprintFeatures(
       }
       return { a: a.within_role_percentile, b: b.within_role_percentile };
     });
-    const title = family.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+    const title = explainFamily(family).label;
     return {
       featureId: `family:${family}`,
       family: `${definitions.length} features`,
