@@ -38,4 +38,12 @@ declare module "*.mjs" {
     root: string,
     markers?: readonly string[],
   ): Promise<{ traces: Array<{ file: string; trace: string }>; scanned: number }>;
+
+  // scoutlens-9a3.29, forbidden-copy.mjs: one list for the static check, the
+  // challenge vitest and the rendered-state e2e.
+  export const forbiddenClaims: readonly string[];
+  export const forbiddenCurrentness: readonly string[];
+  export function scannableText(text: string, unsupportedClaims: readonly string[]): string;
+  export function findForbiddenClaims(scannable: string): string[];
+  export function findForbiddenCurrentness(scannable: string): string[];
 }

@@ -224,23 +224,33 @@ audit (`/science`, provenance, docs).
 
 ### 7.1 Landing — desktop and ≤360 px (same order, stacked on narrow)
 
-1. **Hero** — eyebrow "Player Fingerprint Lab" · thesis (**I**) · boundary
-   sentence (**I**) · data-vintage chip (**I**: purpose, provider, season,
-   population threshold, licence, dataset pin — [D067](decisions-log.md)) · CTAs
-   primary + secondary.
-   No content above the thesis.
-2. **Featured fingerprint preview** (**I**) — editorially selected profile
+Order as `web/src/app/page.tsx` renders it. Corrected by `scoutlens-9a3.29`:
+since `scoutlens-9a3.12` the supported claim lives only in the hero, so the
+claim matrix is one-sided and comes before the fingerprint preview.
+
+1. **Hero** — data-vintage chip (**I**: purpose, provider, season, population
+   threshold, licence, dataset pin — [D067](decisions-log.md)) · eyebrow
+   "Player Fingerprint Lab" · h1 (the route headline, carrying both periods —
+   `scoutlens-9a3.14`) · thesis (**I**) · boundary sentence (**I**) · CTAs
+   primary + secondary. Only the chip, the eyebrow and the h1 sit above the
+   thesis.
+2. **Supported claim** (**I**, hero aside) — `research.supported_claim`, then
+   the critical-confound paragraph (the role + team + minutes control against
+   the fingerprint, both MRR values from artifact metrics) with its link to the
+   team-continuity control on `/science`.
+3. **Claim matrix** (**I**) — one-sided: "Not supported" / "Where the evidence
+   stops", the `research.unsupported_claims` list; it needs no expansion. The
+   supported side is item 2 and is not restated here (`scoutlens-9a3.12`).
+4. **Featured fingerprint preview** (**I**) — editorially selected profile
    (`manifest.featured_profile` with `editorial: true` and its quoted reason);
    footnote that family averages are descriptive features, not quality scores.
-3. **Claim matrix** (**I**) — supported (left/top) and not supported
-   (right/bottom); the unsupported list needs no expansion.
-4. **Evidence band** (**I**) — headline card pair (fingerprint + team control),
+5. **Evidence band** (**I**) — headline card pair (fingerprint + team control),
    with the confound caveat chip rendered inside the cards; the "replication and
    restraint" pair below (**I**). Caveat detail is readable inline or via one
    expand step (**E**); never behind a link to another route.
-5. **Provenance strip** (**I**, both cards visible) — source + licence cards;
+6. **Provenance strip** (**I**, both cards visible) — source + licence cards;
    full audit drawer collapsed (**E**); "Dataset pin" text visible.
-6. **Footer** (global) — case study link when published, repository links.
+7. **Footer** (global) — case study link when published, repository links.
 
 ### 7.2 `/science` ("How it works") — audit surface
 
