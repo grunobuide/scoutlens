@@ -26,6 +26,22 @@ export function providerLabel(provider: string): string {
   return PROVIDER_LABELS[provider as ProviderCode];
 }
 
+/**
+ * The licence boundary in the chip's few words (`scoutlens-9a3.26`, D069).
+ *
+ * The full statement is the manifest's `source.redistribution_note`, which the
+ * provider section prints verbatim. It cannot be copied into the chip: it names
+ * the project by its repository name, and the public identity contract allows
+ * that name once per page. This summary may only say what the note says -
+ * web/tests/data-provenance.test.tsx fails if the note stops saying it.
+ */
+export const REDISTRIBUTION_SUMMARY = "aggregates only, no raw rows";
+
+/** The competition scope, worded once; the count is the manifest's. */
+export function competitionScope(count: number): string {
+  return `${count.toLocaleString("en-US")} domestic competition${count === 1 ? "" : "s"}`;
+}
+
 /** What the site is, in the words of the chip that opens every route. */
 export const BENCHMARK_PURPOSE = "Historical reproducible benchmark";
 

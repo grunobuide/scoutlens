@@ -70,7 +70,7 @@ interface Manifest {
     source_url: string;
     redistribution_note: string;
   };
-  population: { minutes_threshold_per_period: number };
+  population: { minutes_threshold_per_period: number; domestic_competition_ids: readonly number[] };
 }
 
 interface PlayerIndex {
@@ -394,6 +394,13 @@ test("the data vintage is identical on every route that shows it", async ({ page
     await expect(badge.locator(".data-vintage__licence"), `${route} licence`).toHaveText(
       manifest.source.licence,
     );
+    // `scoutlens-9a3.26` (D069): the competition scope and the licence boundary.
+    await expect(badge.locator(".data-vintage__scope"), `${route} competition scope`).toHaveText(
+      `${manifest.population.domestic_competition_ids.length} domestic competitions`,
+    );
+    await expect(badge.locator(".data-vintage__redistribution"), `${route} licence boundary`).toHaveText(
+      "aggregates only, no raw rows",
+    );
     await expect(badge.locator("code"), `${route} dataset pin`).toHaveText(
       manifest.dataset_version,
     );
@@ -435,6 +442,9 @@ test("the provider and the population threshold come before the first result on 
       return {
         provider: position(document.querySelector("main .data-vintage__provider")),
         threshold: position(document.querySelector("main .data-vintage__threshold")),
+        // `scoutlens-9a3.26`: the other two first-interpretation facts.
+        scope: position(document.querySelector("main .data-vintage__scope")),
+        redistribution: position(document.querySelector("main .data-vintage__redistribution")),
         firstResult: position(document.querySelector(selector)),
         firstResultText: (document.querySelector(selector)?.textContent ?? "").trim().slice(0, 60),
       };
@@ -444,6 +454,13 @@ test("the provider and the population threshold come before the first result on 
     expect(order.threshold, `${route} renders no threshold`).toBeGreaterThan(-1);
     expect(order.provider, `${route}: "${order.firstResultText}" precedes the provider`).toBeLessThan(order.firstResult);
     expect(order.threshold, `${route}: "${order.firstResultText}" precedes the threshold`).toBeLessThan(order.firstResult);
+    for (const [fact, at] of [
+      ["competition scope", order.scope],
+      ["licence boundary", order.redistribution],
+    ] as const) {
+      expect(at, `${route} renders no ${fact}`).toBeGreaterThan(-1);
+      expect(at, `${route}: "${order.firstResultText}" precedes the ${fact}`).toBeLessThan(order.firstResult);
+    }
   }
 });
 
@@ -678,6 +695,11 @@ test.describe("without JavaScript", () => {
       await expect(badge.locator(".data-vintage__threshold")).toContainText(
         String(manifest.population.minutes_threshold_per_period),
       );
+      // `scoutlens-9a3.26` (D069).
+      await expect(badge.locator(".data-vintage__scope")).toHaveText(
+        `${manifest.population.domestic_competition_ids.length} domestic competitions`,
+      );
+      await expect(badge.locator(".data-vintage__redistribution")).toHaveText("aggregates only, no raw rows");
     }
   });
 
