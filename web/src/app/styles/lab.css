@@ -812,7 +812,8 @@
   display: grid;
   gap: 0.2rem;
   margin: 1.4rem 0;
-  font-family: var(--font-display);
+  /* `scoutlens-uze.31`: --font-display was never defined; the site has one face. */
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
   font-size: clamp(2rem, 4vw, 3.6rem);
   font-weight: 760;
   letter-spacing: -0.05em;
@@ -822,7 +823,7 @@
 
 .retrieval-outcome__rank span {
   color: var(--ink-600);
-  font-family: var(--font-body);
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
   font-size: 0.72rem;
   font-weight: 650;
   letter-spacing: normal;
@@ -1370,19 +1371,22 @@
   display: grid;
   gap: 0.75rem;
   padding: 1.25rem;
-  border: 1px solid var(--border);
+  /* `scoutlens-uze.31`: --border and --surface were never defined, so this
+     card rendered with no border and no background - the whole declaration
+     is dropped when its variable is missing. The project's own tokens. */
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: var(--surface);
+  background: var(--white);
 }
 
 .method-disclosure__audit,
 .method-disclosure__boundary {
   margin: 0;
-  color: var(--muted);
+  color: var(--ink-600);
 }
 
 .method-disclosure__boundary {
-  border-left: 3px solid var(--border);
+  border-left: 3px solid var(--line);
   padding-left: 0.75rem;
 }
 
@@ -1393,7 +1397,7 @@
 
 .method-disclosure__advanced > p {
   margin: 0.5rem 0 0;
-  color: var(--muted);
+  color: var(--ink-600);
 }
 
 /* `scoutlens-9a3.19`: the per-section "What these numbers mean" disclosure
