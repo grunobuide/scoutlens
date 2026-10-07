@@ -1,6 +1,12 @@
 import Link from "next/link";
 
-import { BENCHMARK_PURPOSE, eligibilityRule, providerLabel } from "@/content/provenance";
+import {
+  BENCHMARK_PURPOSE,
+  REDISTRIBUTION_SUMMARY,
+  competitionScope,
+  eligibilityRule,
+  providerLabel,
+} from "@/content/provenance";
 import type {
   AnyManifest,
   AnyResearchSummaryArtifact,
@@ -23,17 +29,25 @@ export interface DataVintageBadgeProps {
  *  `scoutlens-9a3.20` (D067): it also names the provider and the population
  *  rule. Both used to appear only in ProviderBoundary, after every result on
  *  every route, so a reader met "Rank 1 of 1,257" before learning whose data
- *  it was or who counts as eligible. */
+ *  it was or who counts as eligible.
+ *
+ *  `scoutlens-9a3.26` (D069): and the competition scope and the licence
+ *  boundary, the two remaining facts epic 9a3 AC5 places at the first point
+ *  of interpretation. */
 export function DataVintageBadge({ manifest }: DataVintageBadgeProps) {
   return (
     <p className="data-vintage" data-vintage-badge>
       <span className="data-vintage__label">{BENCHMARK_PURPOSE}</span>
       <span className="data-vintage__provider">{providerLabel(manifest.source.provider)}</span>
       <span className="data-vintage__season">{manifest.source.season}</span>
+      <span className="data-vintage__scope">
+        {competitionScope(manifest.population.domestic_competition_ids.length)}
+      </span>
       <span className="data-vintage__threshold">
         {eligibilityRule(manifest.population.minutes_threshold_per_period)}
       </span>
       <span className="data-vintage__licence">{manifest.source.licence}</span>
+      <span className="data-vintage__redistribution">{REDISTRIBUTION_SUMMARY}</span>
       <code className="data-vintage__pin">{manifest.dataset_version}</code>
     </p>
   );

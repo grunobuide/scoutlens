@@ -2936,3 +2936,36 @@ transitions and a reload. `tests/identity-challenge.test.ts` › "renders an
 insufficient rank with no interval and never borrows the pending caveat" holds
 the uncertainty rule. A per-profile challenge is a new contract decision, not a
 fix to this one.
+
+## D069 — 2026-10-07 — The data-vintage chip also states the competition scope and the licence boundary
+
+**Decision:** the chip that opens every route adds two facts to D067's list,
+after the season and after the licence respectively: the competition scope,
+"N domestic competitions" with N read from
+`manifest.population.domestic_competition_ids`, and the licence boundary in
+four words, "aggregates only, no raw rows". In full the chip states: purpose,
+provider, season, competition scope, population rule, licence, licence
+boundary, dataset pin. (`scoutlens-9a3.26`)
+
+**Why.** The epic's AC5 lists "competition/season vintage" and "licence
+boundary" among the facts a reader needs at the point of first
+interpretation. After D067 the chip carried the season and the licence name
+but neither the competitions nor what the licence permits, and the 2026-10-07
+closure audit marked AC5 partial for it.
+
+**Why a summary, not the note.** The manifest's `source.redistribution_note`
+is the full statement, and the provider section prints it verbatim. It names
+the project by its repository name, which the public identity contract allows
+once per page, so it cannot be repeated in the chip. The four-word summary
+says nothing the note does not: `web/tests/data-provenance.test.tsx` fails if
+the note stops saying "aggregates only" or "raw provider rows remain
+excluded".
+
+**Why a count, not names.** The manifest carries competition ids, not names.
+Names exist per profile in `players.index.json`, and the Lab's competition
+filter lists them. Naming them in the chip would need a manifest field, a
+contract change this decision does not make.
+
+**How to apply:** `e2e/claims-consistency.spec.ts` asserts both facts on
+every route and a selected Lab profile, and that both precede the earliest
+result, with and without JavaScript.

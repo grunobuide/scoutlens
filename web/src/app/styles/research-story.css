@@ -502,7 +502,9 @@
   font-weight: 600;
 }
 
-.data-vintage__threshold {
+.data-vintage__threshold,
+.data-vintage__scope,
+.data-vintage__redistribution {
   color: var(--ink-600);
 }
 

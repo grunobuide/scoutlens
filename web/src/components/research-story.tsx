@@ -197,7 +197,8 @@ export function ProvenanceDrawer({ story }: { story: ShowcaseStory }) {
     <section className="provenance-section" aria-labelledby="sources-heading">
       <div className="source-grid">
         <article>
-          <p className="source-mark">Wyscout / Pappalardo</p>
+          {/* `scoutlens-9a3.26`: the typed table, not a second spelling of it. */}
+          <p className="source-mark">{providerLabel(story.manifest.source.provider)}</p>
           <h2 id="sources-heading">Public event data, aggregate profiles</h2>
           <p>{story.manifest.source.citation}</p>
           <p>
