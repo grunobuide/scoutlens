@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { FIXTURE_MARKERS, SYNTHETIC_PROFILE_KEYS } from "./fixture-pack.mjs";
 import { findFixtureTraces } from "./fixture-traces.mjs";
+import { findForbiddenClaims, findForbiddenCurrentness, scannableText } from "./forbidden-copy.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
@@ -78,64 +79,9 @@ if (!Array.isArray(unsupportedClaims) || unsupportedClaims.length === 0) {
   throw new Error("research-summary.json published no unsupported_claims to except");
 }
 
-/**
- * Assertive phrasings of what the project may never claim, banned outside the
- * disclaimer sentences above.
- *
- * Each is the *affirmative* form. The negated forms the site does use - "not
- * proof of playing style", "it does not measure player quality, tactical fit or
- * recruitment value", "not a scouting model" - do not contain these substrings,
- * which is why the list is phrased this way rather than banning the topic
- * words. Banning "playing style" or "recruitment" outright would flag the
- * caveats, and a check that fights the caveats teaches people to delete them.
- */
-const forbiddenClaims = [
-  "proves playing style",
-  "proven playing style",
-  "similar playing style",
-  "same playing style",
-  "should sign",
-  "should recruit",
-  "recommended signing",
-  "recommended transfer",
-  "ideal replacement",
-  "best replacement",
-  "predicts transfer success",
-  "predicts future performance",
-];
-
-/**
- * Wording that would tell a reader the data is live.
- *
- * Q1 of `docs/public-understanding-check.md` blocks the gate if a reviewer
- * believes the data is current, and this is the machine-checkable half of that.
- * Every entry currently has zero occurrences across all three routes; they are
- * here to catch a future copy change, not to describe today's text. Note the
- * site legitimately writes "no live database", "no live LLM is required for any
- * current page" and "it is not current scouting information" - none of which
- * contain these phrases, which is why they are this specific.
- *
- * Matched on a trailing word boundary, not as a bare substring. The first run
- * of this check failed on `/science/` because "no live database" contains
- * "live data", and the sentence it flagged is the site correctly saying it has
- * no live database. A ban that fires on the disclaimer is worse than no ban:
- * the cheapest way to make it pass is to delete the reassurance.
- */
-const forbiddenCurrentness = [
-  "real-time",
-  "real time data",
-  "live data",
-  "up to date",
-  "up-to-date",
-  "current season",
-  "this season's",
-  "latest data",
-  "latest season",
-  "continuously updated",
-  "updated daily",
-  "updated weekly",
-  "updated automatically",
-];
+// `forbiddenClaims` and `forbiddenCurrentness` live in `forbidden-copy.mjs`
+// (`scoutlens-9a3.29`), so the vitest and e2e that scan the client-rendered
+// challenge states read the same list this check does.
 
 /** The positive half: every public route must say the data is historical. */
 const currentnessDisclaimers = ["not current scouting information"];
@@ -181,30 +127,23 @@ for (const route of routes) {
   // removed, so the disclaimers cannot satisfy - or trip - a ban on the thing
   // they disclaim. Removal is by exact string: the boundaries render inside a
   // single element, so they survive as contiguous text in the HTML.
-  let scannable = html;
-  for (const claim of unsupportedClaims) {
-    scannable = scannable.split(claim).join(" ");
-  }
-  scannable = scannable.toLowerCase();
+  const scannable = scannableText(html, unsupportedClaims);
 
-  for (const forbidden of forbiddenClaims) {
-    if (scannable.includes(forbidden)) {
-      throw new Error(
-        `${route} asserts a claim the project does not support: ${forbidden}. ` +
-          `If this is inside a published claim boundary, it belongs in ` +
-          `research-summary.json's unsupported_claims, not in template copy.`,
-      );
-    }
+  const [claim] = findForbiddenClaims(scannable);
+  if (claim !== undefined) {
+    throw new Error(
+      `${route} asserts a claim the project does not support: ${claim}. ` +
+        `If this is inside a published claim boundary, it belongs in ` +
+        `research-summary.json's unsupported_claims, not in template copy.`,
+    );
   }
 
-  for (const forbidden of forbiddenCurrentness) {
-    const pattern = new RegExp(`${forbidden.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
-    if (pattern.test(scannable)) {
-      throw new Error(
-        `${route} implies the data is current: ${forbidden}. ` +
-          `The dataset is a frozen historical season; see docs/public-understanding-check.md Q1.`,
-      );
-    }
+  const [currentness] = findForbiddenCurrentness(scannable);
+  if (currentness !== undefined) {
+    throw new Error(
+      `${route} implies the data is current: ${currentness}. ` +
+        `The dataset is a frozen historical season; see docs/public-understanding-check.md Q1.`,
+    );
   }
 
   for (const disclaimer of currentnessDisclaimers) {

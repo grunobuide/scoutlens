@@ -165,6 +165,20 @@ a removed disclaimer, and — for the exception mechanism itself — dropping on
 entry from `unsupported_claims`, which correctly turns the still-rendered
 sentence into a violation.
 
+**The lists moved, and now reach the challenge (`scoutlens-9a3.29`).** The
+three routes are prerendered HTML; the identity challenge's query, reveal and
+evidence states render on the client, so their text was never in what this
+check read. `forbiddenClaims` and `forbiddenCurrentness` now live in
+`scripts/forbidden-copy.mjs`, imported unchanged by this check, by
+`tests/forbidden-copy.test.tsx` (every string of the challenge view, every
+state rendered from the published artifacts, and the explanation registry)
+and by `e2e/forbidden-copy.spec.ts` (each state's `main` text in a browser).
+`forbiddenClaims` also gained affirmative player-quality phrasings - "is a
+better player", "player rating of", "quality score of" and the like - never
+the bare noun phrase, because "not a player rating", "not quality scores" and
+every feature definition's "not interpreted as better player quality" contain
+it.
+
 ### 3.5 RSC prefetch 404s on a Windows build — accepted, upstream
 
 `scoutlens-uze.17`. Serving a locally built export on Windows produces two
