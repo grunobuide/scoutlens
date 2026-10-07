@@ -102,7 +102,7 @@ STRUCTURAL = {
     "1,257", "1,061", "26", "19", "16", "12", "15", "2",  # population sizes and median ranks; see MEASURED
     # --- added by scoutlens-9a3.21, for the prose sweep ---
     "76",       # the walkthrough's length in seconds, held to the container by test_media_walkthrough.py
-    "90",       # "The 90-second version": a reading-time label in a heading, not a result
+    "90",       # the 90-second first-understanding design target, not a result (D056)
 }
 
 #: The entries above that are really artifact values. The table sweep reads only
@@ -317,7 +317,7 @@ SEASON = r"(\d{4}/\d{2})"
 #: template is the document's own wording, so rewording a sentence that carries
 #: a figure means rewording its binding here — which is the point.
 FIGURES: tuple[Figure, ...] = (
-    # The 90-second version.
+    # The short version.
     Figure("prose", "whether {} event-derived measurements", (manifest("population", "feature_count"),)),
     Figure(
         "prose",
@@ -572,11 +572,15 @@ def test_the_unevaluated_model_is_stated(prose: str) -> None:
 
 
 def test_the_n_of_one_comprehension_is_disclosed(prose: str) -> None:
-    """`D056`'s handoff requirement, verbatim in substance."""
+    """`D056`'s handoff requirement, verbatim in substance.
+
+    Presence only; `test_comprehension_disclosure.py` also forbids the opposite
+    claim and names the four findings, in this document and the release notes.
+    """
     assert "one evaluator" in prose or "n=1" in prose
     assert "2:53" in prose
     assert "four findings" in prose
-    assert "no fresh independent post-fix validation" in prose
+    assert "no fresh independent retest" in prose
     assert "not** claimed as validated" in prose or "not claimed as validated" in prose
 
 

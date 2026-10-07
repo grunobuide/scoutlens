@@ -369,10 +369,22 @@ model's behaviour.** The 2026-08-11 human policy permits exactly this — the
 toolkit, the offline evaluations and the deterministic fallback ship without a
 demonstration model.
 
-**Public comprehension is n=1.** `D056`: one evaluator, recorded as a block at
-2:53. Communication defects were remediated technically and the automated gates
-were unchanged. This is not a retroactive pass, and comprehension is **not**
-claimed as validated.
+**Public comprehension was tested with one evaluator.** `D056`. Run 1
+(2026-09-15, build `b943b44`) was a **block at 2:53**; the 90-second
+first-understanding goal is a design target, not claimed as met. Its four
+findings were remediated technically, and the automated gates were unchanged:
+
+| Finding (run 1) | Remediated by | Merged on `main` |
+|---|---|---|
+| AI role: Q6 read the site as "describing player types" | `scoutlens-9a3.11` | `5984287` (#102), `68b55e4` (#104) |
+| Recall of the unsupported claims: Q4 recalled none | `scoutlens-9a3.12` | `5984287` (#102) |
+| Team-continuity confound: Q3 never reached it | `scoutlens-9a3.13` | `1ad236b` (#105) |
+| Two-period framing: Q2 dropped the two chronological halves | `scoutlens-9a3.14` | `9b348fd` (#106) |
+
+There was **no fresh independent retest**, so none of the four is measured as
+fixed; an optional repeat with the same reviewer would be non-blind and still
+n=1. This is not a retroactive pass (`scoutlens-9a3.7`), and comprehension is
+**not** claimed as validated or improved.
 
 ## 7. What a reader is not being told
 

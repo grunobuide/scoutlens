@@ -162,7 +162,7 @@ def test_the_n_of_one_comprehension_limit_is_intact(case_study: str) -> None:
     flat = _prose(case_study)
     assert "one evaluator" in flat
     assert "2:53" in flat
-    assert "no fresh independent post-fix validation" in flat
+    assert "no fresh independent retest" in flat
 
 
 def test_the_confound_is_still_the_headline_limitation(case_study: str) -> None:
