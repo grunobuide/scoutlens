@@ -9,12 +9,22 @@ So every number the case study states is matched against
 drifts fails the build rather than quietly misinforming a reader who has no way
 to check it.
 
-The tables were swept first. The prose and the screenshots' alt text carry just
-as many figures — `0.2387`, rank `249`, `0.9069` — so they are swept too
-(`scoutlens-9a3.21`): every number there is either bound to the field it was
-copied from, in `FIGURES`, or named in `STRUCTURAL` with a reason. A bound
-figure is checked per occurrence, not against a pool, so a one-digit edit fails
-even where it would land on some other published number.
+The prose and the screenshots' alt text carry figures — `0.2387`, rank `249`,
+`0.9069` — so they are swept (`scoutlens-9a3.21`): every number there is either
+bound to the field it was copied from, in `FIGURES`, or named in `STRUCTURAL`
+with a reason. A bound figure is checked per occurrence, not against a pool, so
+a one-digit edit fails even where it would land on some other published number.
+
+The tables were once matched against that pool, decimals only, so a median rank
+moved from 16 to 17, a population moved from 1,257 to 1,999 or two replication
+MRRs swapped between rows all passed (`scoutlens-9a3.28`). Every table is now
+declared in `TABLES`, row by row, each figure bound to its
+`(experiment_id, metric_id)`.
+
+The opening also carries the narrative's frozen thesis and boundary (§2 of
+`public-experience-narrative.md`, `D066`), and the checklist states
+`research.supported_claim` verbatim. Both are read from their owners at test
+time, never copied here.
 """
 
 from __future__ import annotations
@@ -59,79 +69,26 @@ def prose(case_study: str) -> str:
     return " ".join(case_study.split()).lower()
 
 
-@pytest.fixture(scope="module")
-def published_values() -> set[str]:
-    """Every metric value the artifact publishes, at the precisions a reader sees.
-
-    A document quotes `0.2539`, not `0.2539333127027185`. Both the rounded and
-    the full form count as agreeing with the artifact; anything else does not.
-    """
-    import json
-
-    summary = json.loads(
-        (DEFAULT_SHOWCASE_ROOT / "v2" / "research-summary.json").read_text(encoding="utf-8")
-    )
-    values: set[str] = set()
-    for experiment in summary.get("experiments", ()):
-        for metric in experiment.get("metrics", ()):
-            value = metric.get("value")
-            if value is None:
-                continue
-            values.add(str(value))
-            if isinstance(value, float):
-                for places in (2, 3, 4, 5):
-                    values.add(f"{value:.{places}f}")
-                    values.add(f"{value:.{places}f}".rstrip("0"))
-            if isinstance(value, int):
-                values.add(f"{value:,}")
-    return values
-
-
-#: Numbers that are structural rather than measured, so they have no metric to
-#: match. Each is checked elsewhere or is a property of the design. One reason
-#: per entry: an entry nobody can justify is a figure hiding from the sweep.
+#: Numbers in the prose and the alt text that are structural rather than
+#: measured, so they have no metric to match. Each is checked elsewhere or is a
+#: property of the design. One reason per entry: an entry nobody can justify is
+#: a figure hiding from the sweep. A measured value never belongs here — it is
+#: bound in `FIGURES` — and the tables have their own, narrower set.
+#:
+#: Until `scoutlens-9a3.28` this set also held the feature counts, the minutes
+#: floor, the split seasons, the population sizes and the median ranks, for a
+#: table sweep that read only decimals; the prose sweep had to un-allow them
+#: through a second set. Every one of them is now bound where it appears.
 STRUCTURAL = {
     "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",  # section and list numbering, `§4`/`§7`, `n=1`, `run 1`
     "0.95",     # the preregistered live threshold (thresholds.py)
     "64",       # eval corpus size (corpus tests)
-    "32", "28", # feature counts, stated in the artifact's own copy
-    "450",      # minutes floor per period
     "2.0.0", "1.0.0",  # contract versions, not measurements
-    "2017", "18", "2015", "16",  # the two seasons, 2017/18 and 2015/16, split at the slash
     "2:53",     # the n=1 comprehension run, from D056
-    "1,257", "1,061", "26", "19", "16", "12", "15", "2",  # population sizes and median ranks; see MEASURED
     # --- added by scoutlens-9a3.21, for the prose sweep ---
     "76",       # the walkthrough's length in seconds, held to the container by test_media_walkthrough.py
     "90",       # the 90-second first-understanding design target, not a result (D056)
 }
-
-#: The entries above that are really artifact values. The table sweep reads only
-#: decimals, so allowlisting them cost it nothing; in prose an allowlisted count
-#: would let a stale one through, so there each must be bound in `FIGURES`.
-MEASURED = {"1,257", "1,061", "26", "19", "16", "12", "15", "450", "32", "28"}
-
-NUMBER = re.compile(r"\b\d+(?:[.,]\d+)*\b")
-
-
-@requires_summary
-def test_every_decimal_figure_matches_the_artifact(
-    case_study: str, published_values: set[str]
-) -> None:
-    """A decimal in this document is a metric, and must be one the artifact has."""
-    tables = [line for line in case_study.splitlines() if line.strip().startswith("|")]
-    decimals = {
-        token
-        for line in tables
-        for token in NUMBER.findall(line)
-        if "." in token and token not in STRUCTURAL
-    }
-    assert decimals, "the case study states no decimal metrics; the tables are gone"
-
-    unknown = sorted(token for token in decimals if token not in published_values)
-    assert not unknown, (
-        f"these figures are not in research-summary.json: {unknown}. "
-        "Either the artifact moved or the case study invented a number."
-    )
 
 
 @requires_summary
@@ -147,14 +104,14 @@ def test_the_headline_numbers_are_present(case_study: str) -> None:
 
 # --- the prose and the alt text, figure by figure (scoutlens-9a3.21) -----
 #
-# The table sweep above matches a decimal against the pool of every published
-# value. That cannot work for prose: `16` is a median rank, a season and a pool
-# member at once, and a one-digit slip from 16 to 15 lands on another published
-# number. So each prose figure is bound to the one field it was copied from, by
-# the words around it, and checked occurrence by occurrence.
+# Matching a figure against the pool of every published value cannot work: `16`
+# is a median rank, a season and a pool member at once, and a one-digit slip
+# from 16 to 15 lands on another published number. So each prose figure is
+# bound to the one field it was copied from, by the words around it, and
+# checked occurrence by occurrence. The tables get the same treatment below.
 
 #: Commands are not figures (the profile key in the CLI example has digits), the
-#: tables are swept above, and a link target is an address.
+#: tables are swept by `TABLES`, and a link target is an address.
 FENCE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 IMAGE = re.compile(r"!\[([^\]]*)\]\([^)]*\)")
 LINK_TARGET = re.compile(r"\]\([^)]*\)")
@@ -488,7 +445,7 @@ def test_every_figure_in_the_prose_and_alt_text_is_bound_or_structural(swept: Sw
             for token in FIGURE_TOKEN.finditer(text)
             if not any(start <= token.start() and token.end() <= end for start, end in bound)
         }
-        unaccounted = sorted(token for token in loose if token not in STRUCTURAL or token in MEASURED)
+        unaccounted = sorted(token for token in loose if token not in STRUCTURAL)
         assert not unaccounted, (
             f"these figures in the case study's {where} are bound to no source: {unaccounted}. "
             "Bind each in FIGURES, or add it to STRUCTURAL with the reason it is not a measurement."
@@ -547,6 +504,350 @@ def test_the_featured_profile_figures_match_its_published_values(
     assert all(retrieval[card]["uncertainty"]["valid_resamples"] == resamples for card in cards), (
         "the alt text says each card reports the same number of valid resamples"
     )
+
+
+# --- the tables, row by row (scoutlens-9a3.28) ---------------------------
+#
+# A pool can tell that `0.2031` is a published value; it cannot tell that it is
+# the replication's fingerprint MRR rather than its within-role one, and it
+# never read an integer. So every table is declared here in document order: its
+# header, then each row as one `Cell` per column, with every figure bound to the
+# `(experiment_id, metric_id)` it was copied from. A row moved, swapped, added
+# or dropped fails, and so does a figure one digit off.
+
+WITHIN = "wyscout_within_role_gate2"
+SB_WITHIN = "statsbomb_within_role_replication"
+SHRINKAGE = "wyscout_ratio_shrinkage"
+
+#: The only figures a table may carry unbound, each with its reason. Narrower
+#: than `STRUCTURAL`: a table has no section numbers, so a bare `2` in one is a
+#: measurement until shown otherwise.
+TABLE_STRUCTURAL = {
+    "5": "the k of recall@5 — the metric's definition, not its value",
+}
+
+
+@dataclass(frozen=True)
+class Cell:
+    """One table cell as a reader sees it, emphasis stripped: `{}` per bound figure.
+
+    `whole` binds the entire cell to one source — a cell that *is* a published
+    sentence, not a sentence with figures in it. `free` is a cell whose wording
+    this file does not own; it is matched as anything, so every figure in it
+    must be in `TABLE_STRUCTURAL`.
+    """
+
+    template: str
+    sources: tuple[Source, ...] = ()
+    whole: bool = False
+    free: bool = False
+
+    def pattern(self) -> re.Pattern[str]:
+        if self.free:
+            return re.compile(r".*")
+        if self.whole:
+            assert self.template == "{}" and len(self.sources) == 1, f"a whole cell has one source: {self!r}"
+            return re.compile(r"(.+)")
+        parts = self.template.split("{}")
+        assert len(parts) - 1 == len(self.sources), f"slot/source mismatch in {self.template!r}"
+        return re.compile(SLOT.join(re.escape(part) for part in parts))
+
+
+def text(literal: str) -> Cell:
+    return Cell(literal)
+
+
+def value(experiment_id: str, metric_id: str) -> Cell:
+    return Cell("{}", (metric(experiment_id, metric_id),))
+
+
+FREE = Cell("", free=True)
+NONE = text("—")  # a metric the experiment does not have, stated as absent
+
+
+@dataclass(frozen=True)
+class Table:
+    name: str  # for the failure message
+    header: tuple[str, ...]
+    rows: tuple[tuple[Cell, ...], ...]
+
+
+#: Every table in the case study, in document order.
+TABLES: tuple[Table, ...] = (
+    Table(
+        "§3 Evidence",
+        ("Experiment", "Metric", "Value"),
+        (
+            (text("Role + minutes baseline"), text("MRR"), value(GLOBAL, "baseline_a_mrr")),
+            (
+                Cell("{}-feature fingerprint", (feature_count(GLOBAL, "fingerprint_mrr"),)),
+                text("MRR"),
+                value(GLOBAL, "fingerprint_mrr"),
+            ),
+            (
+                text(""),
+                text("median self-rank"),
+                Cell("{} of {}", (metric(GLOBAL, "median_rank"), population(GLOBAL, COUNT))),
+            ),
+            (text("Within role only"), text("MRR"), value(WITHIN, "fingerprint_mrr")),
+            (text(""), text("median self-rank"), value(WITHIN, "median_rank")),
+            (text(""), text("recall@5"), value(WITHIN, "recall_at_5")),
+        ),
+    ),
+    Table(
+        "§4 The confound",
+        ("Baseline", "MRR", "median rank"),
+        (
+            (text("Role + minutes"), value(GLOBAL, "baseline_a_mrr"), NONE),
+            (text("Role + team + minutes"), value(TEAM, "baseline_c_mrr"), value(TEAM, "median_rank")),
+            (
+                Cell("{}-feature fingerprint", (feature_count(GLOBAL, "fingerprint_mrr"),)),
+                value(GLOBAL, "fingerprint_mrr"),
+                value(GLOBAL, "median_rank"),
+            ),
+        ),
+    ),
+    Table(
+        "§5 Replication",
+        ("", "MRR", "median rank"),
+        (
+            (text("Role + minutes baseline"), value(SB_GLOBAL, "baseline_a_mrr"), NONE),
+            (text("Canonical fingerprint"), value(SB_GLOBAL, "fingerprint_mrr"), value(SB_GLOBAL, "median_rank")),
+            (text("Within role only"), value(SB_WITHIN, "fingerprint_mrr"), value(SB_WITHIN, "median_rank")),
+        ),
+    ),
+    Table(
+        "§5 The shrinkage null",
+        ("", "raw", "shrunk"),
+        (
+            (text("Global MRR"), value(SHRINKAGE, "raw_global_mrr"), value(SHRINKAGE, "shrunk_global_mrr")),
+            (
+                text("Within-role MRR"),
+                value(SHRINKAGE, "raw_within_role_mrr"),
+                value(SHRINKAGE, "shrunk_within_role_mrr"),
+            ),
+        ),
+    ),
+    Table(
+        "For the reader in a hurry",
+        ("Question", "Answer"),
+        (
+            (text("What is claimed?"), Cell("{}", (summary("supported_claim"),), whole=True)),
+            (
+                text("What is the evidence?"),
+                Cell(
+                    "{} MRR vs a {} baseline on {} units; replicated at {} on a different provider and season; "
+                    "survives restriction to the same role.",
+                    (
+                        metric(GLOBAL, "fingerprint_mrr"),
+                        metric(GLOBAL, "baseline_a_mrr"),
+                        population(GLOBAL, COUNT),
+                        metric(SB_GLOBAL, "fingerprint_mrr"),
+                    ),
+                ),
+            ),
+            (
+                text("What is the biggest limitation?"),
+                Cell(
+                    "A role + team + minutes baseline scores {} — better than the fingerprint. "
+                    "Same-season club continuity is a stronger shortcut.",
+                    (metric(TEAM, "baseline_c_mrr"),),
+                ),
+            ),
+            (text("What is the engineering contribution?"), FREE),
+            (text("What is the AI's role?"), FREE),
+        ),
+    ),
+)
+
+
+@dataclass(frozen=True)
+class ParsedTable:
+    line: int  # the header's line in the case study, for the failure message
+    header: tuple[str, ...]
+    rows: tuple[tuple[str, ...], ...]
+
+
+TABLE_SEPARATOR = re.compile(r"^\|(?:\s*:?-+:?\s*\|)+$")
+
+
+def _cells(line: str) -> tuple[str, ...]:
+    """A row's cells, emphasis stripped and whitespace collapsed: what a reader sees."""
+    return tuple(" ".join(cell.replace("*", "").split()) for cell in line.strip()[1:-1].split("|"))
+
+
+def _tables(case_study: str) -> list[ParsedTable]:
+    """Every markdown table outside a code fence, in document order."""
+    body = FENCE.sub(lambda fence: "\n" * fence.group().count("\n"), case_study)  # keeps line numbers
+    runs: list[list[tuple[int, str]]] = [[]]
+    for number, line in enumerate(body.splitlines(), start=1):
+        if line.strip().startswith("|"):
+            runs[-1].append((number, line.strip()))
+        elif runs[-1]:
+            runs.append([])
+    tables = []
+    for run in (run for run in runs if run):
+        (line, header), *rest = run
+        assert rest and TABLE_SEPARATOR.match(rest[0][1]), f"the table at line {line} has no separator row"
+        tables.append(ParsedTable(line, _cells(header), tuple(_cells(row) for _, row in rest[1:])))
+    return tables
+
+
+def _matched_rows(case_study: str) -> list[tuple[str, int, tuple[Cell, ...], tuple[re.Match[str], ...]]]:
+    """Each declared row against the document's, cell by cell: (table, row, cells, matches).
+
+    The shape is asserted here — the same tables in the same order, the same
+    header, the same number of rows and columns, every cell matching its
+    template whole — so a row cannot move between tables or swap with another.
+    """
+    parsed = _tables(case_study)
+    assert len(parsed) == len(TABLES), (
+        f"the case study has {len(parsed)} tables and TABLES declares {len(TABLES)}. "
+        "Declare a new table here, figure by figure; never leave one unbound."
+    )
+    matched = []
+    for declared, found in zip(TABLES, parsed, strict=True):
+        where = f"{declared.name} (line {found.line})"
+        assert found.header == declared.header, f"{where}: the header is {found.header}, not {declared.header}"
+        assert len(found.rows) == len(declared.rows), (
+            f"{where}: {len(found.rows)} rows in the document, {len(declared.rows)} declared"
+        )
+        for index, (cells, row) in enumerate(zip(declared.rows, found.rows, strict=True), start=1):
+            assert len(row) == len(cells), f"{where}, row {index}: {len(row)} cells, {len(cells)} declared"
+            matches = []
+            for cell, content in zip(cells, row, strict=True):
+                match = cell.pattern().fullmatch(content)
+                assert match, f"{where}, row {index}: {content!r} does not read as {cell.template!r}"
+                matches.append(match)
+            matched.append((declared.name, index, cells, tuple(matches)))
+    return matched
+
+
+def test_every_table_is_declared_and_every_figure_in_it_bound(case_study: str) -> None:
+    """The table sweep, artifact-free: every figure in a table sits in a bound slot.
+
+    Like the prose sweep, it needs only the document, so an unbound figure fails
+    even on a clone that cannot read the artifact.
+    """
+    for table in _tables(case_study):
+        figures = FIGURE_TOKEN.findall(" ".join(table.header))
+        assert not figures, f"the table at line {table.line} has a figure in its header: {figures}"
+
+    unbound = []
+    for name, index, cells, matches in _matched_rows(case_study):
+        for cell, match in zip(cells, matches, strict=True):
+            bound = [match.span(group) for group in range(1, len(cell.sources) + 1)]
+            for token in FIGURE_TOKEN.finditer(match.string):
+                inside = any(start <= token.start() and token.end() <= end for start, end in bound)
+                if not inside and token.group() not in TABLE_STRUCTURAL:
+                    unbound.append(f"{name}, row {index}: {token.group()!r} in {match.string!r}")
+    assert not unbound, (
+        "these table figures are bound to no source:\n" + "\n".join(unbound) + "\n"
+        "Bind each in TABLES, or add it to TABLE_STRUCTURAL with the reason it is not a measurement."
+    )
+
+
+@requires_summary
+def test_every_table_row_matches_its_metrics(case_study: str) -> None:
+    """Each table row against the `(experiment_id, metric_id)` it states."""
+    artifacts = Artifacts(summary=_load(SUMMARY), manifest=_load(MANIFEST), profile=None)
+    problems = []
+    for name, index, cells, matches in _matched_rows(case_study):
+        for cell, match in zip(cells, matches, strict=True):
+            expected = tuple(" ".join(source.read(artifacts).split()) for source in cell.sources)
+            if match.groups() != expected:
+                names = ", ".join(source.name for source in cell.sources)
+                problems.append(
+                    f"{name}, row {index}: the case study says {match.groups()}, "
+                    f"the artifact says {expected} ({names})"
+                )
+    assert not problems, "a case-study table disagrees with the artifact:\n" + "\n".join(problems)
+
+
+# --- the thesis, the boundary and the claim, verbatim (scoutlens-9a3.28) --
+
+NARRATIVE = REPO_ROOT / "docs" / "public-experience-narrative.md"
+
+#: `D066`: §2 says "ScoutLens"; the public identity contract substitutes the
+#: display name and permits no other edit. The same constant as
+#: `web/src/content/narrative.ts` and `e2e/claims-consistency.spec.ts`.
+FROZEN_NAME = "ScoutLens"
+DISPLAY_NAME = "Yumusarái Labs"
+
+#: The Lab boundary `D066` retired. The desktop still was captured before it
+#: (`d79e336`), so its alt text describes it until `scoutlens-jtt.27`
+#: re-captures the still. Nothing else in the case study may say it.
+RETIRED_LAB_BOUNDARY = "not a quality score, style proof, recruitment ranking, or automated verdict"
+
+
+def _frozen_quote(label: str) -> str:
+    """The blockquote under `**{label}` in §2 of the narrative, as one line.
+
+    The same reading as `frozenQuote` in `e2e/claims-consistency.spec.ts`, so
+    the site and the case study are held to one text.
+    """
+    narrative = NARRATIVE.read_text(encoding="utf-8")
+    section = re.search(r"^## 2\. Frozen thesis$(.*?)^## ", narrative, re.MULTILINE | re.DOTALL)
+    assert section, "the narrative has no '## 2. Frozen thesis' section"
+    lines = section.group(1).splitlines()
+    start = next((i for i, line in enumerate(lines) if line.startswith(f"**{label}")), None)
+    assert start is not None, f"§2 of the narrative has no {label!r} label"
+    quote: list[str] = []
+    for line in lines[start + 1 :]:
+        if line.startswith(">"):
+            quote.append(line[1:])
+        elif quote:
+            break
+    assert quote, f"§2's {label!r} label has no blockquote under it"
+    return " ".join(" ".join(quote).split())
+
+
+def _as_read(markdown: str) -> str:
+    """What a reader reads: blockquote markers and emphasis removed, whitespace collapsed."""
+    unquoted = "\n".join(re.sub(r"^\s*>\s?", "", line) for line in markdown.splitlines())
+    return " ".join(unquoted.replace("*", "").split())
+
+
+def test_the_opening_states_the_narratives_thesis_and_boundary_verbatim_and_adjacent(case_study: str) -> None:
+    """§2's thesis, then its boundary, in the short version — the site's own two sentences.
+
+    *Verbatim* is §2's text with one substitution, the display name for
+    "ScoutLens" (`D066`). *Adjacent* is §2's "never separated by other copy",
+    made exact: once blockquote markers and emphasis are removed and whitespace
+    collapsed, the boundary follows the thesis after a single space. A line
+    break, or a paragraph break inside one blockquote, passes; any word, link
+    or figure between them fails.
+    """
+    frozen_thesis = _frozen_quote("Thesis")
+    assert frozen_thesis.count(FROZEN_NAME) == 1, "§2's thesis no longer names the project once; revisit D066"
+    thesis = frozen_thesis.replace(FROZEN_NAME, DISPLAY_NAME)
+    boundary = _frozen_quote("Boundary sentence")
+    assert FROZEN_NAME not in boundary
+
+    opening = re.search(r"^## The short version$(.*?)^#", case_study, re.MULTILINE | re.DOTALL)
+    assert opening, "the case study has no 'The short version' section"
+    read = _as_read(opening.group(1))
+    assert thesis in read, f"the short version does not state §2's thesis verbatim:\n    {thesis}"
+    assert boundary in read, f"the short version does not state §2's boundary verbatim:\n    {boundary}"
+    assert f"{thesis} {boundary}" in read, "something sits between the thesis and its boundary"
+
+
+@requires_summary
+def test_what_is_claimed_is_the_supported_claim_verbatim(case_study: str) -> None:
+    """The checklist's answer is `research.supported_claim`, not a paraphrase of it."""
+    claim = " ".join(_load(SUMMARY)["supported_claim"].split())
+    answers = {row[0]: row[1:] for table in _tables(case_study) for row in table.rows if row}
+    assert "What is claimed?" in answers, "the checklist no longer asks what is claimed"
+    assert answers["What is claimed?"] == (claim,), (
+        f"the case study answers {answers['What is claimed?']}; the artifact's supported claim is {claim!r}"
+    )
+
+
+def test_the_retired_lab_boundary_is_not_restated(case_study: str, swept: Swept) -> None:
+    """`D066` replaced it; only the old still's description may still quote it."""
+    outside_images = _as_read(IMAGE.sub(" ", case_study))
+    assert RETIRED_LAB_BOUNDARY not in outside_images, "the case study restates the Lab boundary D066 retired"
+    assert swept.alt.count(RETIRED_LAB_BOUNDARY) <= 1
 
 
 def test_the_confound_is_not_buried(prose: str) -> None:

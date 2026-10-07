@@ -16,6 +16,18 @@
 
 ## The short version
 
+> On the pitch, a player's actions leave a stable statistical fingerprint;
+> Yumusarái Labs shows that fingerprint can find that same player again across
+> two halves of one season — and shows the limits of that evidence rather than
+> hiding them.
+>
+> This is evidence of individual signal — not proof of playing style, not a
+> recommendation, and not a prediction.
+
+Those two sentences are the site's own, word for word: the thesis and boundary
+frozen in [the public narrative](public-experience-narrative.md#2-frozen-thesis),
+which every route renders together (`D066`).
+
 **The question.** Do a footballer's on-ball actions identify them the way a
 fingerprint does? Take the first half of a player's season as a query and ask
 whether 32 event-derived measurements can find that same player again in the
@@ -270,7 +282,7 @@ caveat with it.
 
 | Question | Answer |
 |---|---|
-| **What is claimed?** | Event-derived profiles contain a reproducible individual fingerprint supporting same-player retrieval across two chronological halves of one season. |
+| **What is claimed?** | Event-derived profiles contain a reproducible individual fingerprint that supports same-player temporal retrieval across two chronological halves. |
 | **What is the evidence?** | 0.2539 MRR vs a 0.0256 baseline on 1,257 units; replicated at 0.2031 on a different provider and season; survives restriction to the same role. |
 | **What is the biggest limitation?** | A role + team + minutes baseline scores 0.5893 — better than the fingerprint. Same-season club continuity is a stronger shortcut. |
 | **What is the engineering contribution?** | A verifiable pipeline: content-addressed data, a versioned artifact contract consumed fail-closed by a static site, a claims matrix derived from the artifact, and a release candidate with a computed identity. |
