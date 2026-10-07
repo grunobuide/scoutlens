@@ -59,10 +59,15 @@ These are recorded rather than resolved, and each has an open bead.
   `not_run`, which is deliberately distinct from a pass. The project therefore
   makes no claim about any model's behaviour (`scoutlens-jtt.6.3` AC3,
   `scoutlens-jtt.6` AC4).
-- **Public comprehension was validated with n=1.** One evaluator, recorded as a
-  block at 2:53 (`D056`). Communication defects were remediated technically;
-  this is not a retroactive pass and comprehension is not claimed as validated
-  (`scoutlens-9a3.7`).
+- **Public comprehension was tested with one evaluator, and not validated.**
+  Run 1 was a block at 2:53; the 90-second first-understanding goal is a design
+  target, not claimed as met (`D056`). Its four findings were remediated
+  technically: the AI role (`scoutlens-9a3.11`; `5984287`, `68b55e4`), recall of
+  the unsupported claims (`scoutlens-9a3.12`; `5984287`), the team-continuity
+  confound (`scoutlens-9a3.13`; `1ad236b`) and the two-period framing
+  (`scoutlens-9a3.14`; `9b348fd`). There was no fresh independent retest, so
+  comprehension is not claimed as validated or improved, and this is not a
+  retroactive pass (`scoutlens-9a3.7`).
 - **The v1 cosine audit baseline has no CI coverage.** One payload pin hydrates
   v2 only, so no clean clone can obtain a v1 payload (`scoutlens-jtt.18`).
 - **Two RSC prefetch payloads 404 on every page load** of the static export.

@@ -14,7 +14,7 @@
 
 ---
 
-## The 90-second version
+## The short version
 
 **The question.** Do a footballer's on-ball actions identify them the way a
 fingerprint does? Take the first half of a player's season as a query and ask
@@ -37,6 +37,10 @@ important thing to understand about this result.
 recommendation. Not a prediction of anything. The study measures re-identification
 across two halves of one historical season, and nothing about quality, style, fit
 or the future follows from it.
+
+**How fast this should land.** The 90-second first-understanding goal for the
+public site is a design target, not claimed as met: the one timed reader took
+2:53, and that run was a block (§9).
 
 ### What it looks like
 
@@ -236,11 +240,19 @@ caveat with it.
 ### 9. Known limitations
 
 - **Same-season confound.** Team continuity outperforms the fingerprint. §4.
-- **n=1 comprehension.** Public comprehension was validated with **one**
-  evaluator; run 1 was a block at 2:53, four findings were recorded, and remedies
-  were implemented. There was **no fresh independent post-fix validation**. An
-  optional follow-up with the same reviewer would be non-blind and is not a
-  second participant. Comprehension is therefore **not** claimed as validated.
+- **n=1 comprehension.** The public site was **tested with one evaluator**, and
+  comprehension is **not** claimed as validated or improved (`D056`). Run 1 was a
+  **block at 2:53**; the 90-second first-understanding goal is a design target,
+  not claimed as met. It recorded four findings, each remediated technically: the
+  **AI role** (Q6, read as "describing player types"; `scoutlens-9a3.11`),
+  **recall of the unsupported claims** (Q4, none recalled; `scoutlens-9a3.12`),
+  the **team-continuity confound** (Q3, never reached; `scoutlens-9a3.13`) and the
+  **two-period framing** (Q2, the two chronological halves dropped;
+  `scoutlens-9a3.14`). The merge commits are listed in
+  [`release-candidate-v1.md`](release-candidate-v1.md) §6. There was **no fresh
+  independent retest**, so none of the four is measured as fixed. An optional
+  follow-up with the same reviewer would be non-blind and is not a second
+  participant.
 - **No demonstration model.** §7.
 - **Small transfer samples.** 26 and 19 players.
 - **One historical season per provider.** Nothing here speaks to the present day.
