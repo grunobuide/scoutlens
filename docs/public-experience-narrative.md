@@ -228,8 +228,9 @@ Order as `web/src/app/page.tsx` renders it. Corrected by `scoutlens-9a3.29`:
 since `scoutlens-9a3.12` the supported claim lives only in the hero, so the
 claim matrix is one-sided and comes before the fingerprint preview.
 
-1. **Hero** — data-vintage chip (**I**: purpose, provider, season, population
-   threshold, licence, dataset pin — [D067](decisions-log.md)) · eyebrow
+1. **Hero** — data-vintage chip (**I**: purpose, provider, season, competition
+   scope, population threshold, licence, licence boundary, dataset pin —
+   [D067](decisions-log.md), [D069](decisions-log.md)) · eyebrow
    "Player Fingerprint Lab" · h1 (the route headline, carrying both periods —
    `scoutlens-9a3.14`) · thesis (**I**) · boundary sentence (**I**) · CTAs
    primary + secondary. Only the chip, the eyebrow and the h1 sit above the
