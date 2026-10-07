@@ -217,7 +217,9 @@ audit (`/science`, provenance, docs).
 ### 7.1 Landing — desktop and ≤360 px (same order, stacked on narrow)
 
 1. **Hero** — eyebrow "Player Fingerprint Lab" · thesis (**I**) · boundary
-   sentence (**I**) · data-vintage chip (**I**) · CTAs primary + secondary.
+   sentence (**I**) · data-vintage chip (**I**: purpose, provider, season,
+   population threshold, licence, dataset pin — [D067](decisions-log.md)) · CTAs
+   primary + secondary.
    No content above the thesis.
 2. **Featured fingerprint preview** (**I**) — editorially selected profile
    (`manifest.featured_profile` with `editorial: true` and its quoted reason);

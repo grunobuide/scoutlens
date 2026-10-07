@@ -12,6 +12,7 @@ import {
   type ShowcaseStory,
 } from "@/content/showcase-story";
 import { explainMetric } from "@/content/evidence-explanations";
+import { providerLabel } from "@/content/provenance";
 import type {
   AnyResearchSummaryArtifact,
 } from "@/contracts/showcase-repository";
@@ -21,10 +22,6 @@ const repositoryRoot = "https://github.com/grunobuide/scoutlens/blob/main/";
 function repositoryHref(path: string): string {
   const [filePath, fragment] = path.split("#", 2);
   return `${repositoryRoot}${filePath ?? path}${fragment === undefined ? "" : `#${fragment}`}`;
-}
-
-function providerLabel(provider: ResearchExperiment["provider"]): string {
-  return provider === "wyscout_pappalardo" ? "Wyscout / Pappalardo" : "StatsBomb Open Data";
 }
 
 interface ExperimentCardProps {

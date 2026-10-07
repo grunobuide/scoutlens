@@ -350,6 +350,20 @@ describe("no published number is retyped into page, component or registry source
         add(outcome.similarity_score.toFixed(3), `retrieval.${scope}.similarity_score`);
       }
     }
+    // `scoutlens-9a3.20`: the population's season and eligibility threshold.
+    // The Lab's catalog heading had both typed in ("2017/18 · at least 450
+    // minutes") and this scan missed them: the season was not in the set and
+    // a bare three-digit number is too short to scan for. The threshold is
+    // therefore scanned as the phrase a surface would print around it.
+    const manifest = await readJson<{
+      source: { season: string };
+      population: { minutes_threshold_per_period: number };
+    }>("manifest.json");
+    add(manifest.source.season, "manifest.source.season");
+    const threshold = manifest.population.minutes_threshold_per_period;
+    for (const phrase of [`${threshold} minutes`, `${threshold} min`, `${threshold}-minute`]) {
+      literals.set(phrase, "manifest.population.minutes_threshold_per_period");
+    }
     for (const neighbor of profile.neighbors) {
       add(formatScore(neighbor.similarity_score), `neighbor ${neighbor.rank} similarity_score`);
     }
