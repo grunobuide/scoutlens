@@ -784,7 +784,7 @@ function StatisticalNeighbors({
             <li key={neighbor.profile_key}>
               <article className="neighbor-card" data-neighbor-rank={neighbor.rank}>
                 <header>
-                  <span className="neighbor-card__rank">{String(neighbor.rank).padStart(2, "0")}</span>
+                  <span className="neighbor-card__rank" data-context="position">{String(neighbor.rank).padStart(2, "0")}</span>
                   <div>
                     <h3 id={titleId}>{neighbor.display_name}</h3>
                     <p>{neighbor.role} · {neighbor.competition.name}</p>
@@ -973,7 +973,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         <section className="fingerprint-lab-card" aria-labelledby="fingerprint-map-heading" data-quantity-scope>
           <header className="fingerprint-lab-card__header">
             <div>
-              <p className="eyebrow">{fingerprint.rows.length}-feature map</p>
+              <p className="eyebrow" data-context="count">{fingerprint.rows.length}-feature map</p>
               <h2 id="fingerprint-map-heading">Period A / B fingerprint</h2>
             </div>
             <fieldset className="percentile-toggle">
@@ -1001,11 +1001,13 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
             </fieldset>
           </header>
 
-          <p className="fingerprint-summary">{buildFingerprintSummary(fingerprint.rows, scope)}</p>
+          <p className="fingerprint-summary" data-quantity={quantityTag(percentileQuantity(scope))}>
+            {buildFingerprintSummary(fingerprint.rows, scope)}
+          </p>
           <div className="lab-fingerprint-legend" aria-hidden="true">
             <span><i className="legend-mark legend-mark--a" /> Period A</span>
             <span><i className="legend-mark legend-mark--b" /> Period B</span>
-            <span>0 — percentile — 100</span>
+            <span data-context="scale">0 — percentile — 100</span>
           </div>
 
           <QuantityGlossary ids={["within_role_percentile", "global_percentile", "raw_value"]} />
@@ -1013,7 +1015,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
           <div className="lab-fingerprint-map">
             {fingerprint.families.map((family) => (
               <section className="lab-feature-family" key={family.family}>
-                <h3>{family.label} <span>{family.rows.length} features</span></h3>
+                <h3>{family.label} <span data-context="count">{family.rows.length} features</span></h3>
                 {family.rows.map((row) => (
                   <FingerprintMapRow key={row.definition.feature_id} row={row} scope={scope} />
                 ))}
@@ -1054,7 +1056,7 @@ export function FingerprintProfile({ catalog, profiles, profile, major, weighted
         <header>
           <div>
             <p className="eyebrow">Equivalent value view</p>
-            <h2 id="fingerprint-table-heading">{`All ${fingerprint.rows.length} measurements`}</h2>
+            <h2 id="fingerprint-table-heading" data-context="count">{`All ${fingerprint.rows.length} measurements`}</h2>
           </div>
           <p>Raw values are descriptive. Global z-scores are the model inputs; percentiles are display context.</p>
         </header>

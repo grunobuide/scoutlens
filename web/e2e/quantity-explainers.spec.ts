@@ -20,7 +20,7 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { waitForStablePage } from "./helpers";
+import { SHOWCASE_BASE, waitForStablePage } from "./helpers";
 
 /** What the v2 Lab and challenge print, all of it: every key except v1's score. */
 const V2_QUANTITIES = [
@@ -73,12 +73,40 @@ async function sweep(page: Page): Promise<Sweep> {
       }
     }
 
-    for (const value of document.querySelectorAll("[data-quantity-scope] dd")) {
-      if (value.closest("[data-quantity-glossary]") !== null || !/\d/.test(value.textContent ?? "")) {
+    // `scoutlens-9a3.32`: research metrics are tethered the same way - a
+    // `data-metric` tag (`experiment_id:metric_id`) needs its explainer in the
+    // same section.
+    for (const element of document.querySelectorAll<HTMLElement>("[data-metric]")) {
+      const scope = element.closest("[data-quantity-scope]");
+      if (scope === null) {
+        problems.push(`${element.dataset.metric} is printed outside any explained section`);
         continue;
       }
-      if (value.closest("[data-quantity], [data-context]") === null) {
-        problems.push(`untagged number "${(value.textContent ?? "").trim().slice(0, 48)}"`);
+      for (const tag of (element.dataset.metric ?? "").split(" ")) {
+        const explained = [...scope.querySelectorAll(`[data-metric-explainer="${tag}"]`)].some(
+          (entry) => entry.closest("[data-quantity-scope]") === scope,
+        );
+        if (!explained) {
+          problems.push(`${tag} is printed in ${scopeName(scope)} with no explainer there`);
+        }
+      }
+    }
+
+    // `scoutlens-9a3.32`: every element in a scope that prints a digit in its
+    // own text, not only <dd>. A number in a <p>, <span> or <strong> passed
+    // unexamined - the challenge's reveal heading and baseline sentence printed
+    // both ranks untagged. Table cells are judged by their column below; header
+    // cells ("Passes per 90") and identifiers (<code>) are names, not values.
+    for (const element of document.querySelectorAll<HTMLElement>("[data-quantity-scope], [data-quantity-scope] *")) {
+      const own = [...element.childNodes]
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent ?? "")
+        .join("");
+      if (!/\d/.test(own) || element.closest("td, th, code, [data-quantity-glossary], [data-metric-explainer]") !== null) {
+        continue;
+      }
+      if (element.closest("[data-quantity], [data-context], [data-metric]") === null) {
+        problems.push(`untagged number "${own.trim().slice(0, 48)}" in <${element.tagName.toLowerCase()}>`);
       }
     }
 
@@ -111,6 +139,56 @@ async function sweep(page: Page): Promise<Sweep> {
   });
 }
 
+/**
+ * Every published research-metric value, as a surface prints it, that has a
+ * decimal point. Whole numbers ("16") are left to the tags: as bare text they
+ * also occur in dates, counts and section numbers.
+ */
+async function publishedMetricValues(page: Page): Promise<string[]> {
+  return page.evaluate(async (base) => {
+    const response = await fetch(`${base}research-summary.json`);
+    const research = (await response.json()) as {
+      experiments: Array<{ metrics: Array<{ value: number; display_precision: number }> }>;
+    };
+    const values = new Set<string>();
+    for (const experiment of research.experiments) {
+      for (const metric of experiment.metrics) {
+        const printed = metric.value.toFixed(metric.display_precision).replace(/^-/, "");
+        if (printed.includes(".") && /[1-9]/.test(printed)) {
+          values.add(printed);
+        }
+      }
+    }
+    return [...values];
+  }, SHOWCASE_BASE);
+}
+
+/**
+ * Text nodes in <main> that print a published metric value outside any
+ * `data-metric` element (`scoutlens-9a3.32`). The landing hero quoted two MRR
+ * values in plain prose; nothing tied them to an explanation.
+ */
+async function untaggedMetricValues(page: Page, values: readonly string[]): Promise<string[]> {
+  return page.evaluate((published) => {
+    const found: string[] = [];
+    const walker = document.createTreeWalker(document.querySelector("main") ?? document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+      const text = node.textContent ?? "";
+      const parent = node.parentElement;
+      if (parent === null || parent.closest("[data-metric], [data-quantity-glossary], [data-metric-explainer]") !== null) {
+        continue;
+      }
+      for (const value of published) {
+        const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        if (new RegExp(`(?<![\\d.])${escaped}(?!\\d)`).test(text)) {
+          found.push(`${value} in <${parent.tagName.toLowerCase()} class="${parent.className}">`);
+        }
+      }
+    }
+    return found;
+  }, values);
+}
+
 test.describe("every Lab and challenge quantity is explained where it is printed", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Markup is viewport-independent; asserted once");
@@ -129,10 +207,14 @@ test.describe("every Lab and challenge quantity is explained where it is printed
 
     // `scoutlens-9a3.25`: the landing and /science print quantities too - the
     // preview's family averages, and the worked example's ranks.
+    // `scoutlens-9a3.32`: and research metrics, each inside a tagged element.
     for (const route of ["/", "/science/"]) {
       await page.goto(route);
       await waitForStablePage(page);
       await check(route);
+      const values = await publishedMetricValues(page);
+      expect(values.length, "no published metric value to look for").toBeGreaterThan(10);
+      expect(await untaggedMetricValues(page, values), `${route} untagged metric values`).toEqual([]);
     }
 
     await page.goto("/lab/");

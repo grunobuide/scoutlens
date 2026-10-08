@@ -155,10 +155,10 @@ export default async function SciencePage() {
           <span data-value="competition">{featured.identity.competition.name}</span>) is the
           editorially featured profile. Period A, the{" "}
           <span data-value="period-a-label">{featured.periods.a.label.toLowerCase()}</span> (
-          <span data-value="period-a-matches">{featured.periods.a.match_count}</span> matches), is
+          <span data-value="period-a-matches" data-context="matches">{featured.periods.a.match_count}</span> matches), is
           the query; period B, the{" "}
           <span data-value="period-b-label">{featured.periods.b.label.toLowerCase()}</span> (
-          <span data-value="period-b-matches">{featured.periods.b.match_count}</span> matches), is
+          <span data-value="period-b-matches" data-context="matches">{featured.periods.b.match_count}</span> matches), is
           searched. The fingerprint ranked their period-B profile{" "}
           <span data-value="self-rank" data-quantity={quantityTag("self_rank")}>{globalRetrieval.self_rank}</span> of{" "}
           <span data-value="candidate-count" data-quantity={quantityTag("self_rank")}>
