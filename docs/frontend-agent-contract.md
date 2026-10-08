@@ -31,10 +31,15 @@ line stops the task.
 | `web/src/components/research-story.tsx` | Allowed | — | Presentation only. Metric ids, claim text and caveat text are Denied. |
 | `web/src/components/lab-explorer.tsx` | Allowed | — | Presentation and local UI state only. Denied: anything that changes a rank, cosine, percentile, z-score, support or uncertainty **value**, or the order the artifact supplies. |
 | `web/src/components/neighbor-comparison-drawer.tsx` | Allowed | — | Same. |
+| `web/src/components/data-provenance.tsx` | Allowed | — | Presentation only; every fact is the manifest's or the research summary's. Which facts the data-vintage chip states, and in what order, is **Conditional** on `scoutlens-9a3` (`D067`, `D069`). Added by `scoutlens-uze.30` (`D070`). |
+| `web/src/components/identity-challenge-panel.tsx`, `identity-challenge-states.tsx` | Allowed | — | Presentation under `docs/identity-challenge-contract.md`. Its frozen copy (§12), state machine, URL rules (`D068`) and caveat bindings are **Denied** without a contract amendment. `D070`. |
+| `web/src/components/quantity-glossary.tsx` | Allowed | — | Presentation of the explanation registry; the explanation text itself lives in `web/src/content/evidence-explanations.ts`. `D070`. |
+| `web/src/components/thesis-statement.tsx` | Allowed | — | Renders `THESIS` and `BOUNDARY` adjacent. Changing either sentence or separating them is **Denied** (`D066`). `D070`. |
+| `web/src/components/rank-format.ts` | **Conditional** | `scoutlens-jtt` | Display rounding of resampled ranks (`D046`). Changing precision is a scientific-invariant change. `D070`. |
 | `web/e2e/**` | Allowed | — | New specs and helpers. Deleting or skipping an existing assertion is Conditional. |
 | `web/tests/**` | Allowed | — | Unit tests for presentation logic. |
 | `web/e2e/__screenshots__/**` | **Conditional** | Bead author | Only under the snapshot policy in §5. |
-| `web/src/content/**` | **Conditional** | `scoutlens-9a3` (narrative) | Formatting and typing helpers only, and only when the bead names the file. Changing what a number means, its unit, its rounding or its label is Denied. |
+| `web/src/content/**` | **Conditional** | `scoutlens-9a3` (narrative) | Formatting and typing helpers only, and only when the bead names the file. Changing what a number means, its unit, its rounding or its label is Denied. Narrative-owned text lives here: `narrative.ts` (thesis and boundary, `D066`), `provenance.ts` (provider names and the chip's wording, `D067`/`D069`), `evidence-explanations.ts` (every metric and quantity explanation). |
 | `web/package.json`, `pnpm-lock.yaml`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.ts`, `playwright.config.ts` | **Conditional** | Bead author | A new dependency requires the bead to state weight and the rejected alternative. |
 | `web/quality-budgets.json`, `lighthouserc.json` | **Conditional** | `scoutlens-uze` | Values may only move **down** (stricter). Loosening a threshold is Denied. |
 | `web/scripts/**` | **Conditional** | `scoutlens-uze` | Release fixture and budget tooling. `scoutlens-uze.8` is the current named exception. |
@@ -146,6 +151,14 @@ the current file (378 kept + 22 deleted per §4.4).
 | 6 | `styles/landing.css` | 21 | `.hero*`, `.proof-band`, `.replication-section`, `.initial-boundaries`, `.signal-*`, `.landing-*` |
 | 7 | `styles/science.css` | 18 | `.science-*`, `.frozen-question*`, `.split-definition*`, `.research-stage*`, `.research-step__marker` |
 | 8 | `styles/lab.css` | 206 | Everything under `/lab`: selector and filters, profile and fingerprint, retrieval, neighbors and drawer, the 32-value table |
+
+Rules added since this map was frozen, and where they live (`scoutlens-uze.30`,
+`D070`): `research-story.css` holds `.data-vintage*` and `.provider-boundary*`,
+rendered by `data-provenance.tsx` on every route. `lab.css` holds the identity
+challenge (`.challenge-*`) and `.quantity-glossary`, which since
+`scoutlens-9a3.25` also renders on `/` and `/science` - it stays in `lab.css`
+because moving a rule between layers changes the cascade, and that is a bead of
+its own. The thesis and boundary reuse each route's own classes.
 
 `research-story.css` is deliberately **not** split into landing and science:
 `research-story.tsx` is rendered by both routes, so a route-named file would give

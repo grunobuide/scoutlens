@@ -2969,3 +2969,28 @@ contract change this decision does not make.
 **How to apply:** `e2e/claims-consistency.spec.ts` asserts both facts on
 every route and a selected Lab profile, and that both precede the earliest
 result, with and without JavaScript.
+
+## D070 — 2026-10-07 — The frontend contract names the components added since it was frozen
+
+**Decision:** `docs/frontend-agent-contract.md` §1 gains rows for
+`data-provenance.tsx`, the two identity-challenge components,
+`quantity-glossary.tsx`, `thesis-statement.tsx` and `rank-format.ts`. The
+`web/src/content/**` row names the narrative-owned modules, and §4.1 says where
+the rules added since the map was frozen live. (`scoutlens-uze.30`)
+
+**Why.** The contract says anything it does not list is Denied. Every one of
+these files has been edited by beads since `scoutlens-uze.2` froze the table,
+and `scoutlens-9a3.18` to `9a3.29` added three of them. A delegated frontend
+bead could not have touched any of them, including the components that render
+the provenance chip, the thesis and the identity challenge. The 9a3.20 mapping
+workflow found the gap.
+
+**Levels.** Presentation components are Allowed, with the decisions that bind
+their content named in the row as Conditional or Denied: the chip's contents
+(`D067`, `D069`), the challenge's frozen copy and URL rules (its contract and
+`D068`), and the thesis and boundary (`D066`). `rank-format.ts` is Conditional
+on `scoutlens-jtt`, because its rounding is a displayed scientific value
+(`D046`).
+
+**How to apply:** a bead that adds a component adds its row in the same pull
+request.
