@@ -140,7 +140,7 @@ export function NeighborComparisonDrawer({
             <h2 id="neighbor-drawer-title">
               {profile.identity.display_name} / {neighbor.display_name}
             </h2>
-            <p id="neighbor-drawer-summary">
+            <p id="neighbor-drawer-summary" data-context="position">
               The selected query remains fixed. This drawer explains the stored additive evidence
               behind the {scoreName} for neighbor rank {neighbor.rank}.
             </p>
@@ -188,7 +188,7 @@ export function NeighborComparisonDrawer({
               </li>
             ))}
           </ol>
-          <p className="neighbor-drawer__reconstruction">
+          <p className="neighbor-drawer__reconstruction" data-quantity={quantityTag("contribution", scoreId)}>
             Family sum {formatContribution(evidence.familySum)} · stored {scoreName}{" "}
             {formatScore(neighborScore(neighbor))}
           </p>
@@ -196,7 +196,7 @@ export function NeighborComparisonDrawer({
 
         <section className="neighbor-drawer__features" aria-labelledby="feature-contributions-heading">
           <header>
-            <p className="eyebrow">{evidence.features.length}-feature audit</p>
+            <p className="eyebrow" data-context="count">{evidence.features.length}-feature audit</p>
             <h3 id="feature-contributions-heading">Exact additive contributions</h3>
           </header>
           <div className="neighbor-drawer__table-scroll" role="region" aria-label="Scrollable feature contribution table" tabIndex={0}>
@@ -226,7 +226,7 @@ export function NeighborComparisonDrawer({
               </tbody>
             </table>
           </div>
-          <p className="neighbor-drawer__reconstruction">
+          <p className="neighbor-drawer__reconstruction" data-quantity={quantityTag("contribution", scoreId)}>
             Feature sum {formatContribution(evidence.featureSum)} · stored {scoreName}{" "}
             {formatScore(neighborScore(neighbor))}
           </p>

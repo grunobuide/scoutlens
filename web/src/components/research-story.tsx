@@ -13,7 +13,7 @@ import {
 } from "@/content/showcase-story";
 import { explainMetric } from "@/content/evidence-explanations";
 import { providerLabel } from "@/content/provenance";
-import { QuantityGlossary, quantityTag } from "@/components/quantity-glossary";
+import { metricTag, QuantityGlossary, quantityTag } from "@/components/quantity-glossary";
 import type {
   AnyResearchSummaryArtifact,
 } from "@/contracts/showcase-repository";
@@ -42,11 +42,15 @@ export function ExperimentCard({
   const caveats = caveatsFor(research, experiment);
 
   return (
-    <article className={`experiment-card experiment-card--${emphasis}`}>
+    // `scoutlens-9a3.32`: an explained scope like the Lab's sections - every
+    // metric value carries its tag and its explanation sits in the same card.
+    // The population line is the artifact's description of who was measured,
+    // so its counts are context, not results.
+    <article className={`experiment-card experiment-card--${emphasis}`} data-quantity-scope>
       <header className="experiment-card__header">
         <p className="experiment-card__provider">{providerLabel(experiment.provider)}</p>
         <h3>{experiment.title}</h3>
-        <p>{experiment.population}</p>
+        <p data-context="population">{experiment.population}</p>
       </header>
       <dl className="experiment-metrics">
         {metrics.map((metric) => {
@@ -57,12 +61,15 @@ export function ExperimentCard({
           // `scoutlens-9a3.25`: as this experiment computed it - one metric id can
           // mean a different population or feature set on another card.
           const explanation = explainMetric(metric, experiment.experiment_id);
+          const tag = metricTag({ experiment, metric });
+          // The whole entry is the metric's: its label can carry a count of its
+          // own ("32-feature cosine MRR"), and its value and interval are it.
           return (
-            <div key={metric.metric_id}>
+            <div key={metric.metric_id} data-metric={tag}>
               <dt>{metric.label}</dt>
               <dd className="experiment-metric__value">{formatMetric(metric)}</dd>
               {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
-              <dd className="experiment-metric__explanation">
+              <dd className="experiment-metric__explanation" data-metric-explainer={tag}>
                 {/*
                   `scoutlens-9a3.25`: all five parts of the record. This showed the
                   meaning and the boundary only; how the number was computed, which
@@ -86,7 +93,10 @@ export function ExperimentCard({
           );
         })}
       </dl>
-      <p className="experiment-card__conclusion">{experiment.conclusion}</p>
+      {/* The artifact's conclusion; a count in it ("32-feature") describes the design. */}
+      <p className="experiment-card__conclusion" data-context="design">
+        {experiment.conclusion}
+      </p>
       <div className="caveat-stack" aria-label="Interpretation boundaries">
         {caveats.map((caveat) => (
           <p className={`caveat caveat--${caveat.severity}`} key={caveat.code}>
@@ -143,7 +153,8 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
           <p>
             {story.featuredTeam} · {profile.identity.role} · {profile.identity.competition.name}
           </p>
-          <p>
+          {/* `scoutlens-9a3.32`: who the percentiles are among - context, not a result. */}
+          <p data-context="population">
             Percentiles within {profile.cohort.within_role_profile_count.toLocaleString("en-US")} {profile.identity.role.toLowerCase()} profiles; at least {profile.cohort.minutes_threshold_per_period} minutes in each half.
           </p>
         </div>
@@ -159,7 +170,7 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
             <div className="fingerprint-row" key={feature.featureId}>
               <div>
                 <span>{feature.label}</span>
-                <small>{feature.family}</small>
+                <small data-context="count">{feature.family}</small>
               </div>
               <div className="fingerprint-track">
                 <span
@@ -181,7 +192,7 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
           ))}
         </div>
         <QuantityGlossary ids={["family_average_percentile"]} />
-        <p className="fingerprint-footnote">
+        <p className="fingerprint-footnote" data-context="population">
           Family averages across all {story.manifest.population.feature_count} descriptive features, not quality scores. Period A covers {periodA.match_count} matches; period B covers {periodB.match_count}.
         </p>
       </div>

@@ -436,6 +436,33 @@ describe("no published number is retyped into page, component or registry source
         literals.set(phrase, "profile.uncertainty.requested_resamples");
       }
     }
+    // `scoutlens-9a3.32`: the small published integers - median ranks, the
+    // transferred-player counts, the featured profile's ranks - are too short
+    // to scan for bare, so, like the threshold, they are scanned as the
+    // phrases copy prints around them.
+    for (const experiment of research.experiments) {
+      for (const metric of experiment.metrics) {
+        if (metric.display_precision !== 0) {
+          continue;
+        }
+        const printed = formatMetric(metric);
+        const phrases =
+          metric.metric_id === "median_rank"
+            ? [`median rank ${printed}`, `median rank of ${printed}`, `median self-rank ${printed}`, `median self-rank of ${printed}`]
+            : [`${printed} players`, `${printed} transferred`, `${printed} transfers`];
+        for (const phrase of phrases) {
+          literals.set(phrase, `${experiment.experiment_id}.${metric.metric_id}`);
+        }
+      }
+    }
+    for (const [scope, outcome] of Object.entries(profile.retrieval).filter(
+      (entry): entry is [string, PlayerProfileArtifact["retrieval"]["global"]] =>
+        typeof entry[1] === "object" && entry[1] !== null && "self_rank" in entry[1],
+    )) {
+      for (const phrase of [`rank ${outcome.self_rank} of`, `ranked ${outcome.self_rank}`, `ranked them ${outcome.self_rank}`]) {
+        literals.set(phrase, `retrieval.${scope}.self_rank`);
+      }
+    }
     for (const neighbor of profile.neighbors) {
       add(formatScore(neighbor.similarity_score), `neighbor ${neighbor.rank} similarity_score`);
     }

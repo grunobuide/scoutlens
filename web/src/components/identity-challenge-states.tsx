@@ -252,7 +252,9 @@ function ContributionRow({
   const labels = explainEvidence(features, item);
   return (
     <li className="challenge-contribution" data-evidence-id={item.evidence_id}>
-      <span className="challenge-contribution__label">{labels.label}</span>
+      <span className="challenge-contribution__label" data-context="label">
+        {labels.label}
+      </span>
       <span className="challenge-contribution__family">{labels.family_label}</span>
       <span className="challenge-contribution__interpretation">{item.interpretation}</span>
       <span className="challenge-contribution__value" data-quantity={quantityTag("contribution")}>
@@ -397,7 +399,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
           <h2 className="challenge-panel__heading" ref={headingRef} tabIndex={-1}>
             {view.copy.orientationHeading}
           </h2>
-          <p className="challenge-panel__body">{view.copy.orientationBody}</p>
+          <p className="challenge-panel__body" data-context="count">{view.copy.orientationBody}</p>
           <p className="challenge-panel__editorial" data-challenge-editorial>
             {view.copy.orientationEditorial}
           </p>
@@ -418,11 +420,11 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
           <h2 className="challenge-panel__heading" ref={headingRef} tabIndex={-1}>
             {view.copy.queryHeading}
           </h2>
-          <p className="challenge-panel__periods">
+          <p className="challenge-panel__periods" data-context="matches">
             {view.periods.a.label} · {view.periods.a.matchCount} matches ·{" "}
             {view.periods.a.minutes.toLocaleString("en-US")} minutes
           </p>
-          <p className="challenge-panel__body">{view.copy.queryBody}</p>
+          <p className="challenge-panel__body" data-context="count">{view.copy.queryBody}</p>
           <ChallengeFingerprint
             rows={rows}
             showPeriodB={false}
@@ -448,13 +450,18 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
 
       {state === "reveal" || state === "evidence" ? (
         <>
-          <h2 className="challenge-panel__heading" ref={headingRef} tabIndex={-1}>
+          <h2
+            className="challenge-panel__heading"
+            ref={headingRef}
+            tabIndex={-1}
+            data-quantity={quantityTag("self_rank")}
+          >
             {state === "evidence" ? view.copy.evidenceHeading : view.copy.revealHeading}
           </h2>
           <p className="challenge-panel__identity" data-challenge-identity>
             {view.copy.revealIdentity}
           </p>
-          <p className="challenge-panel__periods">
+          <p className="challenge-panel__periods" data-context="matches">
             {view.periods.b.label} · {view.periods.b.matchCount} matches ·{" "}
             {view.periods.b.minutes.toLocaleString("en-US")} minutes
           </p>
@@ -507,7 +514,11 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
             the view model and never rendered; the heading states the rank, this
             states what the control did with the same player.
           */}
-          <p className="challenge-panel__body" data-challenge-baseline-sentence>
+          <p
+            className="challenge-panel__body"
+            data-challenge-baseline-sentence
+            data-quantity={quantityTag("baseline_self_rank")}
+          >
             {view.copy.revealBaseline}
           </p>
 
@@ -531,7 +542,7 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
             </>
           ) : (
             <>
-              <p className="challenge-panel__body">
+              <p className="challenge-panel__body" data-context="count">
                 Weights are fitted for {view.fittedFeatureCount} of the {rows.length} displayed
                 measurements. A fitted weight may be exactly zero, so a measurement can be
                 inside the fitted set and carry no influence on the ranking.
