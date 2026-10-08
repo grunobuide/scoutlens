@@ -32,6 +32,11 @@
 
 .frozen-question h2 {
   max-width: 18ch;
+  /* `scoutlens-uze.28`: the stretched-content check found a display-size word
+     wider than this column at 320 px (155 px of ink in a 144 px track). Break
+     it rather than overflow; break-word leaves min-content sizing alone, so
+     copy that fits today renders exactly as before. */
+  overflow-wrap: break-word;
 }
 
 .frozen-question > div > p {
