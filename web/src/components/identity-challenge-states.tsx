@@ -68,6 +68,25 @@ const CHALLENGE_STATES: readonly ChallengeState[] = [
  */
 const DISPLAY_SCOPE = "within_role" as const;
 
+/** The quantities each state prints, explained after its CTAs (§6.1). */
+const QUERY_GLOSSARY = ["within_role_percentile", "raw_value"] as const;
+const REVEAL_GLOSSARY = [
+  "self_rank",
+  "rank_interval",
+  "baseline_self_rank",
+  "similarity_score",
+  "within_role_percentile",
+  "raw_value",
+] as const;
+const EVIDENCE_GLOSSARY = [
+  "self_rank",
+  "rank_interval",
+  "baseline_self_rank",
+  "similarity_score",
+  "contribution",
+  "feature_weight",
+] as const;
+
 /**
  * The state a URL names, or the recovery state.
  *
@@ -355,13 +374,16 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
     // pushed a history entry and pulled focus to the top of the page. An Escape
     // another control has already handled (`defaultPrevented`), or pressed with
     // focus outside the panel, is not one.
+    //
+    // `scoutlens-9a3.31`: that includes focus on <body>. A click on plain text
+    // anywhere on /lab leaves focus there, and the body exception this used to
+    // carry let that Escape reset the challenge from the explorer below.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || state === "orientation" || event.defaultPrevented) {
         return;
       }
       const target = event.target instanceof Node ? event.target : null;
-      const inPanel = target !== null && rootRef.current?.closest("section")?.contains(target) === true;
-      if (!inPanel && target !== document.body) {
+      if (target === null || rootRef.current?.closest("section")?.contains(target) !== true) {
         return;
       }
       goTo("orientation");
@@ -428,7 +450,6 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
             showPeriodB={false}
             caption={`First-half fingerprint, ${rows.length} measurements, within-role percentile`}
           />
-          <QuantityGlossary ids={["within_role_percentile", "raw_value"]} />
           <CaveatList
             caveats={caveatsFor(view, [
               "fingerprint_not_style_proof",
@@ -443,6 +464,12 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
           >
             {view.copy.queryCta}
           </button>
+          {/*
+            `scoutlens-9a3.31`: §6.1 makes the CTA the state's first focusable
+            element. The glossary's <summary> is a control too, so it follows
+            the CTA in the DOM - after it in focus order and in reading order.
+          */}
+          <QuantityGlossary ids={QUERY_GLOSSARY} />
         </>
       ) : null}
 
@@ -525,9 +552,6 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
                   </li>
                 ))}
               </ul>
-              <QuantityGlossary
-                ids={["self_rank", "rank_interval", "baseline_self_rank", "similarity_score", "within_role_percentile", "raw_value"]}
-              />
             </>
           ) : (
             <>
@@ -548,9 +572,6 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
                   </li>
                 ))}
               </ul>
-              <QuantityGlossary
-                ids={["self_rank", "rank_interval", "baseline_self_rank", "similarity_score", "contribution", "feature_weight"]}
-              />
             </>
           )}
 
@@ -585,6 +606,8 @@ export function IdentityChallengeStates({ view, rows }: IdentityChallengeStatesP
               {view.copy.revealCtaLab}
             </a>
           </div>
+          {/* `scoutlens-9a3.31`: after the CTAs, as in the query state (§6.1). */}
+          <QuantityGlossary ids={state === "reveal" ? REVEAL_GLOSSARY : EVIDENCE_GLOSSARY} />
         </>
       ) : null}
     </div>

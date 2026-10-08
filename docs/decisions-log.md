@@ -2994,3 +2994,44 @@ on `scoutlens-jtt`, because its rounding is a displayed scientific value
 
 **How to apply:** a bead that adds a component adds its row in the same pull
 request.
+
+## D073 — 2026-10-08 — The challenge's explainers follow its CTAs, Escape is the panel's alone, and the no-JavaScript card explains its ranks
+
+**Decision:** three amendments to `docs/identity-challenge-contract.md`,
+each restoring a rule the contract already stated or the epic already asked
+for. (`scoutlens-9a3.31`)
+
+1. **§6.1.** Each state's "What these numbers mean" disclosure renders after
+   the state's CTAs. A `<summary>` is a control, and §6.1 makes the CTA each
+   state's first focusable element (query) or its focusable elements (reveal,
+   evidence). `scoutlens-9a3.19` put the disclosure ahead of the CTA, so the
+   first Tab from a state's heading reached the glossary instead.
+2. **§6.2.** Escape resets the challenge only when its target is inside the
+   panel. The listener also accepted a target of `<body>`, where focus rests
+   after a click on plain text anywhere on `/lab`, so an Escape pressed while
+   reading the explorer reset the challenge, pushed a history entry and pulled
+   focus to the top of the page.
+3. **§3.5.** The no-JavaScript card tags the ranks its result sentence prints
+   (`self_rank`, `baseline_self_rank`), explains them in a native disclosure
+   that needs no JavaScript, and states the rank's 95% resampling interval when
+   the artifact publishes one. The interval is its own line, because §12 froze
+   the sentence.
+
+**Why.** The 2026-10-08 closure audit of epic `scoutlens-9a3` marked AC6
+partial on the first two, and AC4 partial on the third, because the card
+printed retrieval quantities with no explanation in reach. The card also
+showed the uncertainty caveat without the interval the caveat describes. The
+only Tab-order test covered orientation, and the keyboard test focused the CTA
+directly, so neither saw the regression. The quantity sweep ran only with
+JavaScript.
+
+**Why move the disclosure, not amend §6.1 to allow it.** §6.1's principle is
+that nothing should stand between a keyboard user and the state's primary
+action. An explainer is reachable one Tab later and stays in reading order
+after the action it explains.
+
+**How to apply:** `e2e/identity-challenge.spec.ts` walks query, reveal and
+evidence by Tab and Enter alone, and adds the `<body>` case to the Escape test.
+`e2e/quantity-explainers.spec.ts` sweeps `/lab/` without JavaScript and holds
+the card's result sentence to its two tags. A control added to a challenge
+state goes after its CTAs.
