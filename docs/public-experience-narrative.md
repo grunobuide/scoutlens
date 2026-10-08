@@ -131,7 +131,9 @@ measurement count read from the manifest (`source.season`,
 `population.feature_count`); they precede the first metric. The orientation
 answers what the project asks and how the season is split to ask it; the §2
 thesis and boundary follow it. `e2e/science-evidence-surface.spec.ts` reads this
-section (`scoutlens-9a3.23`).
+section (`scoutlens-9a3.23`). The case study's "The question" is the same two
+sentences with the same substitutions, and `tests/release/test_case_study.py`
+reads this section too (`scoutlens-9a3.34`).
 
 ## 4. Six timed comprehension questions
 
@@ -295,11 +297,15 @@ The table is the allow/deny contract for every current and future copy owner.
 
 ## 9. Relationship to the release case study
 
-`docs/case-study.md` is a future release deliverable (Beads `scoutlens-jtt.7.3`).
+`docs/case-study.md` is a release deliverable (Beads `scoutlens-jtt.7.3`).
 It must consume this specification: the frozen thesis and 30-second explanation,
 the glossary, and the route ownership. It may point at the same artifact
-identifiers but must not introduce a second copy of any headline metric value;
-numbers remain owned by artifacts, and the case study adds narrative, not data.
+identifiers, and it may carry a copy of a metric value only where
+`tests/release/test_case_study.py` binds that copy to the artifact field it was
+copied from, so a copy that drifts fails the build ([D071](decisions-log.md)).
+An unbound copy is not permitted. Numbers remain owned by artifacts, and the
+case study adds narrative, not data. The same test reads §2 and the opening of
+§3 and holds the case study to them verbatim.
 
 ## 10. Dependencies for implementation
 

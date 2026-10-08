@@ -2994,3 +2994,79 @@ on `scoutlens-jtt`, because its rounding is a displayed scientific value
 
 **How to apply:** a bead that adds a component adds its row in the same pull
 request.
+
+## D071 — 2026-10-08 — The case study may copy a figure only where a test binds it to the artifact
+
+**Decision:** narrative §9's rule that the case study "must not introduce a
+second copy of any headline metric value" is amended. The case study may carry
+a copy of a metric value only where `tests/release/test_case_study.py` binds
+that copy to the artifact field it was copied from (`FIGURES` for the prose and
+the alt text, `TABLES` for the tables), so a copy that drifts fails the build.
+An unbound copy is still forbidden. §9 now says so, and the case study's §8 says
+its figures are checked against the artifact by that test, not generated from
+it. (`scoutlens-9a3.34`)
+
+**Why.** The rule as written was broken from the day the case study shipped: it
+holds about twenty typed figures, and a case study without its numbers cannot
+make its argument. What kept them honest was never generation but the test,
+which since `scoutlens-9a3.21` and `scoutlens-9a3.28` binds every figure,
+occurrence by occurrence, to one metric or manifest field. The case study's own
+sentence "Every metric here is generated from the same artifact" was wrong in
+the same way. The 2026-10-08 closure audit of epic `scoutlens-9a3` found both.
+A rule the project enforces is worth more than one nobody can follow.
+
+**Consumed, not paraphrased.** §9 also says the case study consumes the 30-second
+explanation; it paraphrased it. "The question" is now §3's opening verbatim —
+the two sentences `/science` renders as its orientation — with the display name
+for "ScoutLens" and the season and measurement count read from the manifest,
+and the test reads §3 at run time the way it reads §2.
+
+**Scope.** This governs the release case study only. For product copy the
+change-control boundary's rule stands: the site renders every figure from the
+artifact and never restates a constant.
+
+**How to apply:** a figure added to the case study gets its binding in the same
+change. A ratio written in words ("more than twice") is a figure the sweep
+cannot see, so write it as a numeral and bind it to the ratio it summarises, as
+`times_greater` does for both of the case study's "more than 2×". Small integers
+are no longer exempt everywhere: only Markdown's own numbering and the
+references named in `STRUCTURAL_CONTEXTS` are.
+
+## D072 — 2026-10-08 — The screenshot tolerance is an absolute pixel budget; D054's ratio clause is superseded
+
+**Decision:** D054's clause "keep `maxDiffPixelRatio` at `0.03`" is superseded.
+The screenshot tolerance is `maxDiffPixels: 250` in `web/playwright.config.ts`,
+an absolute pixel count, with no ratio set beside it. The rest of D054 stands:
+images assert layout, rendered-text assertions assert claims, and neither
+substitutes for the other. The frontend agent contract (§4.3 and §5.5) and the
+comments in `e2e/interpolated-text.spec.ts` and `e2e/rendered-values.spec.ts`
+now name `maxDiffPixels`; the two comments keep 0.03 only as the tolerance of
+the time they describe. No tolerance changes here. (`scoutlens-9a3.34`)
+
+**Why.** The value moved three times after D054 without an entry, so the ledger
+still stated a tolerance the config had not had since `scoutlens-uze.19`:
+
+1. `26ffed5` (`scoutlens-uze.19`): `0.03` → `0.002`. At 0.03 the gate missed a
+   site-wide wordmark change. Measured in Playwright's own arithmetic, the floor
+   (CI against the pinned container) was 0.00043 and the smallest real change
+   0.00562.
+2. `e224658` (`scoutlens-uze.19`): `0.002` → `maxDiffPixels: 2000`. The only
+   artefact to tolerate was one monospace element that CI rendered differently,
+   roughly constant in pixels (497 px on desktop, 1,052 px on mobile-360). A
+   ratio divides by image area, so no single ratio sat above the mobile floor
+   and below the smallest real change (3,605 px); 0.002 failed CI on mobile.
+3. `1dadb8f` (`scoutlens-uze.24`): `2000` → `250`. `scoutlens-uze.23` had moved
+   `web-quality` into the pinned image, and at a budget of 0 every baseline
+   matched exactly except one stale image, which was re-rendered. 250 is
+   headroom for jitter never observed, 14× below the smallest real change.
+
+D054's argument, that a ratio cannot say which pixels changed, was right; it is
+why the budget became absolute and tighter, not a reason to keep 0.03. Its
+concern that tightening breeds cross-platform flake was answered by making CI
+and baseline regeneration one renderer.
+
+**How to apply:** the budget is not raised to make a run green (contract §5.5).
+If 250 ever has to move, that is a finding about the renderer: record it in a
+new entry before the config changes. Do not set `maxDiffPixelRatio` beside it;
+Playwright treats each as an independent limit, so a ratio would return as a
+hidden second gate.
