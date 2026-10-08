@@ -33,7 +33,7 @@ export default async function LabPage() {
   return (
     <main id="main-content" className="shell page-shell lab-page">
       <header className="page-intro page-intro--wide lab-page-intro">
-        <DataVintageBadge manifest={story.manifest} />
+        <DataVintageBadge manifest={story.manifest} competitions={story.competitions} />
         <p className="eyebrow">Interactive evidence surface</p>
         <h1>Compare one player with himself.</h1>
         <p className="lede">
@@ -82,7 +82,7 @@ export default async function LabPage() {
         <LabProblemPanel problem={lab.problem} datasetVersion={lab.datasetVersion} />
       )}
 
-      <ProviderBoundary manifest={story.manifest} research={story.research} />
+      <ProviderBoundary manifest={story.manifest} research={story.research} competitions={story.competitions} />
     </main>
   );
 }
