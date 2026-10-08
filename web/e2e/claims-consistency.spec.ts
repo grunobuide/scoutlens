@@ -74,7 +74,7 @@ interface Manifest {
 }
 
 interface PlayerIndex {
-  profiles: ReadonlyArray<{ profile_key: string }>;
+  profiles: ReadonlyArray<{ profile_key: string; competition: { id: number; name: string; country: string } }>;
 }
 
 /**
@@ -100,6 +100,27 @@ async function selectedLabRoute(request: APIRequestContext): Promise<string> {
     throw new Error("the index has no profile besides the featured one");
   }
   return `/lab/?player=${other.profile_key}`;
+}
+
+/**
+ * Which competitions the dataset covers, worked out here from the served index
+ * rather than taken from the site's helper (`scoutlens-9a3.33`, D074): the
+ * distinct competitions of every profile, which must be the manifest's ids,
+ * ordered by country. `scope` is the chip's wording; `names` the provider
+ * section's.
+ */
+async function publishedCompetitions(request: APIRequestContext): Promise<{ scope: string; names: string }> {
+  const index = await fetchArtifact<PlayerIndex>(request, "players.index.json");
+  const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
+  const byId = new Map(index.profiles.map((profile) => [profile.competition.id, profile.competition]));
+  expect([...byId.keys()].sort((a, b) => a - b)).toEqual(
+    [...manifest.population.domestic_competition_ids].sort((a, b) => a - b),
+  );
+  const competitions = [...byId.values()].sort((a, b) => a.country.localeCompare(b.country, "en"));
+  return {
+    scope: `${competitions.length} domestic competitions: ${[...new Set(competitions.map((item) => item.country))].join(", ")}`,
+    names: `(${competitions.map((item) => item.name).join(", ")})`,
+  };
 }
 
 test.beforeEach(async ({}, testInfo) => {
@@ -375,6 +396,7 @@ test("the data vintage is identical on every route that shows it", async ({ page
   // used to be skipped, so losing it passed - and a selected /lab URL is
   // asserted too. `scoutlens-9a3.20`: the badge now names the provider and the
   // population threshold, read from the manifest.
+  const competitions = await publishedCompetitions(request);
   const routes = [...ROUTES, await selectedLabRoute(request)];
   for (const route of routes) {
     await page.goto(route);
@@ -395,8 +417,11 @@ test("the data vintage is identical on every route that shows it", async ({ page
       manifest.source.licence,
     );
     // `scoutlens-9a3.26` (D069): the competition scope and the licence boundary.
-    await expect(badge.locator(".data-vintage__scope"), `${route} competition scope`).toHaveText(
-      `${manifest.population.domestic_competition_ids.length} domestic competitions`,
+    // `scoutlens-9a3.33` (D074): which competitions, not only how many, and the
+    // purpose label, which was asserted only in /science contexts.
+    await expect(badge.locator(".data-vintage__scope"), `${route} competition scope`).toHaveText(competitions.scope);
+    await expect(badge.locator(".data-vintage__label"), `${route} purpose`).toHaveText(
+      "Historical reproducible benchmark",
     );
     await expect(badge.locator(".data-vintage__redistribution"), `${route} licence boundary`).toHaveText(
       "aggregates only, no raw rows",
@@ -473,12 +498,19 @@ test("the provider section states the manifest's redistribution note and the tem
   // publishes ..."), which a containment check alone would have passed. So the
   // sentence before it is part of the expectation.
   const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
+  const competitions = await publishedCompetitions(request);
   const routes = [...ROUTES, await selectedLabRoute(request)];
   for (const route of routes) {
     await page.goto(route);
     await waitForStablePage(page);
     const boundary = page.locator("main [data-provider-boundary]");
     await expect(boundary, `${route} renders no provider section`).toHaveCount(1);
+    // `scoutlens-9a3.33`: the competitions by name, and the provider by its
+    // display name - on /lab this section is the whole provenance audit.
+    await expect(boundary, `${route} competitions`).toContainText(competitions.names);
+    await expect(boundary, `${route} provider`).toContainText(
+      `Provider: ${PROVIDER_LABEL[manifest.source.provider] ?? `(no label for ${manifest.source.provider})`}.`,
+    );
     await expect(boundary, `${route} redistribution note`).toContainText(
       `Published under ${manifest.source.licence}. ${manifest.source.redistribution_note}`,
     );
@@ -685,21 +717,26 @@ test.describe("without JavaScript", () => {
     // `scoutlens-9a3.20`: provenance a reader needs before the first number
     // must be in the served HTML, on every route.
     const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
+    const competitions = await publishedCompetitions(request);
     for (const route of ROUTES) {
       await page.goto(route);
       const badge = page.locator("main [data-vintage-badge]");
       await expect(badge, `${route} badge`).toHaveCount(1);
+      await expect(badge.locator(".data-vintage__label"), `${route} purpose`).toHaveText(
+        "Historical reproducible benchmark",
+      );
       await expect(badge.locator(".data-vintage__provider")).toHaveText(
         PROVIDER_LABEL[manifest.source.provider] ?? `(no label for ${manifest.source.provider})`,
       );
       await expect(badge.locator(".data-vintage__threshold")).toContainText(
         String(manifest.population.minutes_threshold_per_period),
       );
-      // `scoutlens-9a3.26` (D069).
-      await expect(badge.locator(".data-vintage__scope")).toHaveText(
-        `${manifest.population.domestic_competition_ids.length} domestic competitions`,
-      );
+      // `scoutlens-9a3.26` (D069), and `scoutlens-9a3.33` (D074): which ones.
+      await expect(badge.locator(".data-vintage__scope")).toHaveText(competitions.scope);
       await expect(badge.locator(".data-vintage__redistribution")).toHaveText("aggregates only, no raw rows");
+      await expect(page.locator("main [data-provider-boundary]"), `${route} competitions`).toContainText(
+        competitions.names,
+      );
     }
   });
 

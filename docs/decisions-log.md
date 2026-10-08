@@ -2994,3 +2994,36 @@ on `scoutlens-jtt`, because its rounding is a displayed scientific value
 
 **How to apply:** a bead that adds a component adds its row in the same pull
 request.
+
+## D074 — 2026-10-08 — The chip names which competitions, read from the published index; D069's "count, not names" is amended
+
+**Decision:** the data-vintage chip's competition scope names the
+competitions' countries after the count: "5 domestic competitions: England,
+France, Germany, Italy, Spain". The provider section's scope sentence names
+them in full, as the index does ("English first division", ...). Both are
+read at build time from `players.index.json`, whose entries carry each
+competition's id, name and country, through one helper,
+`datasetCompetitions` in `web/src/content/provenance.ts`. The helper throws
+unless the index's distinct competitions are exactly the manifest's
+`population.domestic_competition_ids` and each id has one name. The provider
+section's primary-evidence sentence also names the provider from the one
+table ("Provider: Wyscout / Pappalardo."). (`scoutlens-9a3.33`)
+
+**Why.** Epic 9a3's AC5 asks for "competition/season vintage" at the point
+of first interpretation. D069 gave a count, and on `/` and `/science` no
+surface said which leagues. The 2026-10-08 closure audit marked AC5 partial
+for it, and for a `/lab` provenance audit that never said "Wyscout".
+
+**Why D069's reason no longer holds.** D069 said naming the competitions
+"would need a manifest field". It does not: the published index already
+carries the names, and the pages are static, so reading it costs build time
+and no client JavaScript. What D069 rightly ruled out stays out: nothing is
+typed in. The names and countries are the artifact's, and a re-export with
+different competitions changes the chip or fails the build.
+
+**How to apply:** `web/tests/data-provenance.test.tsx` checks the helper
+against the index's own fields and against planted extra, missing and
+renamed competitions. `e2e/claims-consistency.spec.ts` works the list out
+independently from the served index and asserts it, with the purpose label,
+in the chip and the provider section on every route, with and without
+JavaScript.
