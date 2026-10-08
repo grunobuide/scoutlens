@@ -1,4 +1,4 @@
-import type { ResearchExperiment } from "@/contracts/generated/showcase-v2";
+import type { Competition, ResearchExperiment } from "@/contracts/generated/showcase-v2";
 
 /**
  * Presentation names for the data providers the contract can name
@@ -40,6 +40,48 @@ export const REDISTRIBUTION_SUMMARY = "aggregates only, no raw rows";
 /** The competition scope, worded once; the count is the manifest's. */
 export function competitionScope(count: number): string {
   return `${count.toLocaleString("en-US")} domestic competition${count === 1 ? "" : "s"}`;
+}
+
+/**
+ * Which competitions the dataset covers (`scoutlens-9a3.33`, D074).
+ *
+ * The manifest names them by id only (`population.domestic_competition_ids`);
+ * each entry of the published players index carries its competition's id,
+ * name and country. This reads the distinct competitions off the index and
+ * refuses to answer unless they are exactly the manifest's: an index that
+ * covers a competition the manifest does not declare, or misses one it does,
+ * or names one id two ways, throws rather than printing a list the artifact
+ * does not support. Ordered by country, so the order is the data's, not ours.
+ */
+export function datasetCompetitions(
+  competitionIds: ReadonlyArray<number>,
+  profiles: ReadonlyArray<{ competition: Competition }>,
+): ReadonlyArray<Competition> {
+  const byId = new Map<number, Competition>();
+  for (const { competition } of profiles) {
+    const seen = byId.get(competition.id);
+    if (seen !== undefined && (seen.name !== competition.name || seen.country !== competition.country)) {
+      throw new Error(`Competition ${competition.id} is named two ways in the players index`);
+    }
+    byId.set(competition.id, competition);
+  }
+  const declared = [...new Set(competitionIds)].sort((a, b) => a - b);
+  const indexed = [...byId.keys()].sort((a, b) => a - b);
+  if (declared.join(",") !== indexed.join(",")) {
+    throw new Error(
+      `The players index covers competitions [${indexed.join(", ")}]; the manifest declares [${declared.join(", ")}]`,
+    );
+  }
+  return [...byId.values()].sort((a, b) => a.country.localeCompare(b.country, "en"));
+}
+
+/**
+ * The countries of the dataset's competitions, for the chip. Each country
+ * once: two competitions in one country name it once, and the count before
+ * the list stays the number of competitions.
+ */
+export function competitionCountries(competitions: ReadonlyArray<Competition>): string {
+  return [...new Set(competitions.map((competition) => competition.country))].join(", ");
 }
 
 /** What the site is, in the words of the chip that opens every route. */

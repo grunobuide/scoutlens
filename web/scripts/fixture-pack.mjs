@@ -794,8 +794,20 @@ async function buildFixturePack() {
     profiles: [...index.profiles, ...indexItems],
   };
 
+  // `scoutlens-9a3.33`: the pack's manifest declares the competitions its index
+  // covers. The synthetic profiles sit in competitions 901-903, which the
+  // published manifest does not list, and the site now refuses an index whose
+  // competitions are not exactly the manifest's (`datasetCompetitions`).
+  const fixtureCompetitionIds = [
+    ...new Set([
+      ...manifest.population.domestic_competition_ids,
+      ...fixtureIndex.profiles.map((item) => item.competition.id),
+    ]),
+  ].sort((left, right) => left - right);
+
   const fixtureManifest = {
     ...manifest,
+    population: { ...manifest.population, domestic_competition_ids: fixtureCompetitionIds },
     generated_at: "2026-08-06T00:00:00Z",
     featured_profile: {
       profile_key: FIXTURE_IDENTITY.profile_key,

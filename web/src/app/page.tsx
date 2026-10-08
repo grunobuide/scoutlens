@@ -24,7 +24,7 @@ export default async function HomePage() {
     <main id="main-content">
       <section className="hero shell">
         <div className="hero__copy">
-          <DataVintageBadge manifest={story.manifest} />
+          <DataVintageBadge manifest={story.manifest} competitions={story.competitions} />
           <p className="eyebrow">Player Fingerprint Lab</p>
           {/*
             `scoutlens-9a3.14`. The h1 is the sentence a reader repeats back, and
@@ -166,7 +166,7 @@ export default async function HomePage() {
       </section>
 
       <div className="shell landing-provenance">
-        <ProviderBoundary manifest={story.manifest} research={research} />
+        <ProviderBoundary manifest={story.manifest} research={research} competitions={story.competitions} />
         <ProvenanceDrawer story={story} />
       </div>
     </main>

@@ -3,10 +3,12 @@ import Link from "next/link";
 import {
   BENCHMARK_PURPOSE,
   REDISTRIBUTION_SUMMARY,
+  competitionCountries,
   competitionScope,
   eligibilityRule,
   providerLabel,
 } from "@/content/provenance";
+import type { Competition } from "@/contracts/generated/showcase-v2";
 import type {
   AnyManifest,
   AnyResearchSummaryArtifact,
@@ -20,6 +22,8 @@ import type {
 
 export interface DataVintageBadgeProps {
   manifest: AnyManifest;
+  /** The dataset's competitions, from `datasetCompetitions`. */
+  competitions: ReadonlyArray<Competition>;
 }
 
 /** Concise, no-JavaScript-safe heritage chip for the first interpretation
@@ -33,15 +37,18 @@ export interface DataVintageBadgeProps {
  *
  *  `scoutlens-9a3.26` (D069): and the competition scope and the licence
  *  boundary, the two remaining facts epic 9a3 AC5 places at the first point
- *  of interpretation. */
-export function DataVintageBadge({ manifest }: DataVintageBadgeProps) {
+ *  of interpretation.
+ *
+ *  `scoutlens-9a3.33` (D074): the scope names the competitions' countries, so
+ *  "competition vintage" says which leagues, not only how many. */
+export function DataVintageBadge({ manifest, competitions }: DataVintageBadgeProps) {
   return (
     <p className="data-vintage" data-vintage-badge>
       <span className="data-vintage__label">{BENCHMARK_PURPOSE}</span>
       <span className="data-vintage__provider">{providerLabel(manifest.source.provider)}</span>
       <span className="data-vintage__season">{manifest.source.season}</span>
       <span className="data-vintage__scope">
-        {competitionScope(manifest.population.domestic_competition_ids.length)}
+        {`${competitionScope(manifest.population.domestic_competition_ids.length)}: ${competitionCountries(competitions)}`}
       </span>
       <span className="data-vintage__threshold">
         {eligibilityRule(manifest.population.minutes_threshold_per_period)}
@@ -56,12 +63,14 @@ export function DataVintageBadge({ manifest }: DataVintageBadgeProps) {
 export interface ProviderBoundaryProps {
   manifest: AnyManifest;
   research: AnyResearchSummaryArtifact;
+  /** The dataset's competitions, from `datasetCompetitions`. */
+  competitions: ReadonlyArray<Competition>;
 }
 
 /** Distinguishes the primary per-profile evidence (Wyscout/Pappalardo) from
  *  the aggregate-only StatsBomb replication, and states the
  *  reproducibility-vs-recency boundary explicitly. */
-export function ProviderBoundary({ manifest, research }: ProviderBoundaryProps) {
+export function ProviderBoundary({ manifest, research, competitions }: ProviderBoundaryProps) {
   const replication = research.experiments.some(
     (experiment) => experiment.provider === "statsbomb_open_data",
   );
@@ -86,10 +95,15 @@ export function ProviderBoundary({ manifest, research }: ProviderBoundaryProps) 
             then added its own full stop - "et al.." on every route. The second
             provider check inside it was always true there, so it is gone too.
           */}
+          {/*
+            `scoutlens-9a3.33`: and names the provider from the one table. On
+            /lab this section is the provenance audit, and it never said
+            "Wyscout".
+          */}
           <p>
             {wyscout
-              ? `Every player profile, rank, and neighbor on this site is derived from ${manifest.source.title} (${manifest.source.season}), a public event dataset by Pappalardo et al.`
-              : `Primary evidence is derived from ${manifest.source.title} (${manifest.source.season}).`}
+              ? `Every player profile, rank, and neighbor on this site is derived from ${manifest.source.title} (${manifest.source.season}), a public event dataset by Pappalardo et al. Provider: ${providerLabel(manifest.source.provider)}.`
+              : `Primary evidence is derived from ${manifest.source.title} (${manifest.source.season}). Provider: ${providerLabel(manifest.source.provider)}.`}
           </p>
           {/*
             `scoutlens-9a3.22`: this read "…player-period aggregates:" and then the
@@ -105,7 +119,8 @@ export function ProviderBoundary({ manifest, research }: ProviderBoundaryProps) 
           <p>
             Scope: {population.profile_count.toLocaleString("en-US")}{" "}
             {population.analytical_unit.replaceAll("_", " × ")} profiles
-            across {competitionCount} domestic competition{competitionCount === 1 ? "" : "s"}, split into
+            across {competitionCount} domestic competition{competitionCount === 1 ? "" : "s"}{" "}
+            {`(${competitions.map((competition) => competition.name).join(", ")})`}, split into
             period {periodsLabel}. A profile is eligible only with at least{" "}
             {population.minutes_threshold_per_period} minutes per period.
           </p>
