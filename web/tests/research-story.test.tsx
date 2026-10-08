@@ -133,9 +133,11 @@ describe("evidence-first research story", () => {
 
   it("does not restate the supported claim (scoutlens-9a3.12)", () => {
     // The landing hero states the claim four blocks above this section, under
-    // the same "Supported claim" label. Run 1 of the comprehension check read
-    // the repeat as "you have been here already", skimmed, and could not name a
-    // single unsupported claim — which is what sits immediately after it.
+    // the same "Supported claim" label. Run 1 of the comprehension check could
+    // not name a single unsupported claim — which is what sits immediately
+    // after it. That the evaluator read the repeat as "you have been here
+    // already" and skimmed is inference: run 1 captured no element-read trace
+    // (docs/public-understanding-check.md §6), so the cause was not observed.
     //
     // This asserts the absence, because the defect was a duplicate rather than
     // a missing string: a test that only checks the boundary renders would stay
