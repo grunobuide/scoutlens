@@ -17,9 +17,11 @@ import { SHOWCASE_BASE, waitForStablePage } from "./helpers";
  * probes the rendered page and a source-reading test would have passed on it.
  *
  * It also survived every other gate. The string sits inside a paragraph, so no
- * content assertion covered it, and one missing space is far under
- * `maxDiffPixelRatio: 0.03`, so the visual baselines carried it silently
- * through several regenerations (see `scoutlens-uze.19`). It was eventually
+ * content assertion covered it, and one missing space was far under the
+ * screenshot tolerance of the time, a ratio of 0.03, so the visual baselines
+ * carried it silently through several regenerations. `scoutlens-uze.19`
+ * replaced that ratio with an absolute budget, now `maxDiffPixels: 250`
+ * (`D072`), but this gate does not rely on it. It was eventually
  * found by a human reading a screenshot — and by then it had reached the
  * committed portfolio media.
  *

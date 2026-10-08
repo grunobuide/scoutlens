@@ -2,10 +2,12 @@
  * Value-level assertions on what the Lab actually renders (`scoutlens-uze.12`).
  *
  * **Why this file exists.** The visual baselines were asserting v1 content for
- * six days after the v2 repin and the gate stayed green, because
- * `maxDiffPixelRatio` is 3% and the changed text is a small fraction of a
- * mostly-white card. One committed reference image simultaneously asserted
- * three superseded decisions as correct:
+ * six days after the v2 repin and the gate stayed green, because the
+ * screenshot tolerance was then a ratio of 0.03 and the changed text is a small
+ * fraction of a mostly-white card. The tolerance is now an absolute
+ * `maxDiffPixels: 250` (`scoutlens-uze.19`, `scoutlens-uze.24`, `D072`); the
+ * reason for this file stands either way. One committed reference image
+ * simultaneously asserted three superseded decisions as correct:
  *
  * | in the baseline | should be | decision |
  * |---|---|---|
