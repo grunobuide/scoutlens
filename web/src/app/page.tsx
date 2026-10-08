@@ -9,16 +9,19 @@ import {
 } from "@/components/research-story";
 import { ThesisStatement } from "@/components/thesis-statement";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
+import { MetricGlossary, metricTag } from "@/components/quantity-glossary";
 import { formatMetric, requireMetric } from "@/content/showcase-story";
 
 export default async function HomePage() {
   const story = await loadShowcaseStory();
   const { experiments, research } = story;
-  const teamControlMrr = formatMetric(requireMetric(experiments.teamControl, "baseline_c_mrr"));
+  const teamControl = { experiment: experiments.teamControl, metric: requireMetric(experiments.teamControl, "baseline_c_mrr") };
+  const teamControlMrr = formatMetric(teamControl.metric);
   // `scoutlens-9a3.13`: the confound is only legible next to the number it beats.
   // Both come from the same 1,257-unit Wyscout population, so the comparison is
   // like for like — the bead's stop condition forbids comparing unlike ones.
-  const fingerprintMrr = formatMetric(requireMetric(experiments.global, "fingerprint_mrr"));
+  const fingerprint = { experiment: experiments.global, metric: requireMetric(experiments.global, "fingerprint_mrr") };
+  const fingerprintMrr = formatMetric(fingerprint.metric);
 
   return (
     <main id="main-content">
@@ -91,15 +94,24 @@ export default async function HomePage() {
             the comparison it loses is stated rather than left for the reader to
             assemble, and the evidence is one link away.
           */}
-          <div className="signal-confound">
+          {/*
+            `scoutlens-9a3.32`: the hero quotes two metrics before anything on
+            the page has said what MRR is - the experiment cards that explain
+            them are further down. Each value carries its tag, and the two
+            explanations are one disclosure away, here.
+          */}
+          <div className="signal-confound" data-quantity-scope>
             <p className="signal-caveat">
               <strong>Critical confound:</strong> most players stayed at the same club across both
               halves, so who they played alongside is itself a clue to who they are. A control
               given only role, team and minutes—nothing about how a player acts—identifies them
-              better than the fingerprint does: {teamControlMrr} against {fingerprintMrr} MRR,
-              measured the same way on the same players. That narrows what the result means; it
-              does not retract it.
+              better than the fingerprint does:{" "}
+              <span data-metric={metricTag(teamControl)}>{teamControlMrr}</span> against{" "}
+              <span data-metric={metricTag(fingerprint)}>{fingerprintMrr}</span> MRR, measured the
+              same way on the same players. That narrows what the result means; it does not
+              retract it.
             </p>
+            <MetricGlossary items={[teamControl, fingerprint]} />
             <Link className="signal-evidence" href="/science/#stage-03">
               See the team-continuity control
             </Link>
