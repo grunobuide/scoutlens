@@ -1670,9 +1670,16 @@
 .challenge-panel__identity,
 .challenge-panel__periods,
 .challenge-panel__result,
+.challenge-panel__interval,
 .challenge-panel__pin {
   max-width: 52ch;
   margin: 0;
+}
+
+/* `scoutlens-9a3.31`: the no-JavaScript card's resampling interval. */
+.challenge-panel__interval {
+  color: var(--ink-600);
+  font-size: 0.88rem;
 }
 
 .challenge-panel__identity {

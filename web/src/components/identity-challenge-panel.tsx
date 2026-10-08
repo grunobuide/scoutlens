@@ -26,6 +26,8 @@
 import Link from "next/link";
 
 import { IdentityChallengeStates } from "@/components/identity-challenge-states";
+import { QuantityGlossary, quantityTag } from "@/components/quantity-glossary";
+import { formatRank } from "@/components/rank-format";
 
 import type { IdentityChallengeData } from "@/content/load-identity-challenge";
 import type { IdentityChallengeView } from "@/content/identity-challenge";
@@ -80,13 +82,18 @@ function CaveatList({ caveats }: { caveats: readonly Caveat[] }) {
  * caveats are repeated here in full rather than summarised.
  */
 function DegradedCard({ view }: { view: IdentityChallengeView }) {
+  const { uncertainty } = view.retrieval;
   const caveats = [
     ...caveatsFor(view, DEGRADED_CAVEAT_ORDER),
-    ...(view.retrieval.uncertainty.caveat === null ? [] : [view.retrieval.uncertainty.caveat]),
+    ...(uncertainty.caveat === null ? [] : [uncertainty.caveat]),
   ];
 
+  // `scoutlens-9a3.31`: the card prints the same ranks the reveal does, so it
+  // carries the same tags and the same explanations - a native <details>, which
+  // needs no JavaScript. The interval is its own line rather than a clause in
+  // the result sentence, because §12 froze that sentence.
   return (
-    <div className="challenge-panel__degraded" data-challenge-degraded>
+    <div className="challenge-panel__degraded" data-challenge-degraded data-quantity-scope>
       <h3>{view.copy.degradedHeading}</h3>
       <p className="challenge-panel__identity">{view.copy.revealIdentity}</p>
       <p className="challenge-panel__periods">
@@ -94,13 +101,34 @@ function DegradedCard({ view }: { view: IdentityChallengeView }) {
         <span aria-hidden="true"> · </span>
         <span>{view.periods.b.label}</span>
       </p>
-      <p className="challenge-panel__result" data-challenge-result>
+      <p
+        className="challenge-panel__result"
+        data-challenge-result
+        data-quantity={quantityTag("self_rank", "baseline_self_rank")}
+      >
         {view.copy.degradedResult}
       </p>
+      {uncertainty.rankCi95 === null ? null : (
+        <p
+          className="challenge-panel__interval"
+          data-challenge-degraded-interval
+          data-quantity={quantityTag("rank_interval")}
+        >
+          95% resampling interval of the fingerprint rank: {formatRank(uncertainty.rankCi95[0])}–
+          {formatRank(uncertainty.rankCi95[1])}
+        </p>
+      )}
       <CaveatList caveats={caveats} />
       <Link className="button button--secondary" href={profileHref(view.profileKey)}>
         {view.copy.revealCtaLab}
       </Link>
+      <QuantityGlossary
+        ids={
+          uncertainty.rankCi95 === null
+            ? ["self_rank", "baseline_self_rank"]
+            : ["self_rank", "rank_interval", "baseline_self_rank"]
+        }
+      />
     </div>
   );
 }

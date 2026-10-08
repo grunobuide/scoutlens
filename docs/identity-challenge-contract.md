@@ -299,6 +299,10 @@ player quality
   as a static sentence: "L. Modrić's second-half profile was ranked
   [self_rank] of [candidate_count] by fingerprint similarity, versus
   [baseline_rank] by the role-and-minutes baseline."
+- The rank's 95% resampling interval, when the artifact publishes one, as its
+  own line after that sentence - never inside it, because §12 froze the
+  sentence - and a native "What these numbers mean" disclosure for the ranks
+  the card prints, which needs no JavaScript (`scoutlens-9a3.31`, `D073`)
 - The data-vintage badge
 - The mandatory caveats as inline text
 - A link to the featured profile in the Lab explorer
@@ -387,6 +391,11 @@ published order. Each contribution row is read as: feature label, family,
 alignment or disagreement, contribution value. The rows are informational; the
 CTAs are the focusable elements.
 
+**Explainer disclosures** (`scoutlens-9a3.19`) are controls - a `<summary>` is
+focusable - so in every state they come after the CTAs, in focus order and in
+DOM order. Each state's CTA stays its first focusable element
+(`scoutlens-9a3.31`, `D073`).
+
 **Accessible names on fingerprint rows.** Every row names its feature and the
 percentile scale, plus the period values *that its state shows*:
 
@@ -407,7 +416,9 @@ hiding it from everyone else.
 - Escape in query, reveal, or evidence returns to the orientation state and
   focuses the orientation heading - when focus is inside the challenge panel
   and no other control has already handled the key. The neighbour drawer's
-  Escape and the search box's are theirs (`scoutlens-9a3.27`).
+  Escape and the search box's are theirs (`scoutlens-9a3.27`). Focus on
+  `<body>`, where a click on non-focusable text leaves it, is not inside the
+  panel (`scoutlens-9a3.31`).
 - ~~Profile switch from the Lab explorer resets the challenge and focuses the
   query state heading.~~ Superseded by D068: a profile switch does not touch the
   challenge.

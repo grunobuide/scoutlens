@@ -110,6 +110,31 @@ test("the challenge is operable by keyboard, and Escape returns to orientation",
   await expect(page.locator(".challenge-panel__heading")).toBeFocused();
 });
 
+/**
+ * `scoutlens-9a3.31`: §6.1 makes each state's CTA its first focusable element.
+ * The earlier keyboard test focused the CTA directly, so nothing noticed when
+ * scoutlens-9a3.19 put a glossary's <summary> - a control - ahead of it. This
+ * walks the flow by Tab and Enter alone, from each state's focused heading.
+ */
+test("from each state's heading, one Tab reaches that state's CTA", async ({ page }) => {
+  await gotoLab(page);
+  await page.getByRole("button", { name: "See the fingerprint" }).focus();
+  await page.keyboard.press("Enter");
+
+  for (const [state, cta] of [
+    ["query", "reveal"],
+    ["reveal", "evidence"],
+    ["evidence", "back"],
+  ] as const) {
+    await expect(page.locator(STATES)).toHaveAttribute("data-challenge-state", state);
+    await expect(page.locator(".challenge-panel__heading")).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(`[data-challenge-cta="${cta}"]`), `${state}: first Tab stop`).toBeFocused();
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.locator(STATES)).toHaveAttribute("data-challenge-state", "reveal");
+});
+
 test("the reveal states the method, provenance and the weighted label", async ({ page }) => {
   await gotoLab(page, "?challenge=reveal");
 
@@ -280,6 +305,17 @@ test("Escape returns to orientation only when the challenge owns it", async ({ p
       state,
     );
 
+    // `scoutlens-9a3.31`: nor is one pressed with focus on <body> - where a
+    // click on plain text anywhere on the page leaves it.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(page.locator(STATES), `${state}: Escape on <body> reset the challenge`).toHaveAttribute(
+      "data-challenge-state",
+      state,
+    );
+    await expect(page).toHaveURL(new RegExp(`challenge=${state}`));
+
     // Inside the panel, §6.2 applies.
     await page.locator(".challenge-panel__heading").focus();
     await page.keyboard.press("Escape");
@@ -336,6 +372,23 @@ test.describe("without JavaScript", () => {
       "within_role_display_differs_from_global_model",
     ]) {
       await expect(degraded.locator(`[data-caveat="${code}"]`)).toBeVisible();
+    }
+    // `scoutlens-9a3.31`: the uncertainty state the artifact declares - its
+    // caveat, and the interval itself when one is published.
+    const uncertaintyCaveat: string | undefined = (
+      { available: "uncertainty_sampling_only", pending: "uncertainty_pending" } as Record<string, string>
+    )[global.uncertainty.status];
+    if (uncertaintyCaveat !== undefined) {
+      await expect(degraded.locator(`[data-caveat="${uncertaintyCaveat}"]`)).toBeVisible();
+    }
+    const interval = degraded.locator("[data-challenge-degraded-interval]");
+    if (global.uncertainty.rank_ci_95 === null) {
+      await expect(interval).toHaveCount(0);
+    } else {
+      const [low, high] = global.uncertainty.rank_ci_95;
+      await expect(interval).toHaveText(
+        `95% resampling interval of the fingerprint rank: ${formatRank(low)}–${formatRank(high)}`,
+      );
     }
     // §2's editorial invariant holds without JavaScript too.
     await expect(page.locator(PANEL)).toContainText(manifest.featured_profile.reason);
