@@ -272,8 +272,8 @@ files — description, homepage, topics, social preview, release titles — with
 commands that check them, because nothing in this repository's test suite can.
 
 **Promotion ready: yes**, on the identity axis. The three limits this packet
-refused to claim are unchanged and still hold: comprehension was validated with
-one evaluator and no independent post-fix re-run (`D056`); no demonstration model
+refused to claim are unchanged and still hold: comprehension was not validated —
+one evaluator, no independent post-fix re-run (`D056`); no demonstration model
 has been evaluated; and the name's domain, handle and trademark status remain
 unverified, with no registration made or authorised.
 
