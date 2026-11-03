@@ -3,7 +3,7 @@
     "collect": {
       "startServerCommand": "node scripts/serve-static.mjs --port 4173",
       "startServerReadyPattern": "ScoutLens static server listening",
-      "url": ["http://127.0.0.1:4173/lab/"],
+      "url": ["http://127.0.0.1:4173/", "http://127.0.0.1:4173/science/", "http://127.0.0.1:4173/lab/"],
       "numberOfRuns": 3,
       "puppeteerScript": "scripts/lhci-puppeteer.cjs",
       "puppeteerLaunchOptions": {

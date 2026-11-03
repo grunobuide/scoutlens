@@ -27,9 +27,9 @@ assets as one-year `immutable` resources.
 |---|---|---|
 | Browser E2E | Chromium; 1280x900 desktop and 360x800 touch viewport; English/UTC/light; platform-qualified visual baselines | Any required flow, failure fixture, local link, cache header or responsive baseline fails |
 | Automated accessibility | axe default rules, no excluded elements or disabled rules; all routes and open comparison drawer | Any `serious` or `critical` violation fails |
-| Lighthouse | Three `/lab/` runs; median run; 360x800 mobile; Chromium Fast 4G preset (60 ms RTT, 9 Mbps down) and 4x CPU slowdown | Performance, Accessibility, Best Practices or SEO below 0.90; LCP above 2,500 ms; CLS above 0.10 |
+| Lighthouse | Three runs each of `/`, `/science/` and `/lab/` (`scoutlens-uze.32`); median run per route; 360x800 mobile; Chromium Fast 4G preset (60 ms RTT, 9 Mbps down) and 4x CPU slowdown | Performance, Accessibility, Best Practices or SEO below 0.90; LCP above 2,500 ms; CLS above 0.10 |
 | Interaction latency | Chromium Event Timing API during the percentile-toggle keyboard interaction | Longest interaction above 200 ms fails |
-| Static budgets | Deterministic gzip level 9 over the production export | Module-browser initial JS (scripts without `noModule`) above 204,800 B; catalog above 409,600 B; any profile above 30,720 B; initial `/lab` HTML+CSS+JS above 768,000 B |
+| Static budgets | Deterministic gzip level 9 over the production export | Module-browser initial JS (scripts without `noModule`) above 204,800 B on any of `/`, `/science/` and `/lab/`; catalog above 409,600 B; any profile above 30,720 B; initial `/lab` HTML+CSS+JS above 768,000 B |
 
 The static JS budget counts only `<script>` assets that module-capable browsers
 actually fetch (decision D038). Next.js emits a legacy-only `noModule` polyfill
