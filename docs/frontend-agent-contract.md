@@ -26,6 +26,7 @@ line stops the task.
 | `web/src/app/page.tsx` | Allowed | — | Landing composition. Copy strings are **Conditional** — see §2. |
 | `web/src/app/science/page.tsx` | Allowed | — | Same. |
 | `web/src/app/lab/page.tsx` | Allowed | — | Server component. Its data loading is Conditional. |
+| `web/src/app/case-study/page.tsx` | Allowed | — | Route composition. Copy strings are **Conditional**, as in `page.tsx`. Prose comes from `docs/case-study.md`; every number comes from the showcase artifacts through `requireMetric`, never copied from the document. Created by `scoutlens-rdz.13` (`D075`). |
 | `web/src/app/globals.css` and the layer files in §4 | Allowed | — | One layer file per bead; see §3. |
 | `web/src/components/site-header.tsx`, `site-footer.tsx` | Allowed | — | Presentation only. |
 | `web/src/components/research-story.tsx` | Allowed | — | Presentation only. Metric ids, claim text and caveat text are Denied. |
@@ -35,6 +36,7 @@ line stops the task.
 | `web/src/components/identity-challenge-panel.tsx`, `identity-challenge-states.tsx` | Allowed | — | Presentation under `docs/identity-challenge-contract.md`. Its frozen copy (§12), state machine, URL rules (`D068`) and caveat bindings are **Denied** without a contract amendment. `D070`. |
 | `web/src/components/quantity-glossary.tsx` | Allowed | — | Presentation of the explanation registry; the explanation text itself lives in `web/src/content/evidence-explanations.ts`. `D070`. |
 | `web/src/components/thesis-statement.tsx` | Allowed | — | Renders `THESIS` and `BOUNDARY` adjacent. Changing either sentence or separating them is **Denied** (`D066`). `D070`. |
+| `web/src/components/landing-hero.tsx` | Allowed | — | The landing hero, `LandingHero`. Copy strings are **Conditional**, as in `page.tsx`: the h1 and the line naming both halves of the season are `D075`'s, and `ThesisStatement` follows that line. CTA labels and order are the narrative's §6.3. The proof card's ranks come from the showcase loaders; their values and rounding are not this file's to change. Created by `scoutlens-rdz.8` (`D075`). |
 | `web/src/components/rank-format.ts` | **Conditional** | `scoutlens-jtt` | Display rounding of resampled ranks (`D046`). Changing precision is a scientific-invariant change. `D070`. |
 | `web/e2e/**` | Allowed | — | New specs and helpers. Deleting or skipping an existing assertion is Conditional. |
 | `web/tests/**` | Allowed | — | Unit tests for presentation logic. |
@@ -42,7 +44,7 @@ line stops the task.
 | `web/src/content/**` | **Conditional** | `scoutlens-9a3` (narrative) | Formatting and typing helpers only, and only when the bead names the file. Changing what a number means, its unit, its rounding or its label is Denied. Narrative-owned text lives here: `narrative.ts` (thesis and boundary, `D066`), `provenance.ts` (provider names and the chip's wording, `D067`/`D069`), `evidence-explanations.ts` (every metric and quantity explanation). |
 | `web/package.json`, `pnpm-lock.yaml`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.ts`, `playwright.config.ts` | **Conditional** | Bead author | A new dependency requires the bead to state weight and the rejected alternative. |
 | `web/quality-budgets.json`, `lighthouserc.json` | **Conditional** | `scoutlens-uze` | Values may only move **down** (stricter). Loosening a threshold is Denied. |
-| `web/scripts/**` | **Conditional** | `scoutlens-uze` | Release fixture and budget tooling. `scoutlens-uze.8` is the current named exception. |
+| `web/scripts/**` | **Conditional** | `scoutlens-uze` | Release fixture and budget tooling. `scoutlens-uze.8` is a named exception. So are, for `check-static-output.mjs` only (`D075`): `scoutlens-rdz.8` for the landing h1's expectation, in the pull request that changes the h1, and `scoutlens-rdz.13` and `scoutlens-rdz.15` for `/case-study/` in the route list and its expectations. |
 | `web/src/contracts/showcase-repository.ts` | **Conditional** | `scoutlens-jtt` | Fetch/validation boundary. Fail-closed behaviour may not be weakened. |
 | `web/src/contracts/generated/**` | **Denied** | — | Generated. Regenerate via `pnpm contracts:generate`, never hand-edit. |
 | `src/scoutlens/**` | **Denied** | `scoutlens-jtt` | Python pipeline. |
@@ -151,6 +153,7 @@ the current file (378 kept + 22 deleted per §4.4).
 | 6 | `styles/landing.css` | 21 | `.hero*`, `.proof-band`, `.replication-section`, `.initial-boundaries`, `.signal-*`, `.landing-*` |
 | 7 | `styles/science.css` | 18 | `.science-*`, `.frozen-question*`, `.split-definition*`, `.research-stage*`, `.research-step__marker` |
 | 8 | `styles/lab.css` | 206 | Everything under `/lab`: selector and filters, profile and fingerprint, retrieval, neighbors and drawer, the 32-value table |
+| 9 | `styles/case-study.css` | — | Everything only `/case-study/` renders. Owned by `scoutlens-rdz.13`, which creates it and imports it after `lab.css` (`D075`). Not part of the 2026-08-04 count. |
 
 Rules added since this map was frozen, and where they live (`scoutlens-uze.30`,
 `D070`): `research-story.css` holds `.data-vintage*` and `.provider-boundary*`,
