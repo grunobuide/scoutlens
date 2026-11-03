@@ -26,12 +26,16 @@
 
 Those two sentences are the site's own, word for word: the thesis and boundary
 frozen in [the public narrative](public-experience-narrative.md#2-frozen-thesis),
-which every route renders together (`D066`).
+which every route renders together (`D066`). So is the question that follows:
+the opening of the narrative's
+[spoken explanation](public-experience-narrative.md#3-the-30-second-explanation)
+(§3), which `/science` renders as its orientation.
 
-**The question.** Do a footballer's on-ball actions identify them the way a
-fingerprint does? Take the first half of a player's season as a query and ask
-whether 32 event-derived measurements can find that same player again in the
-second half.
+**The question.** Yumusarái Labs asks one question: can a player's statistical
+profile identify them? We take public football event data from the 2017/18
+season, split every player's play time into two chronological halves, and test
+whether 32 simple measurements of how they act can find that same player again
+in the second half.
 
 **The answer.** Yes, measurably. Against a role-and-minutes baseline scoring
 **0.0256 MRR**, the 32-feature fingerprint scores **0.2539** — a median self-rank
@@ -39,7 +43,7 @@ of **16** out of 1,257 candidates. It replicates on a different provider and a
 different season at **0.2031**, lower but real.
 
 **The catch, and the reason to trust the rest.** A baseline that knows only
-*role, team and minutes* scores **0.5893** — more than twice the fingerprint, at a
+*role, team and minutes* scores **0.5893** — more than 2× the fingerprint, at a
 median rank of 2. Same-season club continuity is a stronger shortcut than the
 fingerprint itself. That confound is published on the site, carried as a
 `critical` caveat on every claim that touches it, and it is the single most
@@ -245,9 +249,10 @@ caveat with it.
   who cannot check it.
 - **No cross-season design yet.** It is the right next experiment, not a shipped
   claim.
-- **No second documentation source.** Every metric here is generated from the
-  same artifact the site renders; a test asserts this page does not disagree with
-  it.
+- **No second source of truth.** The figures here are typed copies, and
+  `tests/release/test_case_study.py` checks each one against the artifact the
+  site renders, so this page cannot disagree with it without failing the build
+  (`D071`).
 
 ### 9. Known limitations
 

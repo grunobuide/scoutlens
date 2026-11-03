@@ -207,7 +207,8 @@ So `scoutlens-uze.3` must confirm it empirically, and that is its acceptance
 evidence: for every route and every audited state, snapshot
 `getComputedStyle()` for **every** element before the split and after it, and
 require a byte-identical diff. A visual screenshot comparison is not sufficient —
-a sub-pixel cascade change can pass a 3% pixel threshold.
+a sub-pixel cascade change can pass a screenshot's pixel tolerance (then
+`maxDiffPixelRatio: 0.03`; now `maxDiffPixels: 250`, `D072`).
 
 ### 4.4 Dead rules — delete, do not move
 
@@ -251,9 +252,10 @@ composed at runtime through template literals. They are **live**. Any future dea
    the baseline covers.
 4. Unrelated regions of an updated snapshot must be unchanged. If they moved,
    the diff is larger than the bead.
-5. `maxDiffPixelRatio`, Lighthouse minimums and the budgets in
-   `quality-budgets.json` may not be raised to make a run green. Masking a region
-   to hide a diff is prohibited.
+5. The screenshot budget (`maxDiffPixels` in `playwright.config.ts`, an
+   absolute pixel count since `scoutlens-uze.19`; `D072`), Lighthouse minimums
+   and the budgets in `quality-budgets.json` may not be raised to make a run
+   green. Masking a region to hide a diff is prohibited.
 6. Platform baselines (`{projectName}-{platform}`) are reviewed independently.
    Updating `win32` does not authorise updating `linux` unseen.
 7. **Both platforms move together, and CI enforces it** (`scoutlens-uze.11`).

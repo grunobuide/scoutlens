@@ -17,6 +17,7 @@ every part of the disclosure it requires is present.
 from __future__ import annotations
 
 import re
+import subprocess
 
 import pytest
 
@@ -64,6 +65,11 @@ def _flatten(text: str) -> str:
     return " ".join(text.replace("*", "").replace("`", "").split()).lower()
 
 
+def _claims(text: str) -> dict[str, str]:
+    """Each forbidden pattern that matches, by label, with the words it matched."""
+    return {label: match.group(0) for label, pattern in FORBIDDEN.items() if (match := re.search(pattern, text))}
+
+
 @pytest.fixture(scope="module", params=DOCUMENTS)
 def document(request: pytest.FixtureRequest) -> tuple[str, str]:
     path = REPO_ROOT / request.param
@@ -75,11 +81,7 @@ def document(request: pytest.FixtureRequest) -> tuple[str, str]:
 def test_no_document_claims_a_comprehension_result(document: tuple[str, str]) -> None:
     """`D056`: not a successful comprehension study, and not a retrospective pass."""
     name, text = document
-    found = {
-        label: match.group(0)
-        for label, pattern in FORBIDDEN.items()
-        if (match := re.search(pattern, text))
-    }
+    found = _claims(text)
     assert not found, f"{name} claims what run 1 did not show: {found}"
 
 
@@ -98,3 +100,60 @@ def test_every_document_names_the_four_findings_and_their_beads(document: tuple[
         if not re.search(rf"{words}.{{0,{NEAR}}}?{re.escape(bead)}", text)
     ]
     assert not missing, f"{name} does not name, with its remediating bead: {missing}"
+
+
+# --- The forbidden half, over every tracked document -------------------------
+#
+# `scoutlens-9a3.30`. The three documents above are the ones `D056` names, but
+# the claim it forbids can be made anywhere a reader lands: the identity
+# packet's addendum said "comprehension was validated with one evaluator" and
+# stayed green, because nothing above read that file. So the forbidden half also runs
+# over every tracked `docs/**/*.md` and the README. The required half does not:
+# a design doc owes no disclosure, it only owes not claiming the result.
+
+#: The two documents that define the words `D056` forbids, and so must contain them.
+DEFINERS = frozenset({"docs/decisions-log.md", "docs/public-understanding-check.md"})
+
+#: Exact flattened passages that match a forbidden pattern without making the
+#: claim. Each is removed from its document before the scan, so the pattern
+#: stays whole for the rest of the file and for every other file, and an edit to
+#: the passage ends the exclusion (``test_every_exclusion_is_still_needed``).
+NOT_A_CLAIM = {
+    # §8 lists what the packet "explicitly did not claim"; the denial follows
+    # the words in the same clause.
+    "docs/public-identity-acceptance.md": ("that public comprehension was validated — it was not",),
+    # The frozen product spec (2026-08-06) defining the 90-second design target
+    # that run 1 was measured against; its D056 amendment, at the head of the
+    # file, keeps it a target. Rewording it needs a decision-log entry.
+    "docs/public-experience-narrative.md": ("jobs-to-be-done (within 90 seconds of landing)",),
+}
+
+
+def _tracked_documents() -> list[str]:
+    listed = subprocess.run(
+        ["git", "ls-files", "-z", "--", "docs/*.md", "README.md"], cwd=REPO_ROOT, capture_output=True, check=True
+    ).stdout.decode("utf-8")
+    return sorted(path for path in listed.split("\0") if path and path not in DEFINERS)
+
+
+@pytest.mark.parametrize("name", _tracked_documents())
+def test_no_tracked_document_claims_a_comprehension_result(name: str) -> None:
+    """`D056`'s forbidden wording, in any document outside the two that define it."""
+    path = REPO_ROOT / name
+    if not path.is_file():
+        pytest.skip(f"{name} not present")
+    text = _flatten(path.read_text(encoding="utf-8"))
+    for passage in NOT_A_CLAIM.get(name, ()):
+        text = text.replace(passage, " ")
+    found = _claims(text)
+    assert not found, f"{name} claims what run 1 did not show: {found}"
+
+
+@pytest.mark.parametrize(
+    ("name", "passage"), [(name, passage) for name, passages in NOT_A_CLAIM.items() for passage in passages]
+)
+def test_every_exclusion_is_still_needed(name: str, passage: str) -> None:
+    """An exclusion whose passage was edited away would excuse whatever replaced it later."""
+    text = _flatten((REPO_ROOT / name).read_text(encoding="utf-8"))
+    assert passage in text, f"{name} no longer reads {passage!r}; drop the exclusion"
+    assert _claims(passage), f"{passage!r} matches no forbidden pattern; drop the exclusion"

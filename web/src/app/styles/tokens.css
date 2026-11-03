@@ -7,6 +7,10 @@
 :root {
   --ink-950: #101a17;
   --ink-800: #293a34;
+  /* `scoutlens-uze.31`: four rules used --ink-700 and it was never defined,
+     so each silently inherited its parent's ink. A mid ink between 800 and
+     600: 7.6:1 on --paper, 8.4:1 on --white. */
+  --ink-700: #3f504a;
   --ink-600: #5f7069;
   --paper: #f5f2e9;
   --paper-deep: #eae5d7;

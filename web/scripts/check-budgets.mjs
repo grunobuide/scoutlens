@@ -156,13 +156,21 @@ assertBudget(
   initialJavaScript,
   budgets.gzip_bytes.initial_route_javascript,
 );
-if (legacyNoModulePaths.length > 0) {
-  console.log(
-    `Legacy noModule polyfill(s) excluded from modern-browser initial JS (${legacyNoModulePaths.join(", ")}): ${legacyNoModuleJavaScript.toLocaleString("en-US")} gzip bytes`,
+// D038 excludes the polyfill from the count *and* asserts it present, so it
+// can never be dropped silently. Until scoutlens-9a3.34 this branch only logged
+// its absence, which is exactly the silent drop D038 rules out. Its absence is
+// not a defect in the build: it means the pinned Next runtime stopped emitting
+// it, and D038's review boundary says to revisit the nominal budget then.
+if (legacyNoModulePaths.length === 0) {
+  throw new Error(
+    "The /lab export has no legacy noModule polyfill. D038 excludes that payload from initial JavaScript " +
+      "on the premise that the pinned Next runtime emits it; if it no longer does, revisit the nominal budget " +
+      "as D038's review boundary requires and record the change in the decision log before relaxing this check.",
   );
-} else {
-  console.log("No legacy noModule polyfill present in the /lab export");
 }
+console.log(
+  `Legacy noModule polyfill(s) excluded from modern-browser initial JS (${legacyNoModulePaths.join(", ")}): ${legacyNoModuleJavaScript.toLocaleString("en-US")} gzip bytes`,
+);
 assertBudget("Feature catalog", catalog, budgets.gzip_bytes.feature_catalog);
 assertBudget(
   `Largest player profile (${largestProfile.path})`,

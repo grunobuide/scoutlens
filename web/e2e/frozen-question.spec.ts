@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { waitForStablePage } from "./helpers";
+import { waitForStablePage, ZOOM_200 } from "./helpers";
 
 /**
  * Defect F-1 (scoutlens-uze.4): at widths <= 48rem the frozen-question marker
@@ -60,6 +60,30 @@ test("frozen-question marker ink clears the heading ink at every measured mobile
         markerInkRight,
       );
       expect(intersects, `${width}px: marker and heading line boxes must not intersect`).toBe(false);
+    });
+  }
+});
+
+/**
+ * `scoutlens-uze.28`: the two cells uze.4's AC2 named that the sweep above
+ * never reached. It measured 640 px only at 800 px tall, never the 640x512
+ * reflow viewport itself, and above the 48rem breakpoint the only evidence was
+ * one pixel baseline at 1280. Same line-box measurement, same two claims.
+ */
+const ABOVE_BREAKPOINT = [769, 1024, 1280, 1440] as const;
+
+test("frozen-question marker ink clears the heading ink at 640x512 and above the breakpoint", async ({ page }) => {
+  await page.goto("/science/");
+  await waitForStablePage(page);
+
+  for (const size of [ZOOM_200, ...ABOVE_BREAKPOINT.map((width) => ({ width, height: 900 }))]) {
+    await test.step(`viewport ${size.width}x${size.height}`, async () => {
+      await page.setViewportSize(size);
+      const { headingInkLeft, intersects, markerInkRight } = await measureFrozenQuestion(page);
+      expect(headingInkLeft, `${size.width}x${size.height}: heading must start at or after the marker ink`).toBeGreaterThanOrEqual(
+        markerInkRight,
+      );
+      expect(intersects, `${size.width}x${size.height}: marker and heading line boxes must not intersect`).toBe(false);
     });
   }
 });

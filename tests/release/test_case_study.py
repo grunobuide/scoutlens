@@ -22,9 +22,14 @@ declared in `TABLES`, row by row, each figure bound to its
 `(experiment_id, metric_id)`.
 
 The opening also carries the narrative's frozen thesis and boundary (§2 of
-`public-experience-narrative.md`, `D066`), and the checklist states
-`research.supported_claim` verbatim. Both are read from their owners at test
-time, never copied here.
+`public-experience-narrative.md`, `D066`), its question is the opening of the
+narrative's 30-second explanation (§3, `scoutlens-9a3.34`), and the checklist
+states `research.supported_claim` verbatim. All three are read from their owners
+at test time, never copied here.
+
+This file is what makes the case study's copies of published figures legitimate:
+narrative §9 permits a copy only where a binding here holds it to its source
+(`D071`).
 """
 
 from __future__ import annotations
@@ -79,8 +84,13 @@ def prose(case_study: str) -> str:
 #: floor, the split seasons, the population sizes and the median ranks, for a
 #: table sweep that read only decimals; the prose sweep had to un-allow them
 #: through a second set. Every one of them is now bound where it appears.
+#:
+#: Until `scoutlens-9a3.34` it also held every bare 1 to 10, anywhere, for the
+#: section numbers. Median ranks of 2 and 12 are published, so that let a new
+#: unbound "median rank of 2" through. Small integers are now accounted for only
+#: where they are structure: the sweep drops Markdown's own numbering (`_sweep`),
+#: and `STRUCTURAL_CONTEXTS` names the in-sentence references.
 STRUCTURAL = {
-    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",  # section and list numbering, `§4`/`§7`, `n=1`, `run 1`
     "0.95",     # the preregistered live threshold (thresholds.py)
     "64",       # eval corpus size (corpus tests)
     "2.0.0", "1.0.0",  # contract versions, not measurements
@@ -88,6 +98,16 @@ STRUCTURAL = {
     # --- added by scoutlens-9a3.21, for the prose sweep ---
     "76",       # the walkthrough's length in seconds, held to the container by test_media_walkthrough.py
     "90",       # the 90-second first-understanding design target, not a result (D056)
+}
+
+#: Figures that are structural because of the words around them, not their
+#: value: a figure inside a match is accounted for, the same figure anywhere
+#: else is not. One reason per pattern, as for `STRUCTURAL`.
+STRUCTURAL_CONTEXTS = {
+    re.compile(r"§\d+\b"): "a cross-reference to a numbered section, here or in another document",
+    re.compile(r"\bn=1\b"): "the one-evaluator comprehension run (D056), held by test_comprehension_disclosure.py",
+    re.compile(r"\bRun 1\b"): "the same run, by its ordinal",
+    re.compile(r"\bscoutlens-[\w.]*\w"): "a bead id (`scoutlens-9a3.11`): an identifier, not a figure",
 }
 
 
@@ -270,12 +290,17 @@ SB_TRANSFER = "statsbomb_transferred_players"
 COUNT = r"^([\d,]+) "
 SEASON = r"(\d{4}/\d{2})"
 
+#: The team baseline over the fingerprint, which the prose states twice as `more than 2×`.
+TEAM_OVER_FINGERPRINT = times_greater(TEAM, "baseline_c_mrr", than=(GLOBAL, "fingerprint_mrr"))
+
 #: Every sourced figure in the prose and the alt text, in document order. A
 #: template is the document's own wording, so rewording a sentence that carries
 #: a figure means rewording its binding here — which is the point.
 FIGURES: tuple[Figure, ...] = (
-    # The short version.
-    Figure("prose", "whether {} event-derived measurements", (manifest("population", "feature_count"),)),
+    # The short version. The question is §3 of the narrative, verbatim; its two
+    # figures are the manifest's, as on `/science` (`scoutlens-9a3.34`).
+    Figure("prose", "event data from the {} season, split", (manifest("source", "season"),)),
+    Figure("prose", "whether {} simple measurements", (manifest("population", "feature_count"),)),
     Figure(
         "prose",
         "baseline scoring **{} MRR**, the {}-feature fingerprint scores **{}**",
@@ -288,6 +313,7 @@ FIGURES: tuple[Figure, ...] = (
     ),
     Figure("prose", "a different season at **{}**", (metric(SB_GLOBAL, "fingerprint_mrr"),)),
     Figure("prose", "minutes* scores **{}**", (metric(TEAM, "baseline_c_mrr"),)),
+    Figure("prose", "more than {}× the fingerprint, at", (TEAM_OVER_FINGERPRINT,)),
     Figure("prose", "at a median rank of {}.", (metric(TEAM, "median_rank"),)),
     # What it looks like: the stills' alt text, and the sentence under them.
     Figure(
@@ -333,11 +359,7 @@ FIGURES: tuple[Figure, ...] = (
     ),
     Figure("prose", "at least {} minutes in *each* period", (manifest("population", "minutes_threshold_per_period"),)),
     # §4. The confound.
-    Figure(
-        "prose",
-        "beats the fingerprint by more than {}×",
-        (times_greater(TEAM, "baseline_c_mrr", than=(GLOBAL, "fingerprint_mrr")),),
-    ),
+    Figure("prose", "beats the fingerprint by more than {}×", (TEAM_OVER_FINGERPRINT,)),
     Figure("prose", "role and minutes narrows {} candidates", (population(TEAM, COUNT),)),
     # §5. Replication, and the transferred players.
     Figure(
@@ -367,9 +389,35 @@ FIGURES: tuple[Figure, ...] = (
 )
 
 
+HEADING_NUMBER = re.compile(r"^(#{2,6} )\d+\. ")
+LIST_MARKER = re.compile(r"^\d+\. ")
+
+
+def _without_markdown_numbering(lines: list[str]) -> list[str]:
+    """A heading's number and an ordered list item's marker are Markdown, not prose.
+
+    A wrapped sentence can also put `2. ` at the start of a line ("…at a median
+    rank of" / "2. Same-season…"), so a marker is dropped only where a list can
+    be: after a blank line, after another item, or after an item's indented
+    continuation. Anywhere else the figure stays in the prose and is swept.
+    """
+    kept: list[str] = []
+    in_list = False
+    for line in lines:
+        if HEADING_NUMBER.match(line):
+            line, in_list = HEADING_NUMBER.sub(r"\1", line), False
+        elif LIST_MARKER.match(line) and (in_list or not kept or not kept[-1].strip()):
+            line, in_list = LIST_MARKER.sub("", line), True
+        else:
+            in_list = in_list and line.startswith((" ", "\t"))
+        kept.append(line)
+    return kept
+
+
 def _sweep(case_study: str) -> Swept:
     body = FENCE.sub("", case_study)
-    body = "\n".join(line for line in body.splitlines() if not line.strip().startswith("|"))
+    lines = [line for line in body.splitlines() if not line.strip().startswith("|")]
+    body = "\n".join(_without_markdown_numbering(lines))
     alt = "\n".join(" ".join(text.split()) for text in IMAGE.findall(body))
     prose = " ".join(LINK_TARGET.sub("]", IMAGE.sub(" ", body)).split())
     return Swept(prose=prose, alt=alt)
@@ -439,16 +487,18 @@ def test_every_figure_in_the_prose_and_alt_text_is_bound_or_structural(swept: Sw
                 "Reword the binding with the sentence; never drop it."
             )
             bound.extend(spans)
+        structural = [match.span() for pattern in STRUCTURAL_CONTEXTS for match in pattern.finditer(text)]
 
         loose = {
             token.group()
             for token in FIGURE_TOKEN.finditer(text)
-            if not any(start <= token.start() and token.end() <= end for start, end in bound)
+            if not any(start <= token.start() and token.end() <= end for start, end in bound + structural)
         }
         unaccounted = sorted(token for token in loose if token not in STRUCTURAL)
         assert not unaccounted, (
             f"these figures in the case study's {where} are bound to no source: {unaccounted}. "
-            "Bind each in FIGURES, or add it to STRUCTURAL with the reason it is not a measurement."
+            "Bind each in FIGURES, or add it (or the words that make it structural) to STRUCTURAL "
+            "(STRUCTURAL_CONTEXTS) with the reason it is not a measurement."
         )
 
 
@@ -780,26 +830,67 @@ DISPLAY_NAME = "Yumusarái Labs"
 RETIRED_LAB_BOUNDARY = "not a quality score, style proof, recruitment ranking, or automated verdict"
 
 
+def _narrative_section(heading: str) -> list[str]:
+    """The lines of one `## ` section of the narrative, heading excluded."""
+    narrative = NARRATIVE.read_text(encoding="utf-8")
+    section = re.search(rf"^## {re.escape(heading)}$(.*?)^## ", narrative, re.MULTILINE | re.DOTALL)
+    assert section, f"the narrative has no '## {heading}' section"
+    return section.group(1).splitlines()
+
+
+def _first_blockquote(lines: list[str]) -> str:
+    """The first blockquote in `lines`, as one line; empty if there is none."""
+    quote: list[str] = []
+    for line in lines:
+        if line.startswith(">"):
+            quote.append(line[1:])
+        elif quote:
+            break
+    return " ".join(" ".join(quote).split())
+
+
 def _frozen_quote(label: str) -> str:
     """The blockquote under `**{label}` in §2 of the narrative, as one line.
 
     The same reading as `frozenQuote` in `e2e/claims-consistency.spec.ts`, so
     the site and the case study are held to one text.
     """
-    narrative = NARRATIVE.read_text(encoding="utf-8")
-    section = re.search(r"^## 2\. Frozen thesis$(.*?)^## ", narrative, re.MULTILINE | re.DOTALL)
-    assert section, "the narrative has no '## 2. Frozen thesis' section"
-    lines = section.group(1).splitlines()
+    lines = _narrative_section("2. Frozen thesis")
     start = next((i for i, line in enumerate(lines) if line.startswith(f"**{label}")), None)
     assert start is not None, f"§2 of the narrative has no {label!r} label"
-    quote: list[str] = []
-    for line in lines[start + 1 :]:
-        if line.startswith(">"):
-            quote.append(line[1:])
-        elif quote:
-            break
+    quote = _first_blockquote(lines[start + 1 :])
     assert quote, f"§2's {label!r} label has no blockquote under it"
-    return " ".join(" ".join(quote).split())
+    return quote
+
+
+#: How many of §3's sentences open the explanation: the ones `/science` renders
+#: as its orientation (`ORIENTATION_SENTENCES` in `e2e/science-evidence-surface.spec.ts`).
+OPENING_SENTENCES = 2
+
+
+def _explanation_opening(manifest_json: dict[str, Any]) -> str:
+    """§3's opening, with exactly the substitutions the narrative permits.
+
+    The same reading as `expectedOrientation` in
+    `e2e/science-evidence-surface.spec.ts`: the display name for "ScoutLens",
+    and the season and the measurement count read from the manifest. Each
+    anchor must be present once before it is replaced, so an unrelated `32` is
+    never rewritten.
+    """
+    explanation = _first_blockquote(_narrative_section("3. The 30-second explanation"))
+    sentences = re.split(r"(?<=[.?])\s+(?=[A-Z])", explanation)
+    # A sentence added to or split in §3 fails here, rather than silently
+    # shifting which sentences the case study is held to.
+    assert len(sentences) == 4, f"§3 is no longer four sentences: {sentences}"
+    opening = " ".join(sentences[:OPENING_SENTENCES])
+    for anchor, replacement in (
+        (FROZEN_NAME, DISPLAY_NAME),
+        ("the 2017/18 season", f"the {manifest_json['source']['season']} season"),
+        ("whether 32 simple", f"whether {manifest_json['population']['feature_count']} simple"),
+    ):
+        assert opening.count(anchor) == 1, f"§3's opening no longer contains {anchor!r} exactly once"
+        opening = opening.replace(anchor, replacement)
+    return opening
 
 
 def _as_read(markdown: str) -> str:
@@ -830,6 +921,22 @@ def test_the_opening_states_the_narratives_thesis_and_boundary_verbatim_and_adja
     assert thesis in read, f"the short version does not state §2's thesis verbatim:\n    {thesis}"
     assert boundary in read, f"the short version does not state §2's boundary verbatim:\n    {boundary}"
     assert f"{thesis} {boundary}" in read, "something sits between the thesis and its boundary"
+
+
+@requires_summary
+def test_the_question_is_the_narratives_explanation_opening_verbatim(case_study: str) -> None:
+    """§9 of the narrative says the case study consumes its 30-second explanation.
+
+    So "The question." is §3's opening — the `/science` orientation's two
+    sentences — with nothing added or dropped: the paragraph, as read, *is* the
+    expected text, not merely contains it (`scoutlens-9a3.34`).
+    """
+    expected = _explanation_opening(_load(MANIFEST))
+    paragraph = re.search(r"^\*\*The question\.\*\*(.*?)\n[ \t]*\n", case_study, re.MULTILINE | re.DOTALL)
+    assert paragraph, "the case study has no '**The question.**' paragraph"
+    assert _as_read(paragraph.group(1)) == expected, (
+        f"the case study's question is not §3's opening verbatim:\n    {expected}"
+    )
 
 
 @requires_summary
