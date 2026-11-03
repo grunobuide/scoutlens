@@ -8,6 +8,12 @@
 // The legacy noModule payload is still asserted and reported separately so it
 // can never be dropped silently. Thresholds in quality-budgets.json are
 // frozen and unchanged by this definition.
+//
+// `scoutlens-uze.32`: the initial-JavaScript cap applies to every public
+// route, not only /lab. The landing and /science were rebuilt by
+// scoutlens-9a3 and had no performance gate at all. Lighthouse audits the
+// same three routes, and this script refuses a lighthouserc.json that audits
+// a different set.
 import { gzipSync } from "node:zlib";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
@@ -90,6 +96,22 @@ assertLighthouseThreshold(
 );
 console.log("Lighthouse assertions match the versioned quality budgets");
 
+/** Every public route: its label, its exported HTML, and its path. */
+const ROUTES = [
+  { label: "/", html: "index.html", path: "/" },
+  { label: "/science", html: "science/index.html", path: "/science/" },
+  { label: "/lab", html: "lab/index.html", path: "/lab/" },
+];
+
+const auditedPaths = (lighthouseConfig.ci?.collect?.url ?? []).map((url) => new URL(url).pathname).sort();
+const routePaths = ROUTES.map((route) => route.path).sort();
+if (JSON.stringify(auditedPaths) !== JSON.stringify(routePaths)) {
+  throw new Error(
+    `lighthouserc.json must audit every public route, ${routePaths.join(", ")}; it audits ${auditedPaths.join(", ") || "none"}`,
+  );
+}
+console.log(`Lighthouse audits every public route: ${routePaths.join(", ")}`);
+
 // Split initial <script> assets by whether a module-capable browser fetches
 // them. Scripts with the `noModule` attribute are legacy-only (see the file
 // header for the budget semantics decision D035).
@@ -109,6 +131,19 @@ function localScriptAssets(html) {
     }
   }
   return { module: [...new Set(modulePaths)], noModule: [...new Set(noModulePaths)] };
+}
+
+for (const route of ROUTES) {
+  if (route.label === "/lab") {
+    continue; // Measured below with its transfer budget and the polyfill check.
+  }
+  const html = (await readFile(resolve(outputRoot, ...route.html.split("/")))).toString("utf8");
+  const { module: paths } = localScriptAssets(html);
+  if (paths.length === 0) {
+    throw new Error(`The ${route.label} export must reference initial JavaScript`);
+  }
+  const bytes = (await Promise.all(paths.map((path) => gzipFile(path)))).reduce((total, size) => total + size, 0);
+  assertBudget(`Initial ${route.label} JavaScript`, bytes, budgets.gzip_bytes.initial_route_javascript);
 }
 
 const labHtmlBytes = await readFile(resolve(outputRoot, "lab", "index.html"));
