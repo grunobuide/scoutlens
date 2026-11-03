@@ -5,10 +5,21 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
-import { REDISTRIBUTION_SUMMARY, competitionScope, providerLabel } from "@/content/provenance";
+import {
+  REDISTRIBUTION_SUMMARY,
+  competitionCountries,
+  competitionScope,
+  datasetCompetitions,
+  providerLabel,
+} from "@/content/provenance";
 import { ProvenanceDrawer } from "@/components/research-story";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
-import type { Manifest, ResearchSummaryArtifact } from "@/contracts/generated/showcase-v2";
+import type {
+  Competition,
+  Manifest,
+  PlayerIndexArtifact,
+  ResearchSummaryArtifact,
+} from "@/contracts/generated/showcase-v2";
 
 // `scoutlens-9a3.22`: the dataset the payload pin names, not v1 - this file
 // read v1 while the site served v2, and its pin literal below named a v1
@@ -26,6 +37,15 @@ async function loadManifest(): Promise<Manifest> {
 
 async function loadResearch(): Promise<ResearchSummaryArtifact> {
   return JSON.parse(await readFile(resolve(PUBLISHED_ROOT, "research-summary.json"), "utf8")) as ResearchSummaryArtifact;
+}
+
+async function loadIndex(): Promise<PlayerIndexArtifact> {
+  return JSON.parse(await readFile(resolve(PUBLISHED_ROOT, "players.index.json"), "utf8")) as PlayerIndexArtifact;
+}
+
+/** The competitions the way the pages get them: the index, checked against the manifest. */
+async function loadCompetitions(manifest: Manifest): Promise<ReadonlyArray<Competition>> {
+  return datasetCompetitions(manifest.population.domestic_competition_ids, (await loadIndex()).profiles);
 }
 
 // Values that must never appear as literals in the component source — they
@@ -61,7 +81,8 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
 
   it("renders the concise vintage badge from manifest fields only", async () => {
     const manifest = await loadManifest();
-    const html = renderToStaticMarkup(<DataVintageBadge manifest={manifest} />);
+    const competitions = await loadCompetitions(manifest);
+    const html = renderToStaticMarkup(<DataVintageBadge manifest={manifest} competitions={competitions} />);
 
     expect(html).toContain("Historical reproducible benchmark");
     expect(html).toContain(manifest.source.season);
@@ -72,8 +93,10 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
       `at least ${manifest.population.minutes_threshold_per_period} minutes in each half`,
     );
     // `scoutlens-9a3.26` (D069): the competition scope and the licence boundary.
+    // `scoutlens-9a3.33` (D074): and which competitions - their countries.
     expect(text(html)).toContain(
-      `data-vintage__scope">${manifest.population.domestic_competition_ids.length} domestic competitions<`,
+      `data-vintage__scope">${manifest.population.domestic_competition_ids.length} domestic competitions: ` +
+        `${competitions.map((competition) => competition.country).join(", ")}<`,
     );
     expect(html).toContain(`data-vintage__redistribution">${REDISTRIBUTION_SUMMARY}<`);
     expect(html).toContain(manifest.dataset_version);
@@ -86,7 +109,10 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
   it("renders the provider boundary distinguishing Wyscout from aggregate StatsBomb", async () => {
     const manifest = await loadManifest();
     const research = await loadResearch();
-    const html = renderToStaticMarkup(<ProviderBoundary manifest={manifest} research={research} />);
+    const competitions = await loadCompetitions(manifest);
+    const html = renderToStaticMarkup(
+      <ProviderBoundary manifest={manifest} research={research} competitions={competitions} />,
+    );
 
     expect(html).toContain("Primary evidence");
     expect(html).toContain("External replication");
@@ -99,12 +125,18 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
     expect(text(html)).toContain(`Published under ${manifest.source.licence}. ${manifest.source.redistribution_note}`);
     expect(html).toContain(manifest.source.source_url);
     expect(html).toContain(manifest.source.licence_url);
+    // `scoutlens-9a3.33`: on /lab this section is the provenance audit, and it
+    // never named the provider.
+    expect(text(html)).toContain(`Provider: ${providerLabel(manifest.source.provider)}.`);
   });
 
   it("surfaces competition scope, eligibility threshold and population from the manifest", async () => {
     const manifest = await loadManifest();
     const research = await loadResearch();
-    const html = renderToStaticMarkup(<ProviderBoundary manifest={manifest} research={research} />);
+    const competitions = await loadCompetitions(manifest);
+    const html = renderToStaticMarkup(
+      <ProviderBoundary manifest={manifest} research={research} competitions={competitions} />,
+    );
 
     // `scoutlens-9a3.22`: as the rest of the site prints them - a grouped count,
     // "player × competition" and "period A / B" - and with no glued or doubled
@@ -114,7 +146,8 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
     const { population } = manifest;
     expect(rendered).toContain(
       `Scope: ${population.profile_count.toLocaleString("en-US")} ${population.analytical_unit.replaceAll("_", " × ")} profiles` +
-        ` across ${population.domestic_competition_ids.length} domestic competitions, split into period ` +
+        ` across ${population.domestic_competition_ids.length} domestic competitions` +
+        ` (${competitions.map((competition) => competition.name).join(", ")}), split into period ` +
         `${population.chronological_periods.map((period) => period.toUpperCase()).join(" / ")}.`,
     );
     expect(rendered).toContain(`at least ${population.minutes_threshold_per_period} minutes per period`);
@@ -134,15 +167,20 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
     const research = await loadResearch();
     const corrupted = JSON.parse(JSON.stringify(manifest)) as Manifest;
     corrupted.source.provider = "statsbomb_open_data" as Manifest["source"]["provider"];
-    const html = renderToStaticMarkup(<ProviderBoundary manifest={corrupted} research={research} />);
+    const html = renderToStaticMarkup(
+      <ProviderBoundary manifest={corrupted} research={research} competitions={await loadCompetitions(manifest)} />,
+    );
     expect(html).not.toContain("Pappalardo et al.");
   });
 
   it("is keyboard and no-JavaScript safe: no essential provenance hidden behind interaction", async () => {
     const manifest = await loadManifest();
     const research = await loadResearch();
-    const badge = renderToStaticMarkup(<DataVintageBadge manifest={manifest} />);
-    const boundary = renderToStaticMarkup(<ProviderBoundary manifest={manifest} research={research} />);
+    const competitions = await loadCompetitions(manifest);
+    const badge = renderToStaticMarkup(<DataVintageBadge manifest={manifest} competitions={competitions} />);
+    const boundary = renderToStaticMarkup(
+      <ProviderBoundary manifest={manifest} research={research} competitions={competitions} />,
+    );
 
     expect(badge).not.toContain("<button");
     expect(badge).not.toContain("onclick");
@@ -169,7 +207,10 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
     // title about the provenance drawer, which no test rendered at all.
     const manifest = await loadManifest();
     const research = await loadResearch();
-    const html = renderToStaticMarkup(<ProviderBoundary manifest={manifest} research={research} />);
+    const competitions = await loadCompetitions(manifest);
+    const html = renderToStaticMarkup(
+      <ProviderBoundary manifest={manifest} research={research} competitions={competitions} />,
+    );
     expect(html).toContain(`href="/science"`);
   });
 
@@ -199,5 +240,48 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
     expect(manifest.source.redistribution_note).toMatch(/raw provider rows remain excluded/i);
     expect(competitionScope(1)).toBe("1 domestic competition");
     expect(competitionScope(manifest.population.domestic_competition_ids.length)).toMatch(/^\d+ domestic competitions$/);
+  });
+
+  it("names exactly the competitions the published index covers, and as many as the manifest declares", async () => {
+    // `scoutlens-9a3.33` (D074). Recomputed here from the index's own fields,
+    // so the helper is checked against the data rather than against itself.
+    const manifest = await loadManifest();
+    const index = await loadIndex();
+    const competitions = await loadCompetitions(manifest);
+
+    const names = new Set(index.profiles.map((profile) => profile.competition.name));
+    expect(new Set(competitions.map((competition) => competition.name))).toEqual(names);
+    expect(competitions).toHaveLength(manifest.population.domestic_competition_ids.length);
+    expect(competitions.map((competition) => competition.id).sort((a, b) => a - b)).toEqual(
+      [...manifest.population.domestic_competition_ids].sort((a, b) => a - b),
+    );
+    const countries = competitions.map((competition) => competition.country);
+    expect(countries).toEqual([...countries].sort((a, b) => a.localeCompare(b, "en")));
+    expect(competitionCountries(competitions)).toBe(countries.join(", "));
+    // Two competitions in one country name it once; the count stays theirs.
+    const [first, second] = competitions;
+    if (first !== undefined && second !== undefined) {
+      expect(competitionCountries([first, { ...second, country: first.country }])).toBe(first.country);
+    }
+  });
+
+  it("refuses an index that does not cover exactly the manifest's competitions", async () => {
+    const manifest = await loadManifest();
+    const { profiles } = await loadIndex();
+    const ids = manifest.population.domestic_competition_ids;
+    const [first, ...rest] = profiles;
+    if (first === undefined) {
+      throw new Error("the published index is empty");
+    }
+
+    // A competition the manifest does not declare.
+    const planted = { competition: { id: 999_999, name: "Planted league", country: "Nowhere" } };
+    expect(() => datasetCompetitions(ids, [...profiles, planted])).toThrow(/manifest declares/);
+    // One the manifest declares and the index lacks.
+    const missing = profiles.filter((profile) => profile.competition.id !== first.competition.id);
+    expect(() => datasetCompetitions(ids, missing)).toThrow(/manifest declares/);
+    // One id named two ways.
+    const renamed = { competition: { ...first.competition, name: `${first.competition.name} (renamed)` } };
+    expect(() => datasetCompetitions(ids, [...rest, first, renamed])).toThrow(/named two ways/);
   });
 });

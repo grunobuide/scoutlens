@@ -22,7 +22,7 @@ export default async function SciencePage() {
   return (
     <main id="main-content" className="shell page-shell science-page">
       <header className="page-intro page-intro--wide">
-        <DataVintageBadge manifest={story.manifest} />
+        <DataVintageBadge manifest={story.manifest} competitions={story.competitions} />
         <p className="eyebrow">How it works</p>
         <h1>The science is the sequence, not one headline number.</h1>
         <p className="lede">
@@ -155,10 +155,10 @@ export default async function SciencePage() {
           <span data-value="competition">{featured.identity.competition.name}</span>) is the
           editorially featured profile. Period A, the{" "}
           <span data-value="period-a-label">{featured.periods.a.label.toLowerCase()}</span> (
-          <span data-value="period-a-matches">{featured.periods.a.match_count}</span> matches), is
+          <span data-value="period-a-matches" data-context="matches">{featured.periods.a.match_count}</span> matches), is
           the query; period B, the{" "}
           <span data-value="period-b-label">{featured.periods.b.label.toLowerCase()}</span> (
-          <span data-value="period-b-matches">{featured.periods.b.match_count}</span> matches), is
+          <span data-value="period-b-matches" data-context="matches">{featured.periods.b.match_count}</span> matches), is
           searched. The fingerprint ranked their period-B profile{" "}
           <span data-value="self-rank" data-quantity={quantityTag("self_rank")}>{globalRetrieval.self_rank}</span> of{" "}
           <span data-value="candidate-count" data-quantity={quantityTag("self_rank")}>
@@ -225,7 +225,7 @@ export default async function SciencePage() {
         <ClaimsMatrix research={research} />
       </div>
 
-      <ProviderBoundary manifest={story.manifest} research={research} />
+      <ProviderBoundary manifest={story.manifest} research={research} competitions={story.competitions} />
       <ProvenanceDrawer story={story} />
     </main>
   );
