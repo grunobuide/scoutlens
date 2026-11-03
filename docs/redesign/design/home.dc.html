@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Yumusarái Labs — Player Fingerprints</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F3F4F4}
+a{color:#853953}a:hover{color:#612D53}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #2C2C2C; background: #F3F4F4; min-height: 100vh">
+
+<!-- NAV -->
+<header style="border-bottom: 1px solid rgba(44,44,44,0.14); background: #F3F4F4">
+<nav aria-label="Main" style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+<a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #2C2C2C">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: #2C2C2C; color: {{accent}}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">YL</span>
+<span style="display: flex; flex-direction: column; line-height: 1.15"><span style="font-weight: 700; font-size: 16px">Yumusarái Labs</span><span style="font-size: 12px; color: #6B6468">Player Fingerprints</span></span>
+</a>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 15px">
+<a href="#idea" style="color: #3A3438; text-decoration: none; padding: 12px 10px">The idea</a>
+<a href="#fingerprint" style="color: #3A3438; text-decoration: none; padding: 12px 10px">A fingerprint</a>
+<a href="#evidence" style="color: #3A3438; text-decoration: none; padding: 12px 10px">What we found</a>
+<a href="Bastidores.dc.html" style="color: #3A3438; text-decoration: none; padding: 12px 10px">How I built it</a>
+<a href="https://grunobuide.github.io/scoutlens/lab/" style="margin-left: 8px; background: #2C2C2C; color: #FFFFFF; text-decoration: none; padding: 12px 18px; border-radius: 999px; font-weight: 600">Open the Lab</a>
+</div>
+</nav>
+</header>
+
+<!-- HERO -->
+<section id="top" style="max-width: 1200px; margin: 0 auto; padding: 72px 24px 56px; display: flex; flex-wrap: wrap; gap: 48px; align-items: center">
+<div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<p style="margin: 0; display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid rgba(44,44,44,0.18); border-radius: 999px; font-size: 13px; color: #4A4448">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #853953"></span>
+A football data science project by Bruno Guide
+</p>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: clamp(44px, 6vw, 80px); line-height: 0.98; letter-spacing: -0.03em; font-weight: 750">Can 32 numbers recognise a footballer?</h1>
+<p style="margin: 0; font-size: 20px; line-height: 1.55; color: #4A4448; max-width: 560px">I described every player in Europe's top five leagues with 32 numbers about <em>how</em> they play — then hid their names. Given only the first half of their 2017/18 season, could a model pick out the same player in the second half?</p>
+<p style="margin: 0; font-size: 20px; line-height: 1.55; color: #2C2C2C; font-weight: 600; max-width: 560px">Often, yes. And the honest part is showing exactly when it can't.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; padding-top: 8px">
+<a href="https://grunobuide.github.io/scoutlens/lab/" style="display: inline-flex; align-items: center; gap: 10px; background: #2C2C2C; color: #FFFFFF; text-decoration: none; padding: 16px 24px; border-radius: 999px; font-weight: 600; font-size: 16px">Find a player in the Lab
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+<a href="Bastidores.dc.html" style="display: inline-flex; align-items: center; gap: 10px; color: #2C2C2C; text-decoration: none; padding: 15px 23px; border-radius: 999px; border: 1.5px solid #2C2C2C; font-weight: 600; font-size: 16px">See how I built it</a>
+</div>
+</div>
+
+<!-- Hero proof card -->
+<div style="flex: 1 1 400px; min-width: 0; background: #2C2C2C; color: #FFFFFF; border-radius: 28px; padding: 32px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 24px 70px rgba(44,44,44,0.18)">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #CFC6CB">One real example</span>
+<span style="font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: 30px; font-weight: 700">L. Modrić</span>
+<span style="font-size: 14px; color: #CFC6CB">Real Madrid · Midfielder · 2017/18</span>
+</div>
+<!-- mini fingerprint glyph: A (teal) vs B (accent) per family -->
+<div role="img" aria-label="Fingerprint glyph: eight family percentiles for each half of the season" style="display: flex; align-items: flex-end; gap: 5px; height: 64px">
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 59%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 56%; background: {{accent}}; border-radius: 2px"></span></div>
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 69%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 71%; background: {{accent}}; border-radius: 2px"></span></div>
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 96%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 94%; background: {{accent}}; border-radius: 2px"></span></div>
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 65%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 88%; background: {{accent}}; border-radius: 2px"></span></div>
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 44%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 48%; background: {{accent}}; border-radius: 2px"></span></div>
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 32%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 24%; background: {{accent}}; border-radius: 2px"></span></div>
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 58%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 58%; background: {{accent}}; border-radius: 2px"></span></div>
+<div style="display: flex; align-items: flex-end; gap: 1px; height: 100%"><span style="width: 4px; height: 75%; background: #B07A97; border-radius: 2px"></span><span style="width: 4px; height: 72%; background: {{accent}}; border-radius: 2px"></span></div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; color: #CFC6CB">Fingerprint search</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 600; color: {{accent}}; line-height: 1">#1</span>
+<span style="font-size: 13px; color: #E4DDE1">found first, out of 1,257</span>
+</div>
+<div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; color: #CFC6CB">Simple guess (role + minutes)</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 600; color: #FFFFFF; line-height: 1">#249</span>
+<span style="font-size: 13px; color: #E4DDE1">out of 1,257</span>
+</div>
+</div>
+
+<!-- rank strip -->
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="position: relative; height: 34px">
+<div style="position: absolute; left: 0; right: 0; top: 15px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.16)"></div>
+<div style="position: absolute; left: 0; top: 7px; width: 20px; height: 20px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div>
+<div style="position: absolute; left: 19.8%; top: 7px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; border: 3px solid #2C2C2C; box-sizing: border-box"></div>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #CFC6CB"><span>Rank 1</span><span>All 1,257 second-half profiles</span><span>Rank 1,257</span></div>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #CFC6CB">Chosen because he's recognisable and active across many kinds of play — not because he scored well. Bars: first half <span style="color: #B07A97; font-weight: 600">■</span> vs second half <span style="color: {{accent}}; font-weight: 600">■</span>.</p>
+</div>
+</section>
+
+<!-- FACT STRIP -->
+<section aria-label="Project at a glance" style="border-top: 1px solid rgba(44,44,44,0.14); border-bottom: 1px solid rgba(44,44,44,0.14); background: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 28px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 600">1,257</span><span style="font-size: 14px; color: #6B6468">player profiles</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 600">5</span><span style="font-size: 14px; color: #6B6468">top European leagues</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 600">32</span><span style="font-size: 14px; color: #6B6468">numbers per player</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 600">2</span><span style="font-size: 14px; color: #6B6468">independent data providers</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 600">100%</span><span style="font-size: 14px; color: #6B6468">open, reproducible results</span></div>
+</div>
+</section>
+
+<!-- THE IDEA -->
+<section id="idea" style="max-width: 1200px; margin: 0 auto; padding: 96px 24px 48px; display: flex; flex-direction: column; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 720px">
+<span style="font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: #853953">The idea in 30 seconds</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: clamp(34px, 4vw, 52px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 700">Like recognising a friend by how they walk.</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #4A4448">If the way a player passes, carries and defends is personal enough, their numbers should look alike in October and in April — even though the opponents changed.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px">
+<div style="background: #FFFFFF; border: 1px solid rgba(44,44,44,0.12); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="width: 48px; height: 48px; border-radius: 14px; background: #E6E2E5; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#853953" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 9h18M12 9v12"></path></svg></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #6B6468">01</span></div>
+<h3 style="margin: 0; font-size: 21px; font-weight: 700">Split the season in two</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4A4448">Aug–Jan becomes the "before", Jan–May the "after". Only players with 450+ minutes in each half count.</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid rgba(44,44,44,0.12); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="width: 48px; height: 48px; border-radius: 14px; background: #E6E2E5; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#853953" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #6B6468">02</span></div>
+<h3 style="margin: 0; font-size: 21px; font-weight: 700">Describe each half with 32 numbers</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4A4448">Passing, progression, chance creation, shooting, defending, position on the pitch… no names, no clubs.</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid rgba(44,44,44,0.12); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="width: 48px; height: 48px; border-radius: 14px; background: #E6E2E5; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#853953" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.5-4.5"></path></svg></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #6B6468">03</span></div>
+<h3 style="margin: 0; font-size: 21px; font-weight: 700">Ask: who looks most alike?</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4A4448">Rank all 1,257 "after" profiles by similarity to one "before". The higher the real player lands, the stronger the fingerprint.</p>
+</div>
+</div>
+</section>
+
+<!-- FINGERPRINT -->
+<section id="fingerprint" style="max-width: 1200px; margin: 0 auto; padding: 48px 24px 96px">
+<div style="background: #FFFFFF; border: 1px solid rgba(44,44,44,0.12); border-radius: 32px; padding: clamp(24px, 4vw, 48px); display: flex; flex-direction: column; gap: 32px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 620px">
+<span style="font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: #853953">What a fingerprint looks like</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: clamp(32px, 3.6vw, 46px); line-height: 1.04; letter-spacing: -0.02em; font-weight: 700">The matches change. The shape stays.</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A4448">Modrić compared with 450 other midfielders, half by half. Most dots barely move — that steadiness is the "fingerprint".</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px; color: #4A4448">
+<span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #853953"></span>Before · 14 matches</span>
+<span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 14px; height: 14px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></span>After · 12 matches</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 20px; padding: 0 0 8px; font-size: 12px; color: #6B6468">
+<span style="flex: 0 0 170px"></span>
+<div style="flex: 1 1 auto; display: flex; justify-content: space-between"><span>0 · lower than peers</span><span>50 · typical</span><span>100 · higher than peers</span></div>
+<span style="flex: 0 0 76px; text-align: right">before → after</span>
+</div>
+
+<!-- row template: track 0-100 -->
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Keeping the ball</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 56%; width: 3%; top: 10px; height: 4px; background: rgba(44,44,44,0.3)"></div><div style="position: absolute; left: 59%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 56%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">59 → 56</span>
+</div>
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Passing</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 69%; width: 2%; top: 10px; height: 4px; background: rgba(44,44,44,0.3)"></div><div style="position: absolute; left: 69%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 71%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">69 → 71</span>
+</div>
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Moving it forward</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 94%; width: 2%; top: 10px; height: 4px; background: rgba(44,44,44,0.3)"></div><div style="position: absolute; left: 96%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 94%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">96 → 94</span>
+</div>
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Creating chances</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 65%; width: 23%; top: 10px; height: 4px; background: rgba(44,44,44,0.3)"></div><div style="position: absolute; left: 65%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 88%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">65 → 88</span>
+</div>
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Shooting</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 44%; width: 4%; top: 10px; height: 4px; background: rgba(44,44,44,0.3)"></div><div style="position: absolute; left: 44%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 48%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">44 → 48</span>
+</div>
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Defending</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 24%; width: 8%; top: 10px; height: 4px; background: rgba(44,44,44,0.3)"></div><div style="position: absolute; left: 32%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 24%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">32 → 24</span>
+</div>
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Where he plays</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 58%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 58%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">58 → 58</span>
+</div>
+<div style="display: flex; align-items: center; gap: 20px; padding: 14px 0; border-top: 1px solid rgba(44,44,44,0.1); border-bottom: 1px solid rgba(44,44,44,0.1)">
+<span style="flex: 0 0 170px; font-size: 16px; font-weight: 600">Carrying the ball</span>
+<div style="flex: 1 1 auto; position: relative; height: 24px"><div style="position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: #E6E2E5"></div><div style="position: absolute; left: 50%; top: 6px; width: 1px; height: 12px; background: rgba(44,44,44,0.25)"></div><div style="position: absolute; left: 72%; width: 3%; top: 10px; height: 4px; background: rgba(44,44,44,0.3)"></div><div style="position: absolute; left: 75%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #853953"></div><div style="position: absolute; left: 72%; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: {{accent}}; border: 3px solid #2C2C2C; box-sizing: border-box"></div></div>
+<span style="flex: 0 0 76px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 14px">75 → 72</span>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #6B6468; max-width: 720px">Each row averages several of the 32 measurements, shown only to help you read the shape. Neither end is "better" — these aren't ratings, and the model uses the individual measurements, not these averages.</p>
+<a href="https://grunobuide.github.io/scoutlens/lab/" style="font-weight: 600; font-size: 15px; padding: 12px 0">Compare any player in the Lab →</a>
+</div>
+</div>
+</section>
+
+<!-- EVIDENCE -->
+<section id="evidence" style="background: #612D53; color: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 96px 24px; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 760px">
+<span style="font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: {{accent}}">What we found</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: clamp(34px, 4vw, 52px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 700">Four tests, told in order — including the one that complicates things.</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #E0D6DB">Score = how close to the top the real player lands, on average (0 = never found, 1 = always first). Researchers call it mean reciprocal rank, or MRR.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<!-- scale -->
+<div style="display: flex; gap: 24px; align-items: center; font-size: 12px; color: #CDBFC7">
+<span style="flex: 0 0 320px"></span>
+<div style="flex: 1 1 auto; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace"><span>0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1</span></div>
+<span style="flex: 0 0 72px"></span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 22px 0; border-top: 1px solid rgba(255,255,255,0.14)">
+<div style="flex: 0 0 320px; display: flex; gap: 14px; align-items: flex-start"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #CDBFC7; padding-top: 3px">01</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 700">A simple guess</span><span style="font-size: 14px; line-height: 1.5; color: #E0D6DB">Match on position, then minutes played.</span></div></div>
+<div style="flex: 1 1 300px; height: 28px; background: rgba(255,255,255,0.06); border-radius: 6px; position: relative"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: 2.6%; background: #B8A9B2; border-radius: 6px"></div></div>
+<span style="flex: 0 0 72px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600">0.026</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 22px 0; border-top: 1px solid rgba(255,255,255,0.14)">
+<div style="flex: 0 0 320px; display: flex; gap: 14px; align-items: flex-start"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #CDBFC7; padding-top: 3px">02</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 700">The 32-number fingerprint</span><span style="font-size: 14px; line-height: 1.5; color: #E0D6DB">About 10× better than guessing. 95% CI on the gain: 0.208–0.248.</span></div></div>
+<div style="flex: 1 1 300px; height: 28px; background: rgba(255,255,255,0.06); border-radius: 6px; position: relative"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: 25.4%; background: {{accent}}; border-radius: 6px"></div></div>
+<span style="flex: 0 0 72px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: {{accent}}">0.254</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 22px 0; border-top: 1px solid rgba(255,255,255,0.14)">
+<div style="flex: 0 0 320px; display: flex; gap: 14px; align-items: flex-start"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #E9C46A; padding-top: 3px">03</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 700">Plot twist: just knowing the club</span><span style="font-size: 14px; line-height: 1.5; color: #E0D6DB">Position + team + minutes beats the fingerprint — most players never changed club mid-season.</span></div></div>
+<div style="flex: 1 1 300px; height: 28px; background: rgba(255,255,255,0.06); border-radius: 6px; position: relative"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: 58.9%; background: repeating-linear-gradient(135deg, #E9C46A 0 8px, #C9A24A 8px 16px); border-radius: 6px"></div></div>
+<span style="flex: 0 0 72px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: #E9C46A">0.589</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 22px 0; border-top: 1px solid rgba(255,255,255,0.14); border-bottom: 1px solid rgba(255,255,255,0.14)">
+<div style="flex: 0 0 320px; display: flex; gap: 14px; align-items: flex-start"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #CDBFC7; padding-top: 3px">04</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 700">So: the 26 who changed club</span><span style="font-size: 14px; line-height: 1.5; color: #E0D6DB">With the team shortcut gone, the fingerprint still finds them. Small sample, wide uncertainty.</span></div></div>
+<div style="flex: 1 1 300px; height: 28px; background: rgba(255,255,255,0.06); border-radius: 6px; position: relative"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: 23.9%; background: {{accent}}; border-radius: 6px"></div></div>
+<span style="flex: 0 0 72px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: {{accent}}">0.239</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px">
+<div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #CDBFC7">Second opinion</span>
+<span style="font-size: 20px; font-weight: 700">Repeated on a different provider</span>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #E0D6DB">StatsBomb data, four leagues, 2015/16: the fingerprint scores <span style="font-family: 'JetBrains Mono', monospace; color: #FFFFFF">0.203</span> against a guess of <span style="font-family: 'JetBrains Mono', monospace; color: #FFFFFF">0.038</span>. Weaker, but the same signal.</p>
+</div>
+<div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #CDBFC7">The bottom line</span>
+<span style="font-size: 20px; font-weight: 700">Players do leave an individual trace</span>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #E0D6DB">But teammates and club context carry a lot of it. The finding is narrower than the headline — and the site says so up front.</p>
+</div>
+</div>
+<a href="Bastidores.dc.html" style="align-self: flex-start; color: {{accent}}; font-weight: 600; font-size: 16px; padding: 12px 0">Read the full research trail →</a>
+</div>
+</section>
+
+<!-- IS / ISN'T -->
+<section style="max-width: 1200px; margin: 0 auto; padding: 96px 24px; display: flex; flex-direction: column; gap: 32px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -0.02em; font-weight: 700; max-width: 720px">Reading it right</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px">
+<div style="background: #FFFFFF; border: 1px solid rgba(44,44,44,0.12); border-radius: 24px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+<span style="font-size: 18px; font-weight: 700; color: #853953">This project shows</span>
+<div style="display: flex; gap: 12px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#853953" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M5 12l5 5L20 7"></path></svg><span style="font-size: 16px; line-height: 1.55">How a player acts carries a measurable, individual signal.</span></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#853953" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M5 12l5 5L20 7"></path></svg><span style="font-size: 16px; line-height: 1.55">That signal holds across two halves of a season and on a second data provider.</span></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#853953" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M5 12l5 5L20 7"></path></svg><span style="font-size: 16px; line-height: 1.55">Every number is reproducible from frozen, openly licensed data.</span></div>
+</div>
+<div style="background: #E6E2E5; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+<span style="font-size: 18px; font-weight: 700; color: #5A3E0E">It does not claim</span>
+<div style="display: flex; gap: 12px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A3E0E" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font-size: 16px; line-height: 1.55">That two similar players share a playing style.</span></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A3E0E" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font-size: 16px; line-height: 1.55">That a statistical neighbour is a signing or replacement recommendation.</span></div>
+<div style="display: flex; gap: 12px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A3E0E" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font-size: 16px; line-height: 1.55">Anything about future performance, tactical fit or transfer value.</span></div>
+</div>
+</div>
+</section>
+
+<!-- BUILT BY -->
+<section style="max-width: 1200px; margin: 0 auto; padding: 0 24px 96px">
+<div style="border: 1.5px solid #2C2C2C; border-radius: 32px; padding: clamp(28px, 4vw, 56px); display: flex; flex-wrap: wrap; gap: 40px; align-items: center">
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<span style="font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: #853953">Behind the project</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -0.02em; font-weight: 700">Data science to get the answer right. AI to make it readable.</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A4448">I'm Bruno Guide, a PhD in NLP working on ML and LLM systems. Yumusarái Labs is how I approach a question end to end: freeze it, try hard to break the result, then turn dense evidence into something anyone can explore.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; padding-top: 4px">
+<a href="Bastidores.dc.html" style="background: #2C2C2C; color: #FFFFFF; text-decoration: none; padding: 14px 22px; border-radius: 999px; font-weight: 600">Read the case study</a>
+<a href="https://github.com/grunobuide/scoutlens" style="color: #2C2C2C; text-decoration: none; padding: 13px 21px; border-radius: 999px; border: 1.5px solid #2C2C2C; font-weight: 600">Code on GitHub</a>
+</div>
+</div>
+<div style="flex: 1 1 360px; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #853953">DATA SCIENCE</span><span style="font-size: 15px; line-height: 1.5">Frozen question, baselines, controls, a second provider</span></div>
+<div style="background: #FFFFFF; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #853953">ENGINEERING</span><span style="font-size: 15px; line-height: 1.5">Python → immutable JSON → typed static site</span></div>
+<div style="background: #2C2C2C; color: #FFFFFF; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: {{accent}}">AI</span><span style="font-size: 15px; line-height: 1.5">Plain-language explanations and a friendlier interface</span></div>
+<div style="background: #FFFFFF; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #853953">GUARDRAILS</span><span style="font-size: 15px; line-height: 1.5">AI never computes or softens a number</span></div>
+</div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer style="border-top: 1px solid rgba(44,44,44,0.14); background: #E6E2E5">
+<div style="max-width: 1200px; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; font-size: 14px; color: #4A4448">
+<div style="display: flex; flex-direction: column; gap: 8px; max-width: 560px">
+<span style="font-weight: 700; color: #2C2C2C">Yumusarái Labs · Evidence-first football analytics</span>
+<span style="line-height: 1.55">Data: Pappalardo et al., Wyscout 2017/18 (CC BY 4.0) and StatsBomb Open Data. Only aggregate results are published — no raw event rows.</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 20px; align-items: flex-start">
+<a href="https://grunobuide.github.io/scoutlens/science/" style="padding: 10px 0">Full methodology</a>
+<a href="https://github.com/grunobuide/scoutlens" style="padding: 10px 0">GitHub</a>
+<a href="https://www.linkedin.com/in/[SEU-PERFIL]" style="padding: 10px 0">LinkedIn</a>
+</div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F2B8CB","options":["#F2B8CB","#E9C46A","#F3F4F4"]},"$preview":{"width":1440,"height":6200}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#F2B8CB' };
+}
+}
+</script>
+</body>
+</html>
