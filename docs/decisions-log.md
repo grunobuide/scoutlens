@@ -3144,3 +3144,105 @@ renamed competitions. `e2e/claims-consistency.spec.ts` works the list out
 independently from the served index and asserts it, with the purpose label,
 in the chip and the provider section on every route, with and without
 JavaScript.
+
+## D075 — 2026-11-03 — The redesign changes the look, the landing h1 and the nav; thesis, boundary, CTAs and every number's owner stay frozen
+
+**Decision:** the redesign of epic `scoutlens-rdz` (plan:
+[`docs/redesign/ROADMAP.md`](redesign/ROADMAP.md), visual target:
+`docs/redesign/design/*.png`) may change these six things, and only these.
+(`scoutlens-rdz.1`)
+
+1. **The landing h1** becomes "Can 32 numbers recognise a footballer?",
+   followed directly by one line that names both halves of the season.
+   `ThesisStatement` follows that line, and the design's lead paragraph is not
+   built. The "32" is the length of `feature-catalog.json` `features`, read
+   when the page is built. It is not typed.
+2. **The top navigation** gains "Case study" as a fourth item, after Overview,
+   Fingerprint Lab and How it works, whose labels stay as frozen.
+3. **A `/case-study/` route** is added. Its prose comes from
+   `docs/case-study.md`. Its numbers come from the showcase artifacts through
+   `requireMetric`, as on every other route, and are never copied from the
+   document; D071's bound copies stay a rule for the document only. The route
+   carries the same static-check obligations as the other three: one h1, the
+   landmarks, the "not current scouting information" notice and the
+   provenance markers. This supersedes, for this one route, the narrative's
+   §6.1 note that "no separate `/about` route is added".
+4. **The palette** becomes graphite, wine and plum. The values change in
+   `styles/tokens.css`, and the classes do not. Every text token keeps at least
+   4.5:1 against each background it is used on.
+5. **The fonts** become Bricolage Grotesque for display and JetBrains Mono for
+   code, from local `@fontsource-variable/*` packages as Inter already is, and
+   never from a third-party font host. The Lighthouse minimums and the
+   2,500 ms LCP budget do not move.
+6. **Delivery.** From `scoutlens-rdz.2` on, beads merge into an integration
+   branch `redesign`. `redesign` reaches `main`, and with it the deployed
+   site, in one merge (`scoutlens-rdz.18`).
+
+**What stays frozen.**
+
+- The thesis and boundary sentence, verbatim and adjacent on every route that
+  shows them, from `web/src/content/narrative.ts` (D066).
+- The CTA labels and order of the narrative's §6.3. "Explore every
+  fingerprint" is primary and "How the science was checked" is secondary. The
+  case study gets its own block lower on the landing, not a third hero CTA,
+  because §6.3 allows the hero two.
+- The product descriptor "Player Fingerprint Lab"
+  ([`public-identity-contract.md`](public-identity-contract.md)). The design's
+  "Player Fingerprints" under the wordmark is not used.
+- "No result values in copy." Every number on a redesigned page comes from
+  the showcase artifacts through the existing loaders and `requireMetric`. The
+  numbers typed in `docs/redesign/design/*.dc.html` are reference only.
+- `research.supported_claim`, `research.unsupported_claims`, the confound
+  beside every headline evidence rendering, the data-vintage chip (D067,
+  D069), the quantity explainers, and every scientific invariant.
+
+**What is cut.**
+
+- "About 10× better than guessing." No artifact publishes that ratio, and
+  the page may not compute one. It is cut (owner decision, 2026-11-03), not
+  deferred to a pipeline metric.
+- The "100% open, reproducible results" strip. It asserts without an evidence
+  ID. Facts the manifest carries replace it: the licence and the dataset pin.
+
+**Amendments this entry authorises, and no others.**
+
+- `scoutlens-rdz.2` amends
+  [`public-experience-narrative.md`](public-experience-narrative.md): §6.1 adds
+  the fourth nav item and `/case-study/`; §6.2 adds `/case-study/` to the
+  places the case study may render; §7.1 lets the line naming both periods
+  sit between the h1 and the thesis, and adds the landing's case-study block.
+- `scoutlens-rdz.3` amends
+  [`frontend-agent-contract.md`](frontend-agent-contract.md): §2 names
+  `web/src/app/case-study/page.tsx` and the hero component, and names
+  `scoutlens-rdz.8`, `scoutlens-rdz.13` and `scoutlens-rdz.15` as the beads
+  that may edit `web/scripts/check-static-output.mjs`; §4.1 adds
+  `styles/case-study.css` as layer 9.
+
+**Found while writing this entry.** The landing's secondary CTA reads "Audit
+the science". That label shipped on 2026-07-28 (`caf9c9d`), before §6.3 froze
+"How the science was checked" on 2026-08-06. The copy pass that §10 assigned
+never applied it, and no test pins either label, so nothing failed. The owner
+chose §6.3's label (2026-11-03). `scoutlens-rdz.8` changes the hero's label,
+and a test pins both CTA labels to §6.3. The narrative does not change.
+
+**Why.** The redesign is mostly presentation, and that part needs no
+decision. Some of it does touch frozen rules: the narrative spec owns the h1's
+job, the nav and the CTAs, the frontend contract denies any route or file it
+does not list, and the static check and the e2e suite pin the h1 and reject
+typed numbers. This entry decides those points before any code, so no bead
+settles one by editing a guard.
+
+**Why a line under the h1, not a longer h1.** The owner chose a question for
+the headline. `scoutlens-9a3.14` put both periods into the landing headline
+after the n=1 comprehension run, because the reader did not see that the two
+profiles come from different halves of the season. The line keeps the periods
+in the headline's reading context without turning the question into two
+sentences. Only the chip, the eyebrow, the h1 and that line sit above the
+thesis.
+
+**How to apply:** the static check expects the current h1 until
+`scoutlens-rdz.8`, which changes the h1 and the check's expectation in the
+same pull request. A bead that needs a file neither contract names after
+rdz.3 stops. The roadmap's open owner decisions (the AI story, plain family
+names and personal links) are not decided here. Each is recorded with the bead
+that needs it.
