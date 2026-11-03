@@ -157,6 +157,30 @@ test.describe("every Lab and challenge quantity is explained where it is printed
     expect([...seen].sort()).toEqual([...V2_QUANTITIES].sort());
   });
 
+  test.describe("without JavaScript", () => {
+    test.use({ javaScriptEnabled: false });
+
+    // `scoutlens-9a3.31`: the degraded challenge card printed self rank, the
+    // candidate count and the baseline rank with nothing tagged and nothing in
+    // reach, and this sweep only ever ran with JavaScript. Without it the card
+    // is inside <noscript>, which the parser renders as real elements.
+    test("on the Lab, the degraded challenge card included", async ({ page }) => {
+      await page.goto("/lab/");
+      await expect(page.locator("[data-challenge-degraded]")).toBeVisible();
+      const result = await sweep(page);
+      expect(result.problems).toEqual([]);
+      expect(result.seen).toEqual(expect.arrayContaining(["self_rank", "baseline_self_rank"]));
+      // The sweep can only judge what is tagged, and the Lab's replay tags the
+      // same ids elsewhere - so the card's own sentence is held to its tags.
+      const card = page.locator("[data-challenge-degraded]");
+      const tags = (await card.locator("[data-challenge-result]").getAttribute("data-quantity")) ?? "";
+      expect(tags.split(" ").sort()).toEqual(["baseline_self_rank", "self_rank"]);
+      for (const id of ["self_rank", "baseline_self_rank"]) {
+        await expect(card.locator(`[data-quantity-explainer="${id}"]`)).toHaveCount(1);
+      }
+    });
+  });
+
   test("each disclosure opens and closes from the keyboard and exposes the same terms it names", async ({
     page,
   }) => {
