@@ -2,24 +2,83 @@
    Design tokens. Owned by the design system; a change here is cross-cutting.
 
    Extracted from globals.css by scoutlens-uze.3. Ownership map and cascade
-   order are frozen in docs/frontend-agent-contract.md section 4. */
+   order are frozen in docs/frontend-agent-contract.md section 4.
+
+   Palette: graphite, wine and plum (`scoutlens-rdz.4`, D075 item 4). The
+   token names predate it and do not change: --teal is now the wine accent,
+   --signal the pink that sits on dark surfaces, --signal-dark the plum.
+
+   Each colour token states its WCAG contrast against every background it was
+   measured on. Text needs 4.5:1; large text (24px, or 18.66px bold) and
+   non-text UI need 3:1. Some backgrounds are not tokens but literals in the
+   layer files, named here by value: #fff5df (warning surfaces), #18241f (the
+   headline experiment card) and its 5% white metric boxes (#242f2a), the
+   cream metric boxes (#f9f7f2; #f9f3e5 on a warning card), the caveat tints,
+   the lime wash on <body>, and the lime glow in the Lab's profile header.
+   How it was measured: Chromium, axe's colour-contrast data, on /, /science/
+   and /lab/ (featured, ?player, every ?challenge state, the neighbour
+   drawer, the v2 max-content fixture) at 1280 and 360 px. Figures are axe's,
+   truncated to two decimals. axe cannot resolve a gradient, so a wash is
+   given at its worst point over every gradient stop. The Lab glow was
+   resolved per text line at every width from 300 to 1600 px. axe does not
+   see generated text or non-text UI; those pairs are computed. */
 
 :root {
-  --ink-950: #101a17;
-  --ink-800: #293a34;
+  /* Graphite: body text and the dark surfaces. As text: 13.96:1 on --white,
+     12.67 on --paper, 10.88 on --paper-deep, 12.88 on #fff5df, 11.83 or more
+     on the caveat tints, 12.52 at the body wash's worst. As a surface:
+     --white 13.96, --signal 10.58, the 68% white literal 7.27 (4.78 under
+     the Lab glow's worst, 18.5%), the 65% white literal 6.81. As UI (the
+     button border on --paper, the challenge's B mark on its 8% track): 12.04
+     or more. */
+  --ink-950: #2c2c2c;
+  /* Strong secondary text: 12.15 on --white, 11.02 on --paper, 9.47 on
+     --paper-deep, 11.21 on #fff5df, 10.89 at the body wash's worst. */
+  --ink-800: #3a3438;
   /* `scoutlens-uze.31`: four rules used --ink-700 and it was never defined,
      so each silently inherited its parent's ink. A mid ink between 800 and
-     600: 7.6:1 on --paper, 8.4:1 on --white. */
-  --ink-700: #3f504a;
-  --ink-600: #5f7069;
-  --paper: #f5f2e9;
-  --paper-deep: #eae5d7;
-  --white: #fffdf7;
-  --signal: #d8ff4f;
-  --signal-dark: #294913;
-  --teal: #14675a;
+     600: 8.76 on #fff5df, 8.51 at the body wash's worst. */
+  --ink-700: #4a4448;
+  /* Muted text: 6.11 on --white, 5.54 on --paper, 5.64 on #fff5df, 5.71 on
+     #f9f7f2, 5.52 on #f9f3e5, 5.48 at the body wash's worst. The fingerprint
+     card's 0/100 labels (generated text) overlap its --paper-deep track:
+     4.76 there. The design's #6b6468 gave 4.48, hence one step darker. */
+  --ink-600: #676064;
+  /* Surfaces only. Each is the background in the pairs above and below. */
+  --paper: #f3f4f4;
+  --paper-deep: #e6e2e5;
+  /* The card surface, and the text on dark surfaces: 13.96 on --ink-950,
+     7.75 on --teal, 10.45 on --signal-dark, 16.01 on #18241f, 13.76 on the
+     critical-caveat tint over it (#2a2f20), 6.83 under the Lab glow's worst
+     (24.1%, the profile name). */
+  --white: #ffffff;
+  /* Pink, for text on dark surfaces: 10.58 on --ink-950, 12.13 on #18241f,
+     10.50 on #242f2a, 4.71 under the Lab glow's worst (27.3%, at 331 px).
+     It is lighter than the design's #f2b8cb because of that glow, a lab.css
+     literal: #f2b8cb gives 3.69 there. As the halo round period B's mark it
+     is decorative; the mark's fill identifies it. */
+  --signal: #f8d8e2;
+  /* Plum: period B's mark and values. As text: 10.45 on --white. As UI: the
+     mark 8.15 on --paper-deep, the fingerprint track. As a surface: --white
+     10.45 (the Lab mark's letter). */
+  --signal-dark: #612d53;
+  /* Wine: the accent. As text (eyebrows, links, metric values, period A's
+     values): 7.75 on --white, 7.03 on --paper, 6.04 on --paper-deep, 7.15 on
+     #fff5df, 7.24 on #f9f7f2, 7.01 on #f9f3e5, 6.95 at the body wash's
+     worst. As UI: period A's mark 6.04 on --paper-deep; the focus ring 6.04
+     or more on every light surface. As a surface: --white 7.75.
+     Below 3:1, and no value of this token can fix it: the focus ring on a
+     dark surface, 1.80 on --ink-950 and 2.06 on #18241f (the old teal gave
+     2.63 and 2.37). A wine light enough for 3:1 on graphite falls below
+     4.5:1 as text on --paper-deep. The ring needs its own rule there. */
+  --teal: #853953;
+  /* Decorative separators and card edges: 1.38 on --white. It is also the
+     only edge of the Lab's search and filter controls, whose --paper fill is
+     1.10 on the --white card. That was 1.42 before this palette, also below
+     3:1. Those controls need a border of their own. */
   --line: color-mix(in srgb, var(--ink-950) 17%, transparent);
-  --shadow: 0 24px 70px rgb(25 39 34 / 10%);
+  /* Decorative. No contrast requirement. */
+  --shadow: 0 24px 70px rgb(44 44 44 / 10%);
   --radius-sm: 0.75rem;
   --radius-md: 1.3rem;
   --radius-lg: 2rem;
