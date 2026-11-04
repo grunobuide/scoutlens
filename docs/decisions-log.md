@@ -3246,3 +3246,82 @@ same pull request. A bead that needs a file neither contract names after
 rdz.3 stops. The roadmap's open owner decisions (the AI story, plain family
 names and personal links) are not decided here. Each is recorded with the bead
 that needs it.
+
+## D076 — 2026-11-03 — The landing's case-study block may link to the case study, a facts strip and "The idea in 30 seconds" follow the hero, and the hero aside holds the proof card before the supported claim
+
+**Decision:** three points D075 left open. Each is a place where the
+narrative and a phase-2 bead of the redesign disagreed, so that bead's
+executor would have stopped. `scoutlens-rdz.2` found the first two while
+amending the narrative (#182); the third came from reading `scoutlens-rdz.8`
+against §7.1. The owner decided all three on 2026-11-03.
+(`scoutlens-rdz.19`)
+
+1. **The landing's case-study block may link to the case study.** The
+   narrative's §6.3 item 3 kept the case-study link to the footer and
+   provenance, and §7.1 item 7 (D075) gives the landing a block that links to
+   `/case-study/`. The block may carry that link (`scoutlens-rdz.12`). It is
+   still not a hero CTA: the hero keeps §6.3's two. Only the case-study link
+   is admitted. The repository link stays in the footer and provenance, so the
+   design's "Code on GitHub" button in the block is not built.
+2. **A facts strip and "The idea in 30 seconds" follow the hero, in that
+   order** (`scoutlens-rdz.9`). They come after the hero and its aside and
+   before the claim matrix. The rest of §7.1 keeps its order: claim matrix,
+   fingerprint preview, evidence band, provenance strip, case-study block,
+   footer.
+   - The **facts strip** shows facts about the population and the data that
+     the manifest or `research-summary.json` publishes, among them the licence
+     and the dataset pin, in place of the cut "100% open" strip (D075). It
+     shows no result value. A fact no artifact publishes is left out and is
+     not computed in the page, as with the cut ratio.
+   - **"The idea in 30 seconds"** explains the method: the season split into
+     two halves, each half described with the catalogue's measurements, and
+     the second-half profiles ranked by their similarity to the first half. It
+     claims no more than the thesis does, so it offers no reading of style,
+     quality or recruitment. Every number in it comes from the artifacts.
+   - The claim matrix stays one-sided and keeps its place before the
+     fingerprint preview (`scoutlens-9a3.12`, `scoutlens-9a3.29`). The design
+     shows a two-sided "Reading it right" after the evidence. It is not built.
+3. **The hero aside holds the proof card first, then the supported claim.**
+   `scoutlens-rdz.8`'s proof card opens the aside. It shows the featured
+   profile's ranks: the fingerprint's and the role-and-minutes guess's,
+   read from the profile artifact. `research.supported_claim` follows it in the
+   same aside, with the confound paragraph and its link to the
+   team-continuity control on `/science`. The card's player is
+   `manifest.featured_profile`, shown with its editorial reason, and is never
+   swapped for one that ranks better. Nothing leaves the hero, and the
+   confound sits beside the card's ranks, as D075 keeps for every headline
+   evidence rendering.
+
+**What stays frozen.** Everything D075 lists. In §6.3, only item 3 changes;
+the CTA labels and their order do not.
+
+**Amendments this entry authorises, and no others.** `scoutlens-rdz.19`
+amends [`public-experience-narrative.md`](public-experience-narrative.md) on
+`redesign`. §6.3 item 3 admits the landing's case-study block. §7.1 puts the
+proof card ahead of the supported claim in the hero aside (item 2) and adds
+the facts strip and "The idea in 30 seconds", in that order, between the hero
+and the claim matrix.
+
+**Found while writing this entry.** The design's proof card shows the
+featured profile found first. The published artifact does not: that
+profile's `retrieval.global.self_rank` is not 1. The role-and-minutes guess's
+rank in the design does match `retrieval.baseline_role_minutes.self_rank`. The
+card shows the artifact's values. The featured profile does not change to
+improve them, because `manifest.featured_profile.reason` says the choice "is
+not based on retrieval rank or player quality".
+
+**Why.** The repository's rule is that when a contract and a bead disagree,
+the bead loses and its executor stops. Deciding these points before rdz.8,
+rdz.9 and rdz.12 start keeps each of them from settling a narrative rule by
+itself. The explanation comes before the claim matrix so the reader learns
+what the test is before reading where its evidence stops. The boundary
+sentence still comes first, in the hero (D066). The supported claim stays in
+the hero because one profile's rank is the most anecdotal number on the
+landing. It should never be read without the population-level claim and the
+confound beside it.
+
+**How to apply:** `scoutlens-rdz.8`, `scoutlens-rdz.9` and `scoutlens-rdz.12`
+start after the narrative amendment is in `redesign`. The owner approves the
+copy of the facts strip, of "The idea in 30 seconds" and of the case-study
+block in each bead's pull request (`product-narrative`). A bead that needs a
+file the frontend contract does not name stops.
