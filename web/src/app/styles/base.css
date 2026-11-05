@@ -54,6 +54,20 @@ h3 {
   letter-spacing: -0.045em;
 }
 
+/* `scoutlens-rdz.5`: the display face is for h1 and h2 only; h3 stays in the
+   text face. --font-display and --font-mono are set by next/font in layout.tsx. */
+h1,
+h2 {
+  font-family: var(--font-display), Inter, Arial, sans-serif;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+}
+
 h1 {
   max-width: 16ch;
   margin-bottom: 1.5rem;
