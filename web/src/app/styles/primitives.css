@@ -56,7 +56,7 @@
 .button:hover,
 .button:focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgb(16 26 23 / 12%);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink-950) 12%, transparent);
 }
 
 .section-heading {
