@@ -27,7 +27,7 @@
   /* Graphite: body text and the dark surfaces. As text: 13.96:1 on --white,
      12.67 on --paper, 10.88 on --paper-deep, 12.88 on #fff5df, 11.83 or more
      on the caveat tints, 12.52 at the body wash's worst. As a surface:
-     --white 13.96, --signal 10.58, the 68% white literal 7.27 (4.78 under
+     --white 13.96, --signal 8.30, the 68% white literal 7.27 (4.78 under
      the Lab glow's worst, 18.5%), the 65% white literal 6.81. As UI (the
      button border on --paper, the challenge's B mark on its 8% track): 12.04
      or more. */
@@ -52,12 +52,14 @@
      critical-caveat tint over it (#2a2f20), 6.83 under the Lab glow's worst
      (24.1%, the profile name). */
   --white: #ffffff;
-  /* Pink, for text on dark surfaces: 10.58 on --ink-950, 12.13 on #18241f,
-     10.50 on #242f2a, 4.71 under the Lab glow's worst (27.3%, at 331 px).
-     It is lighter than the design's #f2b8cb because of that glow, a lab.css
-     literal: #f2b8cb gives 3.69 there. As the halo round period B's mark it
-     is decorative; the mark's fill identifies it. */
-  --signal: #f8d8e2;
+  /* Pink, for text on dark surfaces: the design's #f2b8cb. 8.30 on
+     --ink-950, 9.53 on #18241f, 8.24 on #242f2a, measured per element
+     (`scoutlens-rdz.23`: 264 elements, every route and state above at 1280,
+     360 and 340 px; the lowest is 8.24). It was #f8d8e2 while the Lab's
+     profile header carried a lime glow, where this pink gave 3.69; that glow
+     is gone (`scoutlens-rdz.20`). As the halo round period B's mark it is
+     decorative; the mark's fill identifies it. */
+  --signal: #f2b8cb;
   /* Plum: period B's mark and values. As text: 10.45 on --white. As UI: the
      mark 8.15 on --paper-deep, the fingerprint track. As a surface: --white
      10.45 (the Lab mark's letter). */
