@@ -128,7 +128,11 @@
   min-width: 0;
   min-height: 3rem;
   padding: 0.65rem 0.8rem;
-  border: 1px solid var(--line);
+  /* `scoutlens-rdz.20`: the border is the field's only visible edge (its
+     --paper fill is 1.10:1 on the --white card), so it needs 3:1 (WCAG
+     1.4.11). --line gives 1.38; --ink-600 gives 6.11 on --white and 5.54 on
+     --paper. --line stays as it is for the site's dividers. */
+  border: 1px solid var(--ink-600);
   border-radius: var(--radius-sm);
   background: var(--paper);
   color: var(--ink-950);
@@ -228,7 +232,9 @@
   padding: 2rem;
   border: 1px dashed var(--teal);
   border-radius: var(--radius-md);
-  background: rgb(216 255 79 / 12%);
+  /* `scoutlens-rdz.20`: a wine wash replaces the lime one. On the --white
+     card: --ink-600 5.57:1, --teal 7.07, --ink-950 12.72. */
+  background: color-mix(in srgb, var(--teal) 6%, transparent);
 }
 
 .lab-empty-state h3 {
@@ -251,7 +257,7 @@
 
 .lab-active-filters li {
   padding: 0.35rem 0.65rem;
-  border: 1px solid rgb(20 103 90 / 35%);
+  border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
   border-radius: 999px;
   background: var(--white);
   color: var(--ink-800);
@@ -319,9 +325,10 @@
   align-items: flex-end;
   justify-content: space-between;
   padding: clamp(1.5rem, 5vw, 3.5rem);
-  background:
-    radial-gradient(circle at 88% 0%, rgb(216 255 79 / 30%), transparent 18rem),
-    var(--ink-950);
+  /* `scoutlens-rdz.20`: the lime glow is gone; the design's dark surfaces are
+     flat graphite. Every text colour here is then read against --ink-950
+     alone, which is what lets `scoutlens-rdz.23` return --signal to #f2b8cb. */
+  background: var(--ink-950);
   color: var(--white);
 }
 
@@ -431,7 +438,8 @@
   gap: 0.35rem;
   margin: 0;
   padding: 0.25rem;
-  border: 1px solid var(--line);
+  /* `scoutlens-rdz.20`: the same 3:1 edge as .lab-control's fields. */
+  border: 1px solid var(--ink-600);
   border-radius: 999px;
   background: var(--paper);
 }
@@ -566,7 +574,12 @@
   height: 0.35rem;
   border-radius: 999px;
   background:
-    linear-gradient(90deg, transparent 49.7%, rgb(16 26 23 / 22%) 49.7% 50.3%, transparent 50.3%),
+    linear-gradient(
+      90deg,
+      transparent 49.7%,
+      color-mix(in srgb, var(--ink-950) 22%, transparent) 49.7% 50.3%,
+      transparent 50.3%
+    ),
     var(--paper-deep);
 }
 
@@ -1061,11 +1074,15 @@
   border: 0;
   background: var(--white);
   color: var(--ink-950);
-  box-shadow: -1.5rem 0 4rem rgb(16 26 23 / 22%);
+  box-shadow: -1.5rem 0 4rem color-mix(in srgb, var(--ink-950) 22%, transparent);
 }
 
 .neighbor-drawer::backdrop {
-  background: rgb(16 26 23 / 58%);
+  /* `scoutlens-rdz.20`: ::backdrop inherits custom properties only from
+     Chrome 122, Firefox 120 and Safari 17.4. The build targets older
+     (Chrome 111, Safari 16.4), where --ink-950 is undefined here, so the
+     fallback is the token's value. */
+  background: color-mix(in srgb, var(--ink-950, #2c2c2c) 58%, transparent);
   backdrop-filter: blur(0.2rem);
 }
 
