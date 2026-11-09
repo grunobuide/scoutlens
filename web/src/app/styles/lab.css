@@ -474,6 +474,20 @@
   opacity: 0;
 }
 
+/* `scoutlens-rdz.24`: the radio is transparent, so base.css's ring on it never
+   shows, and keyboard focus was invisible. The label carries the ring instead,
+   in the same two tones (wine outline, white band) but tighter: 2px out, so it
+   stays inside the pill's 4px padding and 1px border and does not reach the
+   other label across the 5.6px gap. Keyboard focus in a radio group lands on
+   the checked radio, so the band sits on the --ink-950 fill (13.96:1) and the
+   wine meets the pill's --paper or the --white card (7.03 or 7.75). :has() is
+   already what shows the checked state above. */
+.percentile-toggle label:has(input:focus-visible) {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--white);
+}
+
 .fingerprint-summary {
   max-width: 48rem;
   margin: 1.5rem 0;
@@ -516,6 +530,13 @@
 .lab-fingerprint-map {
   display: grid;
   gap: 1.5rem;
+}
+
+/* `scoutlens-rdz.24`: the map started flush under the glossary, and its first
+   family card painted over the bottom of the last glossary link's focus ring,
+   which reaches 7px below the link. */
+.quantity-glossary + .lab-fingerprint-map {
+  margin-top: 1rem;
 }
 
 .lab-feature-family {
@@ -1142,6 +1163,22 @@
 .neighbor-drawer__boundary {
   padding: clamp(1.25rem, 4vw, 2.5rem);
   border-bottom: 1px solid var(--line);
+}
+
+/* `scoutlens-rdz.24`: the drawer's "What these numbers mean" sits straight in
+   the scrolling shell, between two sections, with none of their padding. Its
+   text touched the drawer's edge, and the shell clipped the focus rings of its
+   summary and links (left at 1280, both sides at 360). It takes the sections'
+   padding and divider; its text keeps the glossary's 48rem measure. */
+.neighbor-drawer__shell > .quantity-glossary {
+  max-width: none;
+  margin: 0;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.neighbor-drawer__shell > .quantity-glossary > * {
+  max-width: 48rem;
 }
 
 .neighbor-drawer__score {
