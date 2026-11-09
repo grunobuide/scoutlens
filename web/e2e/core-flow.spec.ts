@@ -63,12 +63,13 @@ test("complete selected-player flow works by keyboard at desktop and 360 px", as
   await expect(page.getByText("Available from 500 valid resamples", { exact: false }).first()).toBeVisible();
 
   const globalToggle = page.getByRole("radio", { name: "Global" });
-  const interactionDuration = await measureNextInteraction(page, async () => {
+  const interaction = await measureNextInteraction(page, async () => {
     await globalToggle.focus();
     await page.keyboard.press("Space");
   });
-  expect(interactionDuration).toBeLessThanOrEqual(INTERACTION_BUDGET_MS);
-  console.log(`[${testInfo.project.name}] synthetic interaction duration: ${interactionDuration} ms`);
+  expect(interaction.durationMs).toBeLessThanOrEqual(INTERACTION_BUDGET_MS);
+  const reading = interaction.belowThreshold ? `< ${interaction.durationMs}` : `${interaction.durationMs}`;
+  console.log(`[${testInfo.project.name}] synthetic interaction duration: ${reading} ms`);
   await expect(globalToggle).toBeChecked();
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByRole("radio", { name: "Within role" })).toBeChecked();
