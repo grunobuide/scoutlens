@@ -51,7 +51,8 @@ describe("the frozen display identity", () => {
     const markup = renderToStaticMarkup(<SiteHeader />);
     expect(markup).toContain(SHORT_DESCRIPTOR);
 
-    const landing = await readFile(resolve("src", "app", "page.tsx"), "utf8");
+    // `scoutlens-rdz.8`: the landing eyebrow lives in the hero component.
+    const landing = await readFile(resolve("src", "components", "landing-hero.tsx"), "utf8");
     expect(landing).toContain(`<p className="eyebrow">${DESCRIPTOR}</p>`);
 
     const lab = await readFile(resolve("src", "app", "lab", "page.tsx"), "utf8");

@@ -1,66 +1,219 @@
 /* landing.css
-   Landing route only (app/page.tsx).
+   Landing route only (app/page.tsx, components/landing-hero.tsx).
 
    Extracted from globals.css by scoutlens-uze.3. Ownership map and cascade
    order are frozen in docs/frontend-agent-contract.md section 4. */
 
+/* `scoutlens-rdz.8`: the copy keeps the larger share, and the aside is wide
+   enough for the proof card's two rank tiles side by side. */
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.7fr);
-  gap: clamp(3rem, 8vw, 8rem);
+  grid-template-columns: minmax(0, 1.1fr) minmax(20rem, 0.9fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
   align-items: center;
   min-height: min(50rem, calc(100vh - 5rem));
   padding-block: 4rem;
 }
 
-/* `scoutlens-9a3.13` split the panel in two. The circle stays the circle and
-   keeps the claim it was designed around; the confound moved out from under its
-   `overflow: hidden`, which was clipping the plain-language rewrite. */
+/* D076: the aside holds the proof card, then the supported claim, then its
+   confound. `scoutlens-rdz.8` removed the dial that held the claim, and with
+   it the old palette's cream, teal and lime literals. */
 .hero__signal {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.75rem;
   align-content: center;
-  justify-items: center;
 }
 
-.signal-dial {
-  position: relative;
+/* The proof card: one profile's two ranks on --ink-950. Text on it is
+   --white (13.97:1), --signal (8.31:1) or --white mixed down to 80% over the
+   card (#d5d5d5, 9.51:1). On a rank tile (#373737) the same three measure
+   11.90, 7.08 and 8.11:1. */
+.proof-card {
   display: grid;
-  width: 100%;
-  min-height: 24rem;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: rgb(255 253 247 / 74%);
+  gap: 1.1rem;
+  padding: clamp(1.4rem, 3vw, 2rem);
+  border-radius: var(--radius-lg);
+  background: var(--ink-950);
   box-shadow: var(--shadow);
-  isolation: isolate;
+  color: var(--white);
 }
 
-.signal-dial > div {
-  z-index: 1;
-  width: 68%;
+.proof-card__eyebrow {
+  margin: 0;
+  color: var(--signal);
+  font-size: 0.72rem;
+  font-weight: 720;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.signal-orbit {
-  position: absolute;
-  border: 1px solid rgb(20 103 90 / 26%);
+.proof-card__name {
+  margin: -0.6rem 0 0;
+  color: var(--white);
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.proof-card__context,
+.proof-card__reason {
+  margin: 0;
+  color: color-mix(in srgb, var(--white) 80%, var(--ink-950));
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.proof-card__context {
+  margin-top: -0.75rem;
+}
+
+.proof-card__ranks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.2rem 0 0;
+}
+
+/* The label is at the top and the rank at the bottom, so the two ranks line
+   up when one label wraps and the other does not. */
+.proof-card__rank {
+  display: grid;
+  align-content: space-between;
+  padding: 0.95rem 1.05rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--white) 20%, var(--ink-950));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--white) 5%, var(--ink-950));
+}
+
+.proof-card__rank dt {
+  color: color-mix(in srgb, var(--white) 80%, var(--ink-950));
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+/* The dot names each tile's marker on the strip below: --signal 7.08:1 and
+   --white 11.90:1 against the tile; the markers themselves, on the card,
+   8.31 and 13.97:1. */
+.proof-card__rank dt::before {
+  content: "";
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.45rem;
   border-radius: 50%;
+  background: var(--white);
+  vertical-align: 0.05em;
 }
 
-.signal-orbit--outer {
-  width: 82%;
-  aspect-ratio: 1;
+.proof-card__rank--search dt::before {
+  background: var(--signal);
 }
 
-.signal-orbit--inner {
-  width: 47%;
-  aspect-ratio: 1;
-  background: rgb(216 255 79 / 28%);
+.proof-card__rank dd {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.45rem 0 0;
+}
+
+.proof-card__rank strong {
+  color: var(--white);
+  font-family: var(--font-display), Inter, Arial, sans-serif;
+  font-size: clamp(2.1rem, 3.6vw, 2.7rem);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.proof-card__rank--search strong {
+  color: var(--signal);
+}
+
+.proof-card__rank dd span {
+  color: color-mix(in srgb, var(--white) 80%, var(--ink-950));
+  font-size: 0.84rem;
+}
+
+/* The two ranks as positions on one 1…candidate-count line. Decorative
+   (aria-hidden): the tiles carry the values. Inset by half a marker so a rank
+   of 1 or of the last candidate stays inside the card. */
+.proof-card__strip {
+  position: relative;
+  height: 1rem;
+  margin: 0.15rem 0.45rem 0;
+}
+
+.proof-card__strip::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--white) 24%, var(--ink-950));
+  transform: translateY(-50%);
+}
+
+.proof-card__marker {
+  position: absolute;
+  top: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--white);
+  transform: translate(-50%, -50%);
+}
+
+.proof-card__marker--search {
+  background: var(--signal);
+  box-shadow: 0 0 0 2px var(--ink-950);
+}
+
+.proof-card__scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: -0.5rem 0 0;
+  color: color-mix(in srgb, var(--white) 80%, var(--ink-950));
+  font-size: 0.76rem;
+}
+
+/* The rank explanations open inside the card, so the light-surface colours
+   lab.css gives the shared disclosure are re-set for --ink-950. Higher
+   specificity, not a later layer, is what lets them win over lab.css. */
+.proof-card .quantity-glossary {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.proof-card .quantity-glossary > summary {
+  color: var(--signal);
+}
+
+.proof-card .quantity-glossary__terms,
+.proof-card .quantity-glossary dd {
+  color: color-mix(in srgb, var(--white) 80%, var(--ink-950));
+}
+
+.proof-card .quantity-glossary dt,
+.proof-card .quantity-glossary .quantity-glossary__boundary {
+  color: var(--white);
+}
+
+.proof-card .quantity-glossary dd > a {
+  color: var(--signal);
+}
+
+/* The supported claim, set off by the same wine rule as the hero boundary. */
+.hero-claim {
+  padding-left: 1rem;
+  border-left: 3px solid var(--teal);
 }
 
 .signal-label {
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.4rem;
+  color: var(--teal);
   font-size: 0.72rem;
   font-weight: 750;
   letter-spacing: 0.1em;
@@ -71,13 +224,13 @@
   margin-bottom: 0;
   font-size: 1rem;
   font-weight: 590;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 /* `scoutlens-9a3.13`: the rule that divided the claim from its confound moved
    to the wrapper, so the caveat and its evidence link read as one block. */
 .signal-confound {
-  max-width: 34ch;
+  max-width: 48rem;
 }
 
 .signal-caveat {
@@ -114,9 +267,26 @@
   max-width: 52rem;
 }
 
+/* D075's question. `15ch` in the display face breaks it as the design does
+   on desktop: "Can 32 numbers / recognise a / footballer?". */
 .hero h1 {
-  max-width: 17ch;
-  font-size: clamp(3.2rem, 5.3vw, 5.25rem);
+  max-width: 15ch;
+  margin-bottom: 1.25rem;
+  font-size: clamp(3.2rem, 5.6vw, 5.25rem);
+  line-height: 0.98;
+}
+
+/* The line naming both halves (D075): part of the headline's reading
+   context, so it sits close under the h1 and above the thesis. A fixed size:
+   below 20px it is running text, which must not shrink as the viewport
+   narrows (`responsive-baseline.spec.ts`, `scoutlens-uze.28`). */
+.hero__halves {
+  max-width: 36rem;
+  margin-bottom: 1.25rem;
+  color: var(--ink-800);
+  font-size: 1.2rem;
+  font-weight: 560;
+  line-height: 1.45;
 }
 
 .hero__boundary {
@@ -152,17 +322,8 @@
 
   }
 
-  /* `scoutlens-9a3.14` lengthened the headline to carry the two periods. At the
-     old scale that pushed the claim boundary and both calls to action off the
-     first mobile screen — the wrong direction, since `9a3.12` found the boundary
-     was already going unread. Easing the scale buys the lines back. */
   .hero h1 {
       font-size: clamp(2.4rem, 11vw, 3.1rem);
-
-  }
-
-  .signal-dial {
-      min-height: 20rem;
 
   }
 

@@ -694,11 +694,15 @@ test.describe("without JavaScript", () => {
     // is scored on what a reader sees, not on what eventually loads.
     const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
     const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
+    // `scoutlens-rdz.8`, D075: the headline is the owner's question, its number
+    // the catalogue's length. Read here, not typed, as `landing-hero.spec.ts` does.
+    const catalog = await fetchArtifact<{ features: unknown[] }>(request, "feature-catalog.json");
 
     await page.goto("/");
     const main = page.locator("main");
 
-    await expect(main).toContainText("A player leaves a reproducible fingerprint");
+    await expect(main.locator("h1")).toHaveText(`Can ${catalog.features.length} numbers recognise a footballer?`);
+    await expect(main.locator(".hero__halves")).toContainText(manifest.source.season);
     await expect(main).toContainText(research.supported_claim);
     for (const claim of research.unsupported_claims) {
       await expect(main).toContainText(claim);
@@ -875,18 +879,27 @@ test.describe("the team-continuity confound", () => {
  * time-free claim.
  */
 test.describe("the hero's temporal framing", () => {
-  test("the headline locates the claim in time", async ({ page }) => {
+  test("the headline and the line under it locate the claim in time", async ({ page }) => {
     await page.goto("/");
     await waitForStablePage(page);
 
+    // D075 (`scoutlens-rdz.8`): the h1 became the owner's question, which
+    // carries no time, and the two periods moved to one line directly under
+    // it, inside the headline's reading context. So the property is held
+    // over the h1 and that line together, and the line must name both halves.
     const heading = (await page.locator("main h1").innerText()).replace(/\s+/g, " ").trim();
+    const line = page.locator("main h1 + p");
+    await expect(line, "nothing directly under the h1").toHaveCount(1);
+    const lineText = (await line.innerText()).replace(/\s+/g, " ").trim();
 
     // Pattern, not the exact sentence. The regression is a headline with no
     // temporal relation in it, which is what run 1 read back.
     expect(
-      /half a season|second half|later|two chronological halves|across two/i.test(heading),
-      `the headline states no temporal relation: "${heading}"`,
+      /half a season|second half|later|two chronological halves|across two/i.test(`${heading} ${lineText}`),
+      `the headline and its line state no temporal relation: "${heading}" / "${lineText}"`,
     ).toBe(true);
+    expect(lineText, "the line under the h1 does not name the first half").toMatch(/first half/i);
+    expect(lineText, "the line under the h1 does not name the second half").toMatch(/second half/i);
   });
 
   test("the lede still names the same-player question and both periods", async ({ page }) => {

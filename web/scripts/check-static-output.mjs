@@ -13,8 +13,9 @@ const landmarks = ["<header", "<nav", "<main", "<footer"];
 const fixtureMarkers = [...FIXTURE_MARKERS, ...SYNTHETIC_PROFILE_KEYS];
 const provenanceMarkers = ["Historical reproducible benchmark", "What these numbers describe"];
 const meaningfulStaticContent = {
+  // The landing h1 is checked on its own, below: its number comes from the
+  // published catalogue (`scoutlens-rdz.8`, D075).
   "index.html": [
-    "A player leaves a reproducible fingerprint",
     "Critical confound",
     "StatsBomb Open Data",
     "Not supported",
@@ -79,6 +80,24 @@ if (!Array.isArray(unsupportedClaims) || unsupportedClaims.length === 0) {
   throw new Error("research-summary.json published no unsupported_claims to except");
 }
 
+/**
+ * The landing h1 (`scoutlens-rdz.8`, D075): the owner's question, whose number
+ * is the length of `feature-catalog.json` `features`, read when the page is
+ * built. The expectation reads the catalogue the build shipped, so a "32"
+ * typed into the page and one typed here cannot agree by accident.
+ *
+ * This replaces the old substring check ("A player leaves a reproducible
+ * fingerprint", anywhere in the page) and is stricter: it is the whole text of
+ * the route's one h1.
+ */
+const catalogFeatures = JSON.parse(
+  await readFile(resolve(webRoot, "out", "showcase", `v${showcaseMajor}`, "feature-catalog.json"), "utf8"),
+).features;
+if (!Array.isArray(catalogFeatures) || catalogFeatures.length === 0) {
+  throw new Error("feature-catalog.json published no features to count");
+}
+const landingHeadline = `Can ${catalogFeatures.length} numbers recognise a footballer?`;
+
 // `forbiddenClaims` and `forbiddenCurrentness` live in `forbidden-copy.mjs`
 // (`scoutlens-9a3.29`), so the vitest and e2e that scan the client-rendered
 // challenge states read the same list this check does.
@@ -95,6 +114,12 @@ for (const route of routes) {
   }
   if ((html.match(/<h1[ >]/g) ?? []).length !== 1) {
     throw new Error(`${route} must contain exactly one h1`);
+  }
+  if (route === "index.html") {
+    const headline = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<!-- -->/g, "").trim();
+    if (headline !== landingHeadline) {
+      throw new Error(`${route} h1 must read "${landingHeadline}", found "${headline}"`);
+    }
   }
   for (const expected of meaningfulStaticContent[route] ?? []) {
     if (!html.includes(expected)) {
