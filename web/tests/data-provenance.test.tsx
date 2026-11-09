@@ -189,7 +189,11 @@ describe("scoutlens-9a3.3 data provenance presentation", () => {
   });
 
   it("route variants agree on provider and vintage facts", async () => {
-    const landing = await readFile(resolve("src", "app", "page.tsx"), "utf8");
+    // `scoutlens-rdz.8`: the landing's hero, and the chip with it, is its own
+    // component, so the route's source is the page plus that component.
+    const landing =
+      (await readFile(resolve("src", "app", "page.tsx"), "utf8")) +
+      (await readFile(resolve("src", "components", "landing-hero.tsx"), "utf8"));
     const science = await readFile(resolve("src", "app", "science", "page.tsx"), "utf8");
     const lab = await readFile(resolve("src", "app", "lab", "page.tsx"), "utf8");
 

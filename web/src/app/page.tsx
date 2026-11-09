@@ -1,123 +1,25 @@
-import Link from "next/link";
-
-import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
+import { ProviderBoundary } from "@/components/data-provenance";
+import { LandingHero } from "@/components/landing-hero";
 import {
   ClaimsMatrix,
   ExperimentCard,
   FingerprintPreview,
   ProvenanceDrawer,
 } from "@/components/research-story";
-import { ThesisStatement } from "@/components/thesis-statement";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
-import { MetricGlossary, metricTag } from "@/components/quantity-glossary";
-import { formatMetric, requireMetric } from "@/content/showcase-story";
+import { createServerShowcaseRepository } from "@/content/showcase-server";
 
 export default async function HomePage() {
-  const story = await loadShowcaseStory();
+  const [story, catalog] = await Promise.all([
+    loadShowcaseStory(),
+    // D075: the h1's number is the catalogue's length, read at build time.
+    createServerShowcaseRepository().getFeatureCatalog(),
+  ]);
   const { experiments, research } = story;
-  const teamControl = { experiment: experiments.teamControl, metric: requireMetric(experiments.teamControl, "baseline_c_mrr") };
-  const teamControlMrr = formatMetric(teamControl.metric);
-  // `scoutlens-9a3.13`: the confound is only legible next to the number it beats.
-  // Both come from the same 1,257-unit Wyscout population, so the comparison is
-  // like for like — the bead's stop condition forbids comparing unlike ones.
-  const fingerprint = { experiment: experiments.global, metric: requireMetric(experiments.global, "fingerprint_mrr") };
-  const fingerprintMrr = formatMetric(fingerprint.metric);
 
   return (
     <main id="main-content">
-      <section className="hero shell">
-        <div className="hero__copy">
-          <DataVintageBadge manifest={story.manifest} competitions={story.competitions} />
-          <p className="eyebrow">Player Fingerprint Lab</p>
-          {/*
-            `scoutlens-9a3.14`. The h1 is the sentence a reader repeats back, and
-            it used to end at "in the shape of their actions" — no time in it at
-            all. Run 1's reader gave exactly that back: "an experiment showing how
-            a player can be identified by their actions in the game", graded
-            PARTIAL for dropping the two periods. The lede below has always
-            carried them; the headline did not, and the headline is what was
-            recalled.
-
-            The opening clause is unchanged on purpose: `check-static-output.mjs`
-            asserts "A player leaves a reproducible fingerprint" and that file is
-            outside this bead's ownership boundary. Extending the sentence rather
-            than rewriting it keeps the change inside the boundary.
-          */}
-          <h1>
-            A player leaves a reproducible fingerprint—and it still identifies them half a
-            season later.
-          </h1>
-          {/*
-            `scoutlens-9a3.18` (D066): the lede and the boundary are the frozen
-            thesis and boundary sentence, shared with /science and /lab. The h1
-            above stays the route's headline - an abbreviation section 2
-            allows - and still carries the two periods 9a3.14 put into it.
-          */}
-          <ThesisStatement thesisClassName="lede" boundaryClassName="hero__boundary" />
-          <div className="actions" aria-label="Explore Yumusarái Labs">
-            <Link className="button button--primary" href="/lab/">
-              Explore every fingerprint
-            </Link>
-            <Link className="button button--secondary" href="/science/">
-              Audit the science
-            </Link>
-          </div>
-        </div>
-        <aside className="hero__signal" aria-label="Supported result">
-          {/*
-            The dial is a circle with `overflow: hidden`, holding text at 68% of
-            its width — about thirty characters a line. The old one-sentence
-            confound already nearly filled it, so `scoutlens-9a3.13`'s plain-
-            language rewrite clipped "Supported claim" to "…ED CLAIM" and cut the
-            evidence link off at both ends. Every automated gate stayed green;
-            §4.2's "read the image" is what caught it.
-
-            So the confound moved out of the dial rather than being squeezed back
-            into one line. The circle keeps the claim it was designed around, and
-            the caveat gets room directly beneath it.
-          */}
-          <div className="signal-dial">
-            <span className="signal-orbit signal-orbit--outer" aria-hidden="true" />
-            <span className="signal-orbit signal-orbit--inner" aria-hidden="true" />
-            <div>
-              <p className="signal-label">Supported claim</p>
-              <p className="signal-copy">{research.supported_claim}</p>
-            </div>
-          </div>
-          {/*
-            This previously read "a role + team + minutes control reaches
-            {teamControlMrr} MRR, so same-season context can make identity
-            retrieval easier" — true, and unreadable without already knowing what
-            MRR is and what the fingerprint scores. Run 1's reader came away with
-            "it could be biased": they took that a limit exists, but not which
-            one. The shortcut is now named in plain language before any number,
-            the comparison it loses is stated rather than left for the reader to
-            assemble, and the evidence is one link away.
-          */}
-          {/*
-            `scoutlens-9a3.32`: the hero quotes two metrics before anything on
-            the page has said what MRR is - the experiment cards that explain
-            them are further down. Each value carries its tag, and the two
-            explanations are one disclosure away, here.
-          */}
-          <div className="signal-confound" data-quantity-scope>
-            <p className="signal-caveat">
-              <strong>Critical confound:</strong> most players stayed at the same club across both
-              halves, so who they played alongside is itself a clue to who they are. A control
-              given only role, team and minutes—nothing about how a player acts—identifies them
-              better than the fingerprint does:{" "}
-              <span data-metric={metricTag(teamControl)}>{teamControlMrr}</span> against{" "}
-              <span data-metric={metricTag(fingerprint)}>{fingerprintMrr}</span> MRR, measured the
-              same way on the same players. That narrows what the result means; it does not
-              retract it.
-            </p>
-            <MetricGlossary items={[teamControl, fingerprint]} />
-            <Link className="signal-evidence" href="/science/#stage-03">
-              See the team-continuity control
-            </Link>
-          </div>
-        </aside>
-      </section>
+      <LandingHero story={story} featureCount={catalog.features.length} />
 
       <div className="shell initial-boundaries">
         <ClaimsMatrix research={research} />
