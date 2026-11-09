@@ -57,17 +57,74 @@
   letter-spacing: 0.08em;
 }
 
+/* `scoutlens-rdz.7`, D075: the product descriptor sits under the brand name,
+   beside the mark. The home link and the descriptor share one two-row grid:
+   the link spans both rows through subgrid, so the mark centres on the pair
+   and the focus ring encloses both, while the descriptor stays outside the
+   link and out of its accessible name. `.wordmark` above keeps its rules. */
+.site-brand {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.65rem;
+  justify-content: start;
+}
+
+.site-brand .wordmark {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+  align-items: center;
+}
+
+.site-brand .wordmark__mark {
+  grid-row: 1 / -1;
+}
+
+.site-brand .wordmark > span:not(.wordmark__mark) {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  line-height: 1.25;
+}
+
+/* --ink-600 on --paper, 5.55:1. A click on it falls through to the home link
+   it sits over. */
+.site-brand__descriptor {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  margin: 0;
+  color: var(--ink-600);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+/* Laid out for narrative §6.1's four items: the three frozen labels, and
+   "Case study", which `scoutlens-rdz.13` adds with its route (D075). Every
+   link is a 44 px target at every width, not only on narrow screens (F-4,
+   `scoutlens-uze.4`, extended by `scoutlens-rdz.7`). No negative
+   margin to pull the outer labels onto the shell's edges: it would widen
+   `.site-header__inner` past its box, which `public-identity.spec.ts` holds. */
 .site-nav {
   display: flex;
-  gap: clamp(0.75rem, 3vw, 2rem);
+  flex-wrap: wrap;
+  gap: 0 0.6rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .site-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-inline: 0.5rem;
   color: var(--ink-800);
-  font-size: 0.9rem;
+  font-size: 0.94rem;
   font-weight: 550;
   text-decoration: none;
 }
@@ -77,58 +134,48 @@
   color: var(--teal);
 }
 
+/* `scoutlens-rdz.7`: the footer sits on --paper-deep. --ink-700 on it is
+   7.40:1, and the lead line's --ink-950 10.89:1. */
 .site-footer {
   border-top: 1px solid var(--line);
+  background: var(--paper-deep);
 }
 
 .site-footer__inner {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.4rem;
   min-height: 6rem;
-  color: var(--ink-600);
-  font-size: 0.82rem;
+  padding-block: 2.5rem;
+  color: var(--ink-700);
+  font-size: 0.875rem;
 }
 
 .site-footer p {
   margin: 0;
 }
 
+.site-footer__lead {
+  color: var(--ink-950);
+  font-weight: 700;
+}
+
 @media (max-width: 48rem) {
-  .site-header__inner,
-  .site-footer__inner {
-      grid-template-columns: 1fr;
-
-  }
-
   .site-header__inner {
       align-items: flex-start;
       flex-direction: column;
       justify-content: center;
+      gap: 0.5rem;
       padding-block: 0.85rem;
 
   }
 
+  /* The list wraps, left-aligned under the wordmark, instead of spreading one
+     row edge to edge: at 320 px the three items already take two rows, and
+     with rdz.13's fourth so will 360 px. */
   .site-nav {
-      width: 100%;
-      justify-content: space-between;
-
-  }
-
-  /* F-4 (scoutlens-uze.4): the 17 px-tall text-only nav links fall far
-     below the 44 px touch-target bar on narrow screens. Enlarge the hit
-     area with padding and centering only; the visual type scale is
-     unchanged (WCAG 2.5.8 AA already passes via the spacing exception). */
-  .site-nav a {
-      display: inline-flex;
-      align-items: center;
-      min-height: 2.75rem;
-      padding-inline: 0.5rem;
-      margin-inline: -0.5rem;
-
-  }
-
-  .site-footer__inner {
-      align-items: flex-start;
-      flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
 
   }
 }

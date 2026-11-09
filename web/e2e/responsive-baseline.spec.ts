@@ -185,9 +185,15 @@ async function probeProviderBoundaryTargets(page: Page): Promise<Array<{ text: s
  * shared-shell and stage pairs.
  */
 const TEXT_PAIRS: Record<string, TextPair[]> = {
-  "/": [{ name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" }],
+  "/": [
+    { name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" },
+    // `scoutlens-rdz.7`: the descriptor under the wordmark is outside `.wordmark`.
+    { name: "site nav vs brand descriptor", a: ".site-nav", b: ".site-brand__descriptor" },
+  ],
   "/science/": [
     { name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" },
+    // `scoutlens-rdz.7`: the descriptor under the wordmark is outside `.wordmark`.
+    { name: "site nav vs brand descriptor", a: ".site-nav", b: ".site-brand__descriptor" },
     {
       name: "stage marker vs stage heading",
       a: ".research-stage > header > .research-step__marker",
