@@ -39,16 +39,24 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="experiment-grid experiment-grid--headline">
+            {/*
+              `scoutlens-rdz.11`: the four tests share one 0–1 scale. Only
+              MRR scores are drawn on it; the difference and the median rank
+              stay numbers, because the artifact gives a difference the same
+              unit as a score and only its id tells them apart.
+            */}
             <ExperimentCard
               emphasis="signal"
               experiment={experiments.global}
               metricIds={["baseline_a_mrr", "fingerprint_mrr", "mrr_delta"]}
+              scaledMetricIds={["baseline_a_mrr", "fingerprint_mrr"]}
               research={research}
             />
             <ExperimentCard
               emphasis="warning"
               experiment={experiments.teamControl}
               metricIds={["baseline_c_mrr", "median_rank"]}
+              scaledMetricIds={["baseline_c_mrr"]}
               research={research}
             />
           </div>
@@ -69,11 +77,13 @@ export default async function HomePage() {
           <ExperimentCard
             experiment={experiments.replication}
             metricIds={["baseline_a_mrr", "fingerprint_mrr", "median_rank"]}
+            scaledMetricIds={["baseline_a_mrr", "fingerprint_mrr"]}
             research={research}
           />
           <ExperimentCard
             experiment={experiments.shrinkage}
             metricIds={["raw_global_mrr", "shrunk_global_mrr"]}
+            scaledMetricIds={["raw_global_mrr", "shrunk_global_mrr"]}
             research={research}
           />
         </div>
