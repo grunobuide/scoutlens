@@ -43,9 +43,13 @@ const PAIRS: Record<string, TextPair[]> = {
   ],
   "/": [
     { name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" },
+    // `scoutlens-rdz.7`: the descriptor under the wordmark is outside `.wordmark`.
+    { name: "site nav vs brand descriptor", a: ".site-nav", b: ".site-brand__descriptor" },
   ],
   "/lab/": [
     { name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" },
+    // `scoutlens-rdz.7`: the descriptor under the wordmark is outside `.wordmark`.
+    { name: "site nav vs brand descriptor", a: ".site-nav", b: ".site-brand__descriptor" },
     {
       name: "retrieval boundary text vs its link",
       a: ".retrieval-boundary p",
