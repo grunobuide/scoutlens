@@ -29,29 +29,73 @@ interface ExperimentCardProps {
   experiment: ResearchExperiment;
   research: AnyResearchSummaryArtifact;
   metricIds?: ReadonlyArray<string>;
+  /**
+   * `scoutlens-rdz.11`: the shown metrics drawn on the shared 0–1 scale. The
+   * caller names them because the artifact cannot: a difference of two MRRs
+   * carries the same `mrr` unit as an MRR, and a difference is not a place on
+   * the "how high the true profile lands" axis.
+   */
+  scaledMetricIds?: ReadonlyArray<string>;
   emphasis?: "default" | "warning" | "signal";
+}
+
+/** The axis every scaled card shares, so a bar means the same length in each. */
+const SCALE_TICKS = [0, 0.25, 0.5, 0.75, 1] as const;
+
+function formatTick(tick: number): string {
+  return tick === 0 || tick === 1 ? String(tick) : tick.toFixed(2);
 }
 
 export function ExperimentCard({
   experiment,
   research,
   metricIds,
+  scaledMetricIds,
   emphasis = "default",
 }: ExperimentCardProps) {
   const metrics = metricIds?.map((metricId) => requireMetric(experiment, metricId)) ?? experiment.metrics;
   const caveats = caveatsFor(research, experiment);
+  // Fail closed, like `requireMetric`: a scaled metric the card does not show,
+  // or one that is not a reciprocal-rank score inside the axis, stops the
+  // static build instead of drawing a bar that means something else.
+  const scaled = new Set(
+    (scaledMetricIds ?? []).map((metricId) => {
+      const metric = requireMetric(experiment, metricId);
+      if (!metrics.includes(metric)) {
+        throw new Error(`Scaled metric ${metricId} is not shown on ${experiment.experiment_id}`);
+      }
+      if (metric.unit !== "mrr" || metric.value < 0 || metric.value > 1) {
+        throw new Error(`Scaled metric ${metricId} on ${experiment.experiment_id} is not an MRR in [0, 1]`);
+      }
+      return metric.metric_id;
+    }),
+  );
+  const scaledClass = scaled.size === 0 ? "" : " experiment-card--scaled";
 
   return (
     // `scoutlens-9a3.32`: an explained scope like the Lab's sections - every
     // metric value carries its tag and its explanation sits in the same card.
     // The population line is the artifact's description of who was measured,
     // so its counts are context, not results.
-    <article className={`experiment-card experiment-card--${emphasis}`} data-quantity-scope>
+    <article className={`experiment-card experiment-card--${emphasis}${scaledClass}`} data-quantity-scope>
       <header className="experiment-card__header">
         <p className="experiment-card__provider">{providerLabel(experiment.provider)}</p>
         <h3>{experiment.title}</h3>
         <p data-context="population">{experiment.population}</p>
       </header>
+      {scaled.size === 0 ? null : (
+        // The axis is a reading aid for the bars. The values themselves are
+        // printed as text in each row, so assistive technology skips both.
+        <div className="experiment-scale" aria-hidden="true" data-context="scale">
+          <div className="experiment-scale__ticks">
+            {SCALE_TICKS.map((tick) => (
+              <span key={tick} style={{ left: `${tick * 100}%` }}>
+                {formatTick(tick)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       <dl className="experiment-metrics">
         {metrics.map((metric) => {
           const interval = formatMetricInterval(metric);
@@ -67,6 +111,17 @@ export function ExperimentCard({
           return (
             <div key={metric.metric_id} data-metric={tag}>
               <dt>{metric.label}</dt>
+              {/*
+                `scoutlens-rdz.11`: the bar sits before the value so the row
+                reads bar, then number, as the axis above it does. It is
+                hidden from assistive technology and carries no text, so the
+                reading order of label, value, interval is unchanged.
+              */}
+              {scaled.has(metric.metric_id) ? (
+                <dd className="experiment-metric__bar" aria-hidden="true">
+                  <span style={{ width: `${metric.value * 100}%` }} />
+                </dd>
+              ) : null}
               <dd className="experiment-metric__value">{formatMetric(metric)}</dd>
               {interval === null ? null : <dd className="experiment-metric__interval">95% CI: {interval}</dd>}
               <dd className="experiment-metric__explanation" data-metric-explainer={tag}>

@@ -20,10 +20,10 @@
   padding: clamp(1.5rem, 4vw, 3rem);
 }
 
+/* `scoutlens-rdz.11`: the old palette's lime wash is gone; the boundary
+   card is the flat --paper-deep the design gives it. */
 .claims-matrix__unsupported {
-  background:
-    linear-gradient(135deg, rgb(216 255 79 / 20%), transparent 55%),
-    var(--paper-deep);
+  background: var(--paper-deep);
 }
 
 .claims-matrix__unsupported h2 {
@@ -235,9 +235,15 @@
   color: var(--ink-950);
 }
 
+/* `scoutlens-rdz.11`: plum, the design's evidence surface, in place of the
+   old palette's dark green. It sits on the graphite proof band on / and on
+   --paper on /science. Text on it: --white 10.45, --signal 6.22, the 68%
+   white literal 5.77. Inside /science's 5% white metric boxes: --signal
+   5.41, the 68% literal 5.18. The 58% literal the labels and intervals used
+   gave 4.24 there, so they take the 68% one. */
 .experiment-card--signal {
-  border-color: rgb(216 255 79 / 50%);
-  background: #18241f;
+  border-color: color-mix(in srgb, var(--signal) 50%, transparent);
+  background: var(--signal-dark);
   color: var(--white);
 }
 
@@ -287,7 +293,7 @@
   padding: 0.9rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgb(245 242 233 / 58%);
+  background: color-mix(in srgb, var(--paper) 58%, transparent);
 }
 
 .experiment-card--signal .experiment-metrics > div {
@@ -304,7 +310,7 @@
 }
 
 .experiment-card--signal .experiment-metrics dt {
-  color: rgb(255 255 255 / 58%);
+  color: rgb(255 255 255 / 68%);
 }
 
 /* `scoutlens-r0`: this was a bare `dd` descendant selector, so it also
@@ -338,7 +344,142 @@
 }
 
 .experiment-card--signal .experiment-metrics .experiment-metric__interval {
-  color: rgb(255 255 255 / 58%);
+  color: rgb(255 255 255 / 68%);
+}
+
+/* `scoutlens-rdz.11`: the landing's four tests on one 0–1 scale. A scaled
+   card trades the metric boxes for rows: label, then bar and value on one
+   line. The value column has a fixed width so every track in every card of
+   a grid row has the same length, which is what makes the scale shared. The
+   ticks sit in the same columns as the bars. */
+.experiment-card--scaled {
+  --scale-value-width: 6rem;
+}
+
+.experiment-scale,
+.experiment-card--scaled .experiment-metrics > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--scale-value-width);
+  column-gap: 1rem;
+}
+
+.experiment-scale {
+  margin-top: 1.25rem;
+}
+
+.experiment-scale__ticks {
+  position: relative;
+  height: 1.1rem;
+  color: var(--ink-600);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.experiment-scale__ticks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.experiment-scale__ticks span:first-child {
+  transform: none;
+}
+
+.experiment-scale__ticks span:last-child {
+  transform: translateX(-100%);
+}
+
+.experiment-card--signal .experiment-scale__ticks {
+  color: rgb(255 255 255 / 68%);
+}
+
+.experiment-card--scaled .experiment-metrics {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  margin-top: 0.35rem;
+}
+
+.experiment-card--scaled .experiment-metrics > div {
+  align-items: center;
+  padding: 0.9rem 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+}
+
+.experiment-card--signal.experiment-card--scaled .experiment-metrics > div {
+  border-top-color: color-mix(in srgb, var(--white) 15%, transparent);
+}
+
+.experiment-card--scaled .experiment-metrics dt {
+  grid-column: 1 / -1;
+  min-height: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+}
+
+/* The track's quarter lines repeat the axis inside each bar. As UI the fill
+   is the part that carries the value: --teal 6.69 on the light track over
+   --white and 6.18 over #fff5df; --signal 4.42 on the track over plum. */
+.experiment-metrics .experiment-metric__bar {
+  grid-column: 1;
+  height: 0.8rem;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent calc(25% - 1px), var(--line) calc(25% - 1px) 25%, transparent 25%),
+    linear-gradient(90deg, transparent calc(50% - 1px), var(--line) calc(50% - 1px) 50%, transparent 50%),
+    linear-gradient(90deg, transparent calc(75% - 1px), var(--line) calc(75% - 1px) 75%, transparent 75%),
+    color-mix(in srgb, var(--ink-950) 8%, transparent);
+}
+
+.experiment-metric__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal);
+}
+
+.experiment-card--signal .experiment-metrics .experiment-metric__bar {
+  background:
+    linear-gradient(90deg, transparent calc(25% - 1px), rgb(255 255 255 / 18%) calc(25% - 1px) 25%, transparent 25%),
+    linear-gradient(90deg, transparent calc(50% - 1px), rgb(255 255 255 / 18%) calc(50% - 1px) 50%, transparent 50%),
+    linear-gradient(90deg, transparent calc(75% - 1px), rgb(255 255 255 / 18%) calc(75% - 1px) 75%, transparent 75%),
+    color-mix(in srgb, var(--white) 12%, transparent);
+}
+
+.experiment-card--signal .experiment-metric__bar span {
+  background: var(--signal);
+}
+
+/* The test that complicates the headline is striped, as the design marks
+   it. The lighter stripe alone is 3.38 on its track. */
+.experiment-card--warning .experiment-metric__bar span {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--teal) 0 0.35rem,
+    color-mix(in srgb, var(--teal) 75%, var(--white)) 0.35rem 0.7rem
+  );
+}
+
+.experiment-card--scaled .experiment-metrics .experiment-metric__value {
+  grid-column: 2;
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  text-align: right;
+}
+
+.experiment-card--scaled .experiment-metrics .experiment-metric__interval,
+.experiment-card--scaled .experiment-metrics .experiment-metric__explanation {
+  grid-column: 1 / -1;
+}
+
+.experiment-card--scaled .experiment-metrics .experiment-metric__interval {
+  text-align: right;
 }
 
 .experiment-card__conclusion {
@@ -355,7 +496,7 @@
   margin: 0;
   padding: 0.75rem;
   border-left: 3px solid var(--teal);
-  background: rgb(20 103 90 / 7%);
+  background: color-mix(in srgb, var(--teal) 7%, transparent);
   font-size: 0.76rem;
 }
 
@@ -430,8 +571,11 @@
   text-transform: none;
 }
 
+/* `scoutlens-rdz.11`: no `overflow: hidden`. The summary spans the drawer
+   edge to edge, so clipping cut its focus ring on three sides, and nothing in
+   the drawer paints past its rounded corners: the summary has no fill and
+   the content's long paths wrap. */
 .provenance-drawer {
-  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--paper-deep);
@@ -489,7 +633,7 @@
   padding: 0.2rem 0.5rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgb(245 242 233 / 70%);
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
   color: var(--ink-800);
   font-weight: 650;
   letter-spacing: 0.02em;
@@ -556,7 +700,7 @@
 
 .provider-boundary__card--replication {
   border-color: rgb(168 15 77 / 35%);
-  background: rgb(250 247 240 / 60%);
+  background: color-mix(in srgb, var(--paper) 60%, transparent);
 }
 
 .provider-boundary__card a {
