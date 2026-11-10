@@ -70,6 +70,18 @@ describe("the frozen display identity", () => {
     expect(layout).not.toContain(RETIRED);
   });
 
+  it("sets the full descriptor under the wordmark, outside the home link (scoutlens-rdz.7)", () => {
+    // D075: "Player Fingerprint Lab" under the wordmark, not the design's
+    // "Player Fingerprints". Outside the link, so the link's accessible name
+    // is still the brand alone and the wordmark's own markup is unchanged.
+    const markup = renderToStaticMarkup(<SiteHeader />);
+    expect(markup).toContain(`<p class="site-brand__descriptor">${DESCRIPTOR}</p>`);
+    expect(markup).not.toContain("Player Fingerprints<");
+    const homeLink = markup.match(/<a class="wordmark"[^>]*>([\s\S]*?)<\/a>/)?.[1] ?? "";
+    expect(homeLink, "the home link was not rendered").not.toBe("");
+    expect(homeLink).not.toContain(DESCRIPTOR);
+  });
+
   it("leaves the description alone: it describes the work, not the publisher", async () => {
     const layout = await readFile(resolve("src", "app", "layout.tsx"), "utf8");
     // The description is about the research, and a rename has no business in
