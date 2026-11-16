@@ -191,6 +191,9 @@ export function ClaimsMatrix({ research }: { research: AnyResearchSummaryArtifac
   );
 }
 
+/** The preview's percentile axis: the two ends and the middle of the cohort. */
+const PERCENTILE_TICKS = [0, 50, 100] as const;
+
 export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
   const profile = story.featuredProfile;
   const periodA = profile.periods.a;
@@ -221,13 +224,35 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
           <span><i className="period-dot period-dot--b" />B · {periodB.label}</span>
         </div>
         <div className="fingerprint-plot">
+          {/* `scoutlens-rdz.10`: one percentile axis for every row, like the
+              evidence cards' shared scale. A reading aid only: each row prints
+              its two values as text, so assistive technology skips it. */}
+          <div className="fingerprint-axis" aria-hidden="true" data-context="scale">
+            <div className="fingerprint-axis__ticks">
+              {PERCENTILE_TICKS.map((tick) => (
+                <span key={tick} style={{ left: `${tick}%` }}>
+                  {tick}
+                </span>
+              ))}
+            </div>
+          </div>
           {story.fingerprintFeatures.map((feature) => (
             <div className="fingerprint-row" key={feature.featureId}>
               <div>
                 <span>{feature.label}</span>
                 <small data-context="count">{feature.family}</small>
               </div>
+              {/* A dumbbell: A and B on one track, joined by the distance
+                  between them. B is drawn last, so it sits on top. */}
               <div className="fingerprint-track">
+                <span
+                  aria-hidden="true"
+                  className="fingerprint-span"
+                  style={{
+                    left: `${Math.min(feature.periodA, feature.periodB)}%`,
+                    width: `${Math.abs(feature.periodA - feature.periodB)}%`,
+                  }}
+                />
                 <span
                   aria-hidden="true"
                   className="fingerprint-mark fingerprint-mark--a"
@@ -241,6 +266,7 @@ export function FingerprintPreview({ story }: { story: ShowcaseStory }) {
               </div>
               <p data-quantity={quantityTag("family_average_percentile")}>
                 <span>{feature.periodA.toFixed(0)}</span>
+                <span aria-hidden="true" className="fingerprint-arrow">→</span>
                 <span>{feature.periodB.toFixed(0)}</span>
               </p>
             </div>

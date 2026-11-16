@@ -91,10 +91,10 @@
   flex-wrap: wrap;
   gap: 0.7rem 1.4rem;
   justify-content: flex-end;
-  margin-bottom: 2rem;
-  color: var(--ink-600);
-  font-size: 0.78rem;
-  font-weight: 650;
+  margin-bottom: 1.5rem;
+  color: var(--ink-700);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
 .fingerprint-legend span {
@@ -103,9 +103,13 @@
   align-items: center;
 }
 
+/* `scoutlens-rdz.10`: A is a filled dot and B a ringed one, so the two halves
+   differ in shape as well as colour, in the legend and on every track. */
 .period-dot {
-  width: 0.7rem;
-  height: 0.7rem;
+  flex: none;
+  box-sizing: border-box;
+  width: 0.875rem;
+  height: 0.875rem;
   border-radius: 50%;
 }
 
@@ -114,26 +118,65 @@
 }
 
 .period-dot--b {
-  background: var(--signal-dark);
-  box-shadow: 0 0 0 3px var(--signal);
+  border: 3px solid var(--ink-950);
+  background: var(--signal);
 }
 
 .fingerprint-plot {
   display: grid;
 }
 
-.fingerprint-row {
+/* The axis and the rows share their columns, so the axis sits over every track. */
+.fingerprint-row,
+.fingerprint-axis {
   display: grid;
-  grid-template-columns: minmax(9rem, 0.9fr) minmax(12rem, 2fr) 4.6rem;
+  grid-template-columns: minmax(9rem, 0.9fr) minmax(12rem, 2fr) 5.5rem;
   gap: 1.5rem;
   align-items: center;
-  min-height: 4.8rem;
+}
+
+.fingerprint-axis {
+  padding-bottom: 0.6rem;
+}
+
+.fingerprint-axis__ticks {
+  position: relative;
+  grid-column: 2;
+  height: 1.1rem;
+  color: var(--ink-600);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fingerprint-axis__ticks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.fingerprint-axis__ticks span:first-child {
+  transform: none;
+}
+
+.fingerprint-axis__ticks span:last-child {
+  transform: translateX(-100%);
+}
+
+.fingerprint-row {
+  min-height: 4rem;
+  padding-block: 0.75rem;
   border-top: 1px solid var(--line);
 }
 
 .fingerprint-row > div:first-child {
   display: grid;
   line-height: 1.3;
+}
+
+.fingerprint-row > div:first-child > span {
+  color: var(--ink-950);
+  font-weight: 600;
 }
 
 .fingerprint-row small {
@@ -143,69 +186,81 @@
   text-transform: uppercase;
 }
 
+/* A dumbbell per row: a thin 0-100 line with a tick at 50, the bar between the
+   halves, and the two dots. Only the dots carry a value; the rest is ink. */
 .fingerprint-track {
   position: relative;
-  height: 0.25rem;
-  border-radius: 999px;
-  background:
-    linear-gradient(90deg, transparent 49.7%, rgb(16 26 23 / 18%) 49.7% 50.3%, transparent 50.3%),
-    var(--paper-deep);
-}
-
-.fingerprint-track::before,
-.fingerprint-track::after {
-  position: absolute;
-  top: -0.45rem;
-  color: var(--ink-600);
-  font-size: 0.62rem;
+  height: 1.5rem;
 }
 
 .fingerprint-track::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
   left: 0;
-  content: "0";
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 999px;
+  background: var(--paper-deep);
+  content: "";
 }
 
 .fingerprint-track::after {
-  right: 0;
-  content: "100";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1px;
+  height: 0.75rem;
+  background: color-mix(in srgb, var(--ink-950) 25%, transparent);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.fingerprint-span,
+.fingerprint-mark {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+}
+
+.fingerprint-span {
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-950) 30%, transparent);
 }
 
 .fingerprint-mark {
-  position: absolute;
-  width: 0.9rem;
-  height: 0.9rem;
-  border: 2px solid var(--white);
+  box-sizing: border-box;
+  width: 1rem;
+  height: 1rem;
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
 
 .fingerprint-mark--a {
-  top: -0.3rem;
   background: var(--teal);
 }
 
 .fingerprint-mark--b {
-  top: 0.55rem;
-  background: var(--signal-dark);
-  box-shadow: 0 0 0 2px var(--signal);
+  border: 3px solid var(--ink-950);
+  background: var(--signal);
 }
 
 .fingerprint-row > p {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.45rem;
   justify-content: flex-end;
   margin: 0;
+  color: var(--ink-950);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 0.86rem;
   font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
-.fingerprint-row > p span:first-child {
-  color: var(--teal);
-}
-
-.fingerprint-row > p span:last-child {
-  color: var(--signal-dark);
-  font-weight: 700;
+.fingerprint-arrow {
+  color: var(--ink-600);
 }
 
 .fingerprint-footnote {
@@ -729,16 +784,45 @@
 
   }
 
+  /* `scoutlens-rdz.10`: narrow screens stack each row, the name and values on
+     one line and the track across the card below them, so the track keeps
+     most of the width. The track is aria-hidden: the text order is unchanged.
+     The track and the axis share an inset, so a dot at 0 or 100 stays inside
+     the row and the ticks still sit over the track's ends. */
   .fingerprint-row {
-      grid-template-columns: minmax(7rem, 0.9fr) minmax(8rem, 1.4fr);
-      gap: 0.8rem;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.4rem 0.8rem;
       padding-block: 0.8rem;
 
   }
 
+  .fingerprint-row > div:first-child {
+      grid-row: 1;
+      grid-column: 1;
+
+  }
+
   .fingerprint-row > p {
+      grid-row: 1;
       grid-column: 2;
-      justify-content: flex-start;
+
+  }
+
+  .fingerprint-track {
+      grid-row: 2;
+      grid-column: 1 / -1;
+      margin-inline: 0.5rem;
+
+  }
+
+  .fingerprint-axis {
+      grid-template-columns: minmax(0, 1fr);
+
+  }
+
+  .fingerprint-axis__ticks {
+      grid-column: 1;
+      margin-inline: 0.5rem;
 
   }
 
