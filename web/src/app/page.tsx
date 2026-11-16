@@ -7,6 +7,7 @@ import {
   ProvenanceDrawer,
 } from "@/components/research-story";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
+import { eligibilityRule } from "@/content/provenance";
 import { createServerShowcaseRepository } from "@/content/showcase-server";
 
 export default async function HomePage() {
@@ -15,11 +16,79 @@ export default async function HomePage() {
     // D075: the h1's number is the catalogue's length, read at build time.
     createServerShowcaseRepository().getFeatureCatalog(),
   ]);
-  const { experiments, research } = story;
+  const { experiments, research, manifest } = story;
+  const { population, source } = manifest;
+  const competitionCount = population.domestic_competition_ids.length;
+  const eligible = eligibilityRule(population.minutes_threshold_per_period);
 
   return (
     <main id="main-content">
       <LandingHero story={story} featureCount={catalog.features.length} />
+
+      {/*
+        `scoutlens-rdz.9` (D076, narrative §7.1 item 3): facts about the
+        population and the data, in place of the "100% open" strip D075 cut.
+        Every value is the manifest's, read at build time. It shows no result
+        value, and a fact no artifact publishes is left out rather than
+        computed here: the design's provider count is one of them.
+      */}
+      <section className="facts-strip" aria-label="About the data">
+        <ul className="facts-strip__list shell">
+          <li>
+            <span className="facts-strip__value">{population.profile_count.toLocaleString("en-US")}</span>{" "}
+            <span className="facts-strip__label">{`profiles of ${eligible}`}</span>
+          </li>
+          <li>
+            <span className="facts-strip__value">{competitionCount}</span>{" "}
+            <span className="facts-strip__label">
+              {`domestic competition${competitionCount === 1 ? "" : "s"} in the ${source.season} season`}
+            </span>
+          </li>
+          <li>
+            <span className="facts-strip__value">{population.feature_count}</span>{" "}
+            <span className="facts-strip__label">measurements describe each half</span>
+          </li>
+          <li>
+            <span className="facts-strip__value">{source.licence}</span>{" "}
+            <span className="facts-strip__label">licence of the source data</span>
+          </li>
+          <li className="facts-strip__pin">
+            <code className="facts-strip__value">{manifest.dataset_version}</code>{" "}
+            <span className="facts-strip__label">dataset pin</span>
+          </li>
+        </ul>
+      </section>
+
+      {/*
+        `scoutlens-rdz.9` (D076, narrative §7.1 item 4): the method as the
+        narrative's §3 tells it, and nothing §3 does not say. The heading is
+        §3's question; the three steps are its second sentence, split where
+        D076 splits the method. The numbers are the manifest's.
+      */}
+      <section className="idea shell" aria-labelledby="idea-heading">
+        <p className="eyebrow">The idea in 30 seconds</p>
+        <h2 id="idea-heading">Can a player&apos;s statistical profile identify them?</h2>
+        <ol className="idea__steps">
+          <li>
+            <h3>Split the season in two</h3>
+            <p>
+              {`We take public football event data from the ${source.season} season and split every player's play time into two chronological halves. Only ${eligible} count.`}
+            </p>
+          </li>
+          <li>
+            <h3>{`Describe each half with ${population.feature_count} measurements`}</h3>
+            <p>
+              {`Each half becomes a profile of ${population.feature_count} simple measurements of how the player acts.`}
+            </p>
+          </li>
+          <li>
+            <h3>Look for the same player again</h3>
+            <p>
+              {`All ${population.profile_count.toLocaleString("en-US")} second-half profiles are ranked by how similar each is to one player's first half. The test is how high that same player lands.`}
+            </p>
+          </li>
+        </ol>
+      </section>
 
       <div className="shell initial-boundaries">
         <ClaimsMatrix research={research} />

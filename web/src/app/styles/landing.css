@@ -299,6 +299,106 @@
   font-weight: 650;
 }
 
+/* `scoutlens-rdz.9` (D076): the facts strip, a white band under the hero, as
+   the design draws it. Each fact is its value over its label, and the DOM
+   holds them in that order, so the reading order is the visual one. The pin
+   is a long identifier, so its cell is wider and its value smaller and free to
+   wrap. Labels are --ink-600 on --white (6.11:1). */
+.facts-strip {
+  border-block: 1px solid var(--line);
+  background: var(--white);
+}
+
+.facts-strip__list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.5fr);
+  gap: 1.25rem 2rem;
+  margin-block: 0;
+  padding: 1.75rem 0;
+  list-style: none;
+}
+
+.facts-strip__list li {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.facts-strip__value {
+  color: var(--ink-950);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.facts-strip__pin .facts-strip__value {
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.facts-strip__label {
+  color: var(--ink-600);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+/* `scoutlens-rdz.9` (D076): "The idea in 30 seconds", three steps on white
+   cards. The step numbers are generated, and their alternative text is empty,
+   so a screen reader hears the ordered list, not "01" before each title. */
+.idea {
+  padding-block: clamp(4.5rem, 8vw, 7rem) 3rem;
+}
+
+.idea h2 {
+  max-width: 24ch;
+  margin-bottom: 2.5rem;
+}
+
+.idea__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: idea-step;
+}
+
+.idea__steps li {
+  position: relative;
+  padding: 1.6rem 1.5rem 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  counter-increment: idea-step;
+}
+
+.idea__steps li::before {
+  content: counter(idea-step, decimal-leading-zero) / "";
+  position: absolute;
+  top: 1.75rem;
+  right: 1.5rem;
+  color: var(--ink-600);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.idea__steps h3 {
+  margin: 0 2.5rem 0.75rem 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.idea__steps p {
+  margin: 0;
+  color: var(--ink-700);
+  line-height: 1.55;
+}
+
 .initial-boundaries {
   padding-block: 1.25rem 6rem;
 }
@@ -330,6 +430,19 @@
   .initial-boundaries {
       padding-top: 0;
 
+  }
+
+  /* Two facts a row on narrow screens; the pin takes a row of its own. */
+  .facts-strip__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .facts-strip__pin {
+      grid-column: 1 / -1;
+  }
+
+  .idea__steps {
+      grid-template-columns: 1fr;
   }
 
   /* Same technique as `.site-nav a` (`scoutlens-uze.4`) and the provider-boundary
