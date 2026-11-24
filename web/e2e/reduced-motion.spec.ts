@@ -14,7 +14,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { waitForStablePage } from "./helpers";
 
-const ROUTES = ["/", "/science/"] as const;
+const ROUTES = ["/", "/science/", "/case-study/"] as const;
 
 test.beforeEach(({}, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "Motion preference is viewport-independent; asserted once");

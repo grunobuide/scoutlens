@@ -88,7 +88,8 @@ function TrailStep({ id, title, status, tone = "default", figure, quoted, resear
             ))}
           </div>
         )}
-        <p className="trail-step__doc">
+        {/* A document's name can carry a digit ("gate 2"); it is a name, not a value. */}
+        <p className="trail-step__doc" data-context="document">
           <a href={repositoryHref(doc.href)}>{doc.label}</a>
         </p>
         {quoted.length === 0 ? null : <MetricGlossary items={quoted} />}
@@ -97,7 +98,9 @@ function TrailStep({ id, title, status, tone = "default", figure, quoted, resear
         {figure === undefined ? null : (
           <p className="trail-step__value">
             <Value quoted={figure} />
-            <span className="trail-step__value-label">{figure.metric.label}</span>
+            <span className="trail-step__value-label" data-context="label">
+              {figure.metric.label}
+            </span>
           </p>
         )}
         <p className="trail-step__status">{status}</p>
@@ -162,7 +165,8 @@ export default async function CaseStudyPage() {
             research={research}
             doc={{ href: "docs/chronological-split.md", label: "The chronological split" }}
           >
-            <p>
+            {/* The frozen design's counts, from the manifest: context, not results. */}
+            <p data-context="design">
               A chronological split: the first half of a season queries the second half.{" "}
               {`${profileCount} eligible player × competition units from the ${source.season} ${source.title}, each with at least ${population.minutes_threshold_per_period} minutes in each half, described by ${population.feature_count} features.`}{" "}
               The task and its thresholds were frozen before the result was read, so a result that
@@ -195,11 +199,14 @@ export default async function CaseStudyPage() {
             doc={{ href: "docs/gate-2-decision.md", label: "The gate 2 decision" }}
           >
             <p>
-              {`The ${population.feature_count}-feature fingerprint scores `}
+              The <span data-context="design">{`${population.feature_count}-feature`}</span> fingerprint scores{" "}
               <Value quoted={fingerprint} /> MRR, <Value quoted={gain} /> above the baseline
-              {gainInterval === null ? null : <span data-metric-interval={metricTag(gain)}>{` (95% CI ${gainInterval})`}</span>}, at a
-              median self-rank of <Value quoted={medianRank} />
-              {` of ${profileCount}.`}
+              {gainInterval === null ? null : (
+                <span data-metric-interval={metricTag(gain)} data-context="interval">{` (95% CI ${gainInterval})`}</span>
+              )}
+              , at a
+              median self-rank of <Value quoted={medianRank} /> of{" "}
+              <span data-context="population">{profileCount}</span>.
             </p>
             <p>
               Restricted to candidates in the same nominal role, it goes up: <Value quoted={withinRole} /> MRR,

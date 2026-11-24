@@ -137,7 +137,7 @@ async function probeProseLeaks(page: Page): Promise<ProseLeak[]> {
 // carries the suite's other two disclosures (`method-disclosure__advanced`,
 // `provenance-drawer`) and is walked for the same invariant even though
 // neither currently sits inside a numeric-value container.
-const ROUTES = ["/", "/science/", "/lab/"];
+const ROUTES = ["/", "/science/", "/lab/", "/case-study/"];
 
 // R0's acceptance gate names these five widths explicitly. `320`/`640x512`/
 // `768` are swept within each test via explicit resize, matching

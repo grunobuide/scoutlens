@@ -35,7 +35,7 @@ import { SHOWCASE_BASE, waitForStablePage } from "./helpers";
 const REPOSITORY_ROOT = join(__dirname, "..", "..");
 
 /** Routes that render provenance and claim surfaces. */
-const ROUTES = ["/", "/science/", "/lab/"] as const;
+const ROUTES = ["/", "/science/", "/lab/", "/case-study/"] as const;
 
 interface Metric {
   metric_id: string;
@@ -237,6 +237,50 @@ test("a metric shown on two routes shows the same value on both", async ({ page 
   }
 
   expect(conflicts, "the same metric renders differently on different routes").toEqual([]);
+});
+
+/**
+ * `scoutlens-rdz.15`: metrics quoted outside an experiment card. The landing
+ * hero's confound and every number on /case-study/ are spans tagged
+ * `data-metric="<experiment_id>:<metric_id>"`, which the card reader above
+ * never sees. The tag is the identity, so the check needs no label.
+ */
+test("every metric quoted in running text is the artifact's, and the same on every route", async ({
+  page,
+  request,
+}) => {
+  const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
+  const expected = new Map<string, string>(
+    research.experiments.flatMap((experiment) =>
+      experiment.metrics.map((metric) => [`${experiment.experiment_id}:${metric.metric_id}`, formatMetric(metric)] as const),
+    ),
+  );
+
+  const mismatches: string[] = [];
+  const seen = new Map<string, Set<string>>();
+  for (const route of ROUTES) {
+    await page.goto(route);
+    await waitForStablePage(page);
+    const quoted = await page
+      .locator("main span[data-metric]")
+      .evaluateAll((spans) => spans.map((span) => [span.getAttribute("data-metric") ?? "", (span.textContent ?? "").trim()]));
+    for (const [tag, text] of quoted) {
+      const value = expected.get(tag!);
+      if (value === undefined) {
+        mismatches.push(`${route} quotes ${tag}, which the artifact does not define`);
+      } else if (value !== text) {
+        mismatches.push(`${route} quotes ${tag} = ${text}, the artifact says ${value}`);
+      }
+      seen.set(tag!, (seen.get(tag!) ?? new Set()).add(text!));
+    }
+  }
+  expect(mismatches, "a quoted metric disagrees with the artifact").toEqual([]);
+  expect(
+    [...seen.entries()].filter(([, texts]) => texts.size > 1).map(([tag, texts]) => `${tag}: ${[...texts].join(" / ")}`),
+    "a quoted metric reads differently on two routes",
+  ).toEqual([]);
+  // The case study quotes the trail's numbers; an empty sweep would pass vacuously.
+  expect(seen.size, "no route quotes a metric in running text").toBeGreaterThanOrEqual(15);
 });
 
 test("every rendered confidence interval matches the artifact", async ({ page, request }) => {
@@ -445,6 +489,9 @@ const RESULT_SELECTOR = [
   "main [data-quantity]",
   "main [data-challenge-rank]",
   "main [data-challenge-result]",
+  // `scoutlens-rdz.15`: a metric quoted in running text - the landing hero's
+  // confound, every number on /case-study/.
+  "main [data-metric]",
 ].join(", ");
 
 test("the provider and the population threshold come before the first result on every route", async ({

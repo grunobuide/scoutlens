@@ -189,6 +189,21 @@ async function untaggedMetricValues(page: Page, values: readonly string[]): Prom
   }, values);
 }
 
+test("/case-study/ explains every metric in the step that quotes it, and prints none untagged", async ({ page }, testInfo) => {
+  // `scoutlens-rdz.15`: the trail quotes research metrics in running text,
+  // each step a scope with its own glossary. It prints no per-profile
+  // registry quantity, so the Lab sweep's "printed at least one" does not
+  // apply; the two other gates do.
+  test.skip(testInfo.project.name !== "desktop", "Markup is viewport-independent; asserted once");
+  await page.goto("/case-study/");
+  await waitForStablePage(page);
+  const result = await sweep(page);
+  expect(result.problems).toEqual([]);
+  const values = await publishedMetricValues(page);
+  expect(await untaggedMetricValues(page, values), "/case-study/ untagged metric values").toEqual([]);
+  expect(await page.locator("main [data-quantity-scope] [data-metric]").count()).toBeGreaterThanOrEqual(15);
+});
+
 test.describe("every Lab and challenge quantity is explained where it is printed", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Markup is viewport-independent; asserted once");

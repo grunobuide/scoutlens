@@ -47,7 +47,7 @@ async function hoverRules(page: Page): Promise<Array<{ selector: string; propert
 }
 
 test.describe("hover", () => {
-  for (const route of ["/", "/science/", PROFILE]) {
+  for (const route of ["/", "/science/", "/case-study/", PROFILE]) {
     test(`every :hover rule on ${route} is cosmetic`, async ({ page }, testInfo) => {
       test.skip(testInfo.project.name !== "desktop", "Stylesheets are identical across projects");
       await page.goto(route);
