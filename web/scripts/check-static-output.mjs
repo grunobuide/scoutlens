@@ -8,7 +8,7 @@ import { findForbiddenClaims, findForbiddenCurrentness, scannableText } from "./
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
-const routes = ["index.html", "lab/index.html", "science/index.html"];
+const routes = ["index.html", "lab/index.html", "science/index.html", "case-study/index.html"];
 const landmarks = ["<header", "<nav", "<main", "<footer"];
 const fixtureMarkers = [...FIXTURE_MARKERS, ...SYNTHETIC_PROFILE_KEYS];
 const provenanceMarkers = ["Historical reproducible benchmark", "What these numbers describe"];
@@ -29,6 +29,14 @@ const meaningfulStaticContent = {
     "First chronological half",
     "Keep a useful correction out",
     "Audit the full provenance chain",
+  ],
+  // `scoutlens-rdz.13` (D075): the route's headline, its two section headings
+  // and the decisions log the trail ends on.
+  "case-study/index.html": [
+    "How I built Yumusarái Labs",
+    "Each test made the claim smaller",
+    "No backend. Every number comes from a file you can inspect.",
+    "Every decision, in order",
   ],
   "lab/index.html": [
     "Compare one player with himself.",

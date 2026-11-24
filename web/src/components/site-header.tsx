@@ -11,6 +11,7 @@ const navigation = [
   { href: "/", label: "Overview" },
   { href: "/lab/", label: "Fingerprint Lab" },
   { href: "/science/", label: "How it works" },
+  { href: "/case-study/", label: "Case study" },
 ] as const;
 
 export function SiteHeader() {
