@@ -196,6 +196,9 @@ test.describe("the surfaces a rename usually breaks", () => {
     await expect(page.getByRole("link", { name: "Fingerprint Lab" })).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "How it works" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    // `scoutlens-rdz.13` (D075): the nav's fourth item.
+    await expect(page.getByRole("link", { name: "Case study" })).toBeFocused();
   });
 });
 
