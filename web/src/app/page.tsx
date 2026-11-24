@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ProviderBoundary } from "@/components/data-provenance";
 import { LandingHero } from "@/components/landing-hero";
 import {
@@ -162,6 +164,48 @@ export default async function HomePage() {
         <ProviderBoundary manifest={story.manifest} research={research} competitions={story.competitions} />
         <ProvenanceDrawer story={story} />
       </div>
+
+      {/*
+        `scoutlens-rdz.12` (narrative §7.1 item 9, D075, D076): the landing's
+        case-study block. It carries the case-study link only - not a third
+        hero CTA, and the repository link stays in the footer and provenance
+        (D076). Every line is docs/case-study.md's: §1-§5 for the trail, §6
+        for the engineering, §7 for the AI boundary.
+      */}
+      <section className="behind shell" aria-labelledby="behind-heading">
+        <div className="behind__copy">
+          <p className="eyebrow">Behind the project</p>
+          <h2 id="behind-heading">A question that can be wrong, and the machinery to check the answer.</h2>
+          <p>
+            The question was frozen before the result was read. Then came a baseline to beat, a
+            control that narrowed the claim, a replication on another provider and a published null,
+            and the engineering that keeps every number on this site tied to the file it came from.
+          </p>
+          <p className="behind__action">
+            <Link className="button button--primary" href="/case-study/">
+              Read the case study
+            </Link>
+          </p>
+        </div>
+        <dl className="behind__facets">
+          <div>
+            <dt>Data science</dt>
+            <dd>A frozen question, baselines, a team control, a second provider</dd>
+          </div>
+          <div>
+            <dt>Engineering</dt>
+            <dd>Python, then immutable JSON, then a typed static site</dd>
+          </div>
+          <div>
+            <dt>AI</dt>
+            <dd>An offline explanation toolkit, kept out of this site</dd>
+          </div>
+          <div>
+            <dt>Guardrails</dt>
+            <dd>A model may only cite published evidence, and a refused output is never shown</dd>
+          </div>
+        </dl>
+      </section>
     </main>
   );
 }
