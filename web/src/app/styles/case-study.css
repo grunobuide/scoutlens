@@ -177,6 +177,91 @@
   color: var(--signal-dark);
 }
 
+/* `scoutlens-rdz.14`: where AI fits, a plum panel between the trail and the
+   engineering. Contrast on --signal-dark: --white 10.46, --signal 6.22. The
+   cards are 8% white over the plum: --white 8.32, --signal (links) 4.95, and
+   --white on the code chips (14% more) 5.76. */
+.case-study-ai {
+  margin-block: clamp(2rem, 5vw, 4rem);
+  padding: clamp(2rem, 5vw, 3.5rem);
+  border-radius: var(--radius-lg);
+  background: var(--signal-dark);
+  color: var(--white);
+}
+
+.case-study-ai .eyebrow {
+  color: var(--signal);
+}
+
+.case-study-ai h2 {
+  max-width: 22ch;
+  margin-bottom: 1.25rem;
+  color: var(--white);
+}
+
+.case-study-ai__lede {
+  max-width: 46rem;
+  margin-bottom: 2rem;
+  color: var(--white);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.case-study-ai__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.case-study-ai__card {
+  min-width: 0;
+  padding: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 8%);
+}
+
+.case-study-ai__card h3 {
+  margin-bottom: 0.75rem;
+  color: var(--white);
+  font-size: 1.15rem;
+}
+
+.case-study-ai__card p,
+.case-study-ai__card li {
+  color: var(--white);
+  line-height: 1.55;
+}
+
+.case-study-ai__card ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding-left: 1.2rem;
+}
+
+.case-study-ai__card code {
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.35rem;
+  background: rgb(255 255 255 / 14%);
+  color: var(--white);
+}
+
+.case-study-ai__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin: 0;
+  font-weight: 650;
+}
+
+.case-study-ai__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--signal);
+}
+
 /* Engineering: the four stages of the pipeline as one row, the last one, the
    site the reader is on, set dark. */
 .case-study-engineering {
@@ -307,6 +392,10 @@
   }
 
   .pipeline {
+    grid-template-columns: 1fr;
+  }
+
+  .case-study-ai__grid {
     grid-template-columns: 1fr;
   }
 }
