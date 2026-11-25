@@ -290,7 +290,10 @@ export default async function CaseStudyPage() {
         `scoutlens-rdz.14` (D075): where AI fits. Every sentence is
         `docs/case-study.md` §7's or one of the agent contracts'
         (`docs/frontend-agent-contract.md`, `docs/modeling-agent-contract.md`),
-        and the section opens by saying there is no AI in this site.
+        and the section opens by saying there is no AI in this site. D077
+        (`scoutlens-rdz.28`): the lede's last sentence is the Lab's method
+        disclosure and D056's "the project already uses ML", and `/science/`'s
+        "Governed AI" carries the same sentence.
       */}
       <section className="case-study-ai" aria-labelledby="ai-heading">
         <p className="eyebrow">Where AI fits</p>
@@ -298,7 +301,9 @@ export default async function CaseStudyPage() {
         <p className="case-study-ai__lede">
           There is no AI in the deployed site, and none is planned. No page calls a model: every
           number on these pages is computed in Python from frozen event data and read from a
-          published file.
+          published file. The machine learning is offline: the Fingerprint Lab ranks with one
+          non-negative weight per measurement, fitted on the frozen Wyscout training split and
+          published with the results.
         </p>
         <div className="case-study-ai__grid">
           <article className="case-study-ai__card">

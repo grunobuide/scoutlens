@@ -132,19 +132,19 @@ Toda bead que move pixel regenera os próprios baselines no mesmo PR. Não exist
 - [x] **Ordem da fase 0 e da fase 1.** A rdz.3 vira a emenda do contrato de frontend (a expectativa do h1 vai para a rdz.8) e a rdz.6 vira o gate da fase 1 (20 out 2026).
 - [x] **Texto final do h1.** "Can 32 numbers recognise a footballer?" + uma linha logo abaixo com as duas metades da temporada (3 nov 2026). O "32" é contagem de features e sai do artefato, não digitado.
 - [x] **Quarto item da nav.** "Case study" no topo, como quarto item; emenda o §6.1 via a decisão do redesign (3 nov 2026).
-- [ ] **História da IA.** Claude Code e agentes em paralelo via beads, contratos de agente e o toolkit de explicação offline. Nada além do que esses documentos sustentam.
-- [ ] **Nomes simples das famílias** ("Keeping the ball" para Possession…). Subtítulo do nome oficial, ou de fora?
+- [x] **História da IA.** Claude Code e agentes em paralelo via beads, contratos de agente e o toolkit de explicação offline. Nada além do que esses documentos sustentam. `/science/` e `/case-study/` contam a mesma história e dizem onde está o ML: os pesos aprendidos offline da Lab (25 nov 2026, D077).
+- [x] **Nomes simples das famílias** ("Keeping the ball" para Possession…). De fora: só os nomes oficiais (25 nov 2026, D077).
 - [x] **Razão "~10×".** Cortar (3 nov 2026).
-- [ ] **Links pessoais.** URL do LinkedIn e e-mail público.
+- [x] **Links pessoais.** Só o LinkedIn, no fim da `/case-study/`; sem e-mail público (25 nov 2026, D077).
 
 ## Checklist de lançamento
 
-- [ ] `pnpm release:check` verde em `web/`
-- [ ] Snapshots atualizados em Linux e Windows, diffs lidos
-- [ ] Tese e boundary verbatim e adjacentes nas rotas que as exibem
-- [ ] Nenhum número digitado: `rendered-values` e `claims-consistency` verdes
-- [ ] Contraste conferido nos fundos claro, grafite e ameixa
-- [ ] Páginas lidas no celular (360 px) e no desktop, inclusive `/case-study/`
-- [ ] Teste de compreensão rodado e registrado (rdz.17), com cada achado do §4 resolvido
+- [x] `pnpm release:check` verde em `web/` (rdz.16)
+- [x] Snapshots atualizados em Linux e Windows, diffs lidos
+- [x] Tese e boundary verbatim e adjacentes nas rotas que as exibem
+- [x] Nenhum número digitado: `rendered-values` e `claims-consistency` verdes
+- [x] Contraste conferido nos fundos claro, grafite e ameixa
+- [x] Páginas lidas no celular (360 px) e no desktop, inclusive `/case-study/` (rdz.16)
+- [ ] Teste de compreensão rodado e registrado (rdz.17), com cada achado do §4 resolvido. Roda depois do lançamento, no site no ar (D077)
 - [ ] `CHANGELOG.md` com a entrada do redesign e link para a decisão
 - [ ] `redesign` mergeado em `main`, workflow `deploy` verde e post do LinkedIn publicado

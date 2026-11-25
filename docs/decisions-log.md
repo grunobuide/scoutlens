@@ -3325,3 +3325,52 @@ start after the narrative amendment is in `redesign`. The owner approves the
 copy of the facts strip, of "The idea in 30 seconds" and of the case-study
 block in each bead's pull request (`product-narrative`). A bead that needs a
 file the frontend contract does not name stops.
+
+## D077 — 2026-11-25 — The redesign launches with one AI story on both pages, a LinkedIn link, the official family names, and the reader test after launch
+
+**Decision:** the four decisions the redesign roadmap left to the owner
+(`docs/redesign/ROADMAP.md`, "Decisões que são suas"). The owner decided all
+four on 2026-11-25. (`scoutlens-rdz.28`)
+
+1. **One AI story, and it says where the machine learning is.** `/science/`'s
+   "Governed AI" said AI "may narrate deterministic evidence in the future".
+   `/case-study/`'s "Where AI fits" (`scoutlens-rdz.14`, from
+   `docs/case-study.md` §7) says there is no AI in the deployed site and none
+   is planned. Both pages now say the second. `/science/` keeps the
+   fail-closed contract's terms, now as the toolkit outside the site. It also
+   keeps "No live LLM is required for any current page" and "AI never
+   recomputes a value", the Q6 evidence that `claims-consistency.spec.ts`
+   holds. Both pages gain one identical sentence: "The machine learning is
+   offline: the Fingerprint Lab ranks with one non-negative weight per
+   measurement, fitted on the frozen Wyscout training split and published
+   with the results." It restates the Lab's method disclosure and D056's
+   instrument clarification ("The project already uses ML to fit its ranking
+   representation"). Q6's answer key counts "no ML at all" as wrong, and
+   before this neither page said where the ML was.
+2. **Personal links: LinkedIn only.** One link to the owner's LinkedIn
+   profile, at the end of `/case-study/`. No public email. The rest of the
+   design's contact block is not built. The owner supplies the URL; the link
+   ships in the pull request that adds it.
+3. **Family names: the official ones only.** The design's plain names
+   ("Keeping the ball" for Possession…) are not built, neither as a subtitle
+   nor in place of the name. `scoutlens-rdz.10` already kept the official
+   names.
+4. **The reader test runs after launch.** `scoutlens-rdz.17` no longer blocks
+   `scoutlens-rdz.18`; it runs against the deployed site. D056 already made a
+   fresh reader something v1 does not wait for. A finding from it becomes a
+   defect bead against the live site, under the same §4 rules. Run 1
+   (2026-09-15, a block at 2:53) and D056's disclosure stand unchanged.
+
+**What stays frozen.** Everything D075 and D076 list. No value, rounding,
+metric id, caveat or artifact order changes, and the thesis and boundary are
+untouched (D066).
+
+**Trade-off.** Launching first trades evidence about comprehension for a
+launch date. The redesign rewrote the landing and added a page that no
+first-time reader has seen. A misreading will surface on the live site, after
+the announcement, not before it. The CHANGELOG entry for the redesign says
+the new copy has had no blind read.
+
+**How to apply:** `scoutlens-rdz.28` aligns the two AI sections and adds a
+test that holds them together. The LinkedIn link and the CHANGELOG entry come
+before `scoutlens-rdz.18`. `scoutlens-rdz.17` depends on `scoutlens-rdz.18`.
