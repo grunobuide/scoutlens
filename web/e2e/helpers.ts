@@ -135,43 +135,177 @@ export async function expectNoPageOverflow(page: Page): Promise<void> {
   expect(widths.body).toBeLessThanOrEqual(widths.client);
 }
 
-export async function measureNextInteraction(page: Page, action: () => Promise<void>): Promise<number> {
-  const eventTimingSupported = await page.evaluate(() =>
-    PerformanceObserver.supportedEntryTypes.includes("event"),
-  );
-  expect(eventTimingSupported, "Chromium must expose the Event Timing API used by INP").toBe(true);
+/**
+ * The smallest `durationThreshold` an `event` observer accepts; the Event
+ * Timing spec raises anything lower to it. Chromium reports durations in 8 ms
+ * steps, so an interaction that is done in 8 ms produces no entry at all.
+ */
+export const EVENT_TIMING_THRESHOLD_MS = 16;
 
-  await page.evaluate(() => {
-    const state = window as typeof window & {
-      __scoutlensInteractionDurations?: number[];
-      __scoutlensInteractionObserver?: PerformanceObserver;
-    };
-    state.__scoutlensInteractionDurations = [];
-    state.__scoutlensInteractionObserver?.disconnect();
-    state.__scoutlensInteractionObserver = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
+/** What `measureNextInteraction` saw of the interaction an action created. */
+export interface InteractionTiming {
+  /**
+   * The longest Event Timing duration among the action's interactions. When
+   * `belowThreshold` is true the browser reported none, and this is
+   * `EVENT_TIMING_THRESHOLD_MS`: an upper bound, not a reading.
+   */
+  durationMs: number;
+  /** Every interaction the action created finished below the threshold. */
+  belowThreshold: boolean;
+}
+
+/** The barrier key: no default action, and swallowed before the app sees it. */
+const BARRIER_KEY = "Shift";
+
+interface InteractionProbe {
+  observer: PerformanceObserver;
+  record: (entries: PerformanceEntryList) => void;
+  entries: Array<{ startTime: number; duration: number; interactionId: number }>;
+  countBefore: number;
+  actionStart: number;
+  actionEnd: number;
+  swallow: (event: KeyboardEvent) => void;
+}
+type ProbeWindow = Window & { __scoutlensInteraction?: InteractionProbe };
+type CountingPerformance = Performance & { interactionCount: number };
+
+/**
+ * The Event Timing duration of the interaction an action creates - the number
+ * INP is made of.
+ *
+ * The browser reports nothing for an interaction faster than the observer's
+ * threshold, so "no entry" is ambiguous: the interaction may have been fast,
+ * may never have happened, or may simply not be reported yet. Entries arrive
+ * after the next frame is presented, which was seen to land after the double
+ * `requestAnimationFrame` this used to wait. `scoutlens-1z1` traced the
+ * core-flow flake to exactly that ambiguity, and this resolves it in three
+ * steps instead of reading silence as failure (or as success):
+ *
+ * 1. **The interaction happened.** `performance.interactionCount` counts every
+ *    interaction however fast, and it must rise across the action.
+ * 2. **Reporting has caught up.** After the action a barrier key is pressed. A
+ *    capture listener on `window` swallows it before the app sees it, and
+ *    holds the main thread for twice the threshold so Event Timing has to
+ *    report it. Entries are reported in dispatch order, so once the barrier's
+ *    entry is in, every entry of the measured interaction is too.
+ * 3. **Only then does silence mean fast.** An interaction with no entry by the
+ *    barrier finished below `EVENT_TIMING_THRESHOLD_MS`, and that bound is
+ *    returned, so a budget check against it still means something. A slow
+ *    interaction is always reported and returns its real duration.
+ */
+export async function measureNextInteraction(page: Page, action: () => Promise<void>): Promise<InteractionTiming> {
+  const support = await page.evaluate(() => ({
+    eventTiming: PerformanceObserver.supportedEntryTypes.includes("event"),
+    interactionCount: typeof (performance as Partial<CountingPerformance>).interactionCount === "number",
+  }));
+  expect(support.eventTiming, "Chromium must expose the Event Timing API used by INP").toBe(true);
+  expect(support.interactionCount, "Chromium must expose performance.interactionCount").toBe(true);
+
+  await page.evaluate((threshold) => {
+    const probeWindow = window as ProbeWindow;
+    probeWindow.__scoutlensInteraction?.observer.disconnect();
+    const entries: InteractionProbe["entries"] = [];
+    const record = (list: PerformanceEntryList) => {
+      for (const entry of list) {
         const event = entry as PerformanceEntry & { interactionId?: number };
-        if ((event.interactionId ?? 0) > 0) {
-          state.__scoutlensInteractionDurations?.push(event.duration);
-        }
+        entries.push({ startTime: event.startTime, duration: event.duration, interactionId: event.interactionId ?? 0 });
       }
-    });
+    };
+    const observer = new PerformanceObserver((list) => record(list.getEntries()));
     const options: PerformanceObserverInit & { durationThreshold: number } = {
       type: "event",
-      buffered: true,
-      durationThreshold: 16,
+      durationThreshold: threshold,
     };
-    state.__scoutlensInteractionObserver.observe(options);
-  });
+    observer.observe(options);
+    probeWindow.__scoutlensInteraction = {
+      observer,
+      record,
+      entries,
+      countBefore: (performance as CountingPerformance).interactionCount,
+      actionStart: performance.now(),
+      actionEnd: Number.POSITIVE_INFINITY,
+      swallow: () => undefined,
+    };
+  }, EVENT_TIMING_THRESHOLD_MS);
 
   await action();
-  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+
+  // Two frames, so the frame that paints the action's result is produced before
+  // the barrier holds the main thread and could delay it.
+  const interactions = await page.evaluate(
+    () =>
+      new Promise<number>((resolve, reject) => {
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            const probe = (window as ProbeWindow).__scoutlensInteraction;
+            if (probe === undefined) {
+              reject(new Error("the interaction probe was not installed"));
+              return;
+            }
+            probe.actionEnd = performance.now();
+            resolve((performance as CountingPerformance).interactionCount - probe.countBefore);
+          }),
+        );
+      }),
+  );
+  expect(interactions, "The measured action must create an Event Timing interaction").toBeGreaterThan(0);
+
+  await page.evaluate(
+    ({ key, holdMs }) => {
+      const probe = (window as ProbeWindow).__scoutlensInteraction;
+      if (probe === undefined) {
+        throw new Error("the interaction probe was not installed");
+      }
+      probe.swallow = (event: KeyboardEvent) => {
+        if (event.key !== key) {
+          return;
+        }
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        if (event.type === "keydown") {
+          const until = performance.now() + holdMs;
+          while (performance.now() < until) {
+            // Hold the main thread so the barrier is slow enough to be reported.
+          }
+        }
+      };
+      window.addEventListener("keydown", probe.swallow, true);
+      window.addEventListener("keyup", probe.swallow, true);
+    },
+    { key: BARRIER_KEY, holdMs: 2 * EVENT_TIMING_THRESHOLD_MS },
+  );
+  await page.keyboard.press(BARRIER_KEY);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const probe = (window as ProbeWindow).__scoutlensInteraction;
+          if (probe === undefined) {
+            return false;
+          }
+          probe.record(probe.observer.takeRecords());
+          return probe.entries.some((entry) => entry.startTime >= probe.actionEnd);
+        }),
+      { message: "Event Timing must report the barrier keypress, or no entry cannot be read as a fast interaction" },
+    )
+    .toBe(true);
+
   const durations = await page.evaluate(() => {
-    const state = window as typeof window & { __scoutlensInteractionDurations?: number[] };
-    return state.__scoutlensInteractionDurations ?? [];
+    const probe = (window as ProbeWindow).__scoutlensInteraction;
+    if (probe === undefined) {
+      throw new Error("the interaction probe was not installed");
+    }
+    window.removeEventListener("keydown", probe.swallow, true);
+    window.removeEventListener("keyup", probe.swallow, true);
+    probe.observer.disconnect();
+    return probe.entries
+      .filter((entry) => entry.interactionId > 0 && entry.startTime >= probe.actionStart && entry.startTime < probe.actionEnd)
+      .map((entry) => entry.duration);
   });
-  expect(durations.length, "The measured action must create an Event Timing interaction").toBeGreaterThan(0);
-  return Math.max(...durations);
+  if (durations.length === 0) {
+    return { durationMs: EVENT_TIMING_THRESHOLD_MS, belowThreshold: true };
+  }
+  return { durationMs: Math.max(...durations), belowThreshold: false };
 }
 
 export async function waitForStablePage(page: Page): Promise<void> {
