@@ -146,5 +146,5 @@ Toda bead que move pixel regenera os próprios baselines no mesmo PR. Não exist
 - [x] Contraste conferido nos fundos claro, grafite e ameixa
 - [x] Páginas lidas no celular (360 px) e no desktop, inclusive `/case-study/` (rdz.16)
 - [ ] Teste de compreensão rodado e registrado (rdz.17), com cada achado do §4 resolvido. Roda depois do lançamento, no site no ar (D077)
-- [ ] `CHANGELOG.md` com a entrada do redesign e link para a decisão
+- [x] `CHANGELOG.md` com a entrada do redesign e link para a decisão (#208; o link do LinkedIn entrou na mesma entrada, rdz.29)
 - [ ] `redesign` mergeado em `main`, workflow `deploy` verde e post do LinkedIn publicado

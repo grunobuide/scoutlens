@@ -202,6 +202,43 @@ test.describe("where AI fits (scoutlens-rdz.14)", () => {
   });
 });
 
+test.describe("the contact link (scoutlens-rdz.29)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "content assertion, run once in desktop Chromium");
+  });
+
+  test("one LinkedIn link, after the engineering and before the provider boundary", async ({ page }) => {
+    await page.goto(ROUTE);
+    await waitForStablePage(page);
+
+    // D077 item 2: the owner's URL, in the site's external-link style (same
+    // tab, no `target`).
+    const section = page.locator("[aria-labelledby='contact-heading']");
+    const link = section.getByRole("link");
+    await expect(link).toHaveCount(1);
+    await expect(link).toHaveText("Find me on LinkedIn");
+    await expect(link).toHaveAttribute("href", "https://www.linkedin.com/in/brunofguide/");
+    await expect(link).not.toHaveAttribute("target", /.*/);
+
+    // After the engineering, and the provider boundary still closes the page.
+    const order = await page.locator("main > section").evaluateAll((sections) =>
+      sections.map((element) => element.getAttribute("aria-labelledby")),
+    );
+    expect(order.indexOf("contact-heading")).toBe(order.indexOf("engineering-heading") + 1);
+    expect(order.at(-1)).toBe("provider-boundary-heading");
+    expect(order.indexOf("provider-boundary-heading")).toBe(order.indexOf("contact-heading") + 1);
+  });
+
+  test("no route publishes an email address", async ({ page }) => {
+    for (const route of ["/", "/science/", "/lab/", ROUTE]) {
+      await page.goto(route);
+      await waitForStablePage(page);
+      await expect(page.locator('a[href^="mailto:"]'), route).toHaveCount(0);
+      await expect(page.locator("body"), route).not.toContainText(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
+    }
+  });
+});
+
 test("the case study fits the viewport and has no serious accessibility violation", async ({ page }) => {
   await page.goto(ROUTE);
   await waitForStablePage(page);
