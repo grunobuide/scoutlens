@@ -157,7 +157,7 @@
 .research-stage__confound-note {
   margin-top: 1.5rem;
   padding: 1rem 1.25rem;
-  border-left: 3px solid var(--warning, #c47d00);
+  border-left: 3px solid #c78e2d;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: #fff5df;
   color: var(--ink-700);
