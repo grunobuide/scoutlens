@@ -101,6 +101,8 @@ const ROUTES = [
   { label: "/", html: "index.html", path: "/" },
   { label: "/science", html: "science/index.html", path: "/science/" },
   { label: "/lab", html: "lab/index.html", path: "/lab/" },
+  // `scoutlens-rdz.26` (D075): the redesign's fourth route.
+  { label: "/case-study", html: "case-study/index.html", path: "/case-study/" },
 ];
 
 const auditedPaths = (lighthouseConfig.ci?.collect?.url ?? []).map((url) => new URL(url).pathname).sort();
