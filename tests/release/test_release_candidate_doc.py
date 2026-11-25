@@ -157,6 +157,28 @@ def test_the_licence_statements_agree() -> None:
     assert "not yet decided" not in data_licences
 
 
+def test_the_data_licences_cover_statsbomb() -> None:
+    """`DATA_LICENSES.md` is linked as the full data boundary, so it states StatsBomb's too.
+
+    It named only the Wyscout/Pappalardo dataset while README and the v1.0.0
+    notes pointed to it for the whole boundary (`scoutlens-jtt.25`). The
+    StatsBomb agreement is the stricter of the two: no redistribution, no
+    commercial use of derived analysis, and the logo on published analysis.
+    """
+    data_licences = (REPO_ROOT / "DATA_LICENSES.md").read_text(encoding="utf-8")
+    assert "## StatsBomb Open Data (aggregate replication only)" in data_licences
+    section = data_licences.split("## StatsBomb Open Data", 1)[1].split("\n## ", 1)[0]
+    for phrase in (
+        "StatsBomb Public Data User Agreement",
+        "b0bc9f22dd77c206ddedc1d742893b3bbe64baec",
+        "Redistributing the data is prohibited",
+        "any analysis derived from it",
+        "StatsBomb brand logo",
+        "docs/statsbomb-provenance.md",
+    ):
+        assert phrase in section, f"the StatsBomb section does not state {phrase!r}"
+
+
 def test_the_document_is_not_a_stub(doc: str) -> None:
     """A freeze record that fits on a screen has not audited anything."""
     assert len(doc) > 8000
