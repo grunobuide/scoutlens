@@ -197,8 +197,9 @@ test.describe("the surfaces a rename usually breaks", () => {
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "How it works" })).toBeFocused();
     await page.keyboard.press("Tab");
-    // `scoutlens-rdz.13` (D075): the nav's fourth item.
-    await expect(page.getByRole("link", { name: "Case study" })).toBeFocused();
+    // `scoutlens-rdz.13` (D075): the nav's fourth item. Exact, because the
+    // landing's "Read the case study" (`scoutlens-rdz.12`) also contains it.
+    await expect(page.getByRole("link", { name: "Case study", exact: true })).toBeFocused();
   });
 });
 
