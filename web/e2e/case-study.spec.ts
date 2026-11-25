@@ -167,6 +167,41 @@ test.describe("the case study's research trail", () => {
   });
 });
 
+test.describe("where AI fits (scoutlens-rdz.14)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "content assertion, run once in desktop Chromium");
+  });
+
+  test("opens by saying the site has no AI, and links only documents that exist", async ({ page }) => {
+    await page.goto(ROUTE);
+    await waitForStablePage(page);
+    const section = page.locator("[aria-labelledby='ai-heading']");
+    // case-study.md §7's first sentence, before anything about agents.
+    await expect(section.locator(".case-study-ai__lede")).toContainText("There is no AI in the deployed site");
+    // No model is claimed to have been evaluated (§7, "not_run").
+    await expect(section).toContainText("No demonstration model has been evaluated");
+    await expect(section).not.toContainText(/\d/);
+
+    const hrefs = await section.getByRole("link").evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""));
+    expect(hrefs).toHaveLength(4);
+    for (const href of hrefs) {
+      expect(href.startsWith(REPOSITORY_BLOB), `${href} leaves the repository`).toBe(true);
+      const path = href.slice(REPOSITORY_BLOB.length);
+      expect(existsSync(join(REPOSITORY_ROOT, path)), `${path} does not exist`).toBe(true);
+    }
+  });
+
+  test("sits between the research trail and the engineering", async ({ page }) => {
+    await page.goto(ROUTE);
+    await waitForStablePage(page);
+    const ids = await page.locator("main > section").evaluateAll((sections) =>
+      sections.map((section) => section.getAttribute("aria-labelledby")),
+    );
+    expect(ids.indexOf("ai-heading")).toBe(ids.indexOf("trail-heading") + 1);
+    expect(ids.indexOf("engineering-heading")).toBe(ids.indexOf("ai-heading") + 1);
+  });
+});
+
 test("the case study fits the viewport and has no serious accessibility violation", async ({ page }) => {
   await page.goto(ROUTE);
   await waitForStablePage(page);

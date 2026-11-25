@@ -279,6 +279,64 @@ export default async function CaseStudyPage() {
         </p>
       </section>
 
+      {/*
+        `scoutlens-rdz.14` (D075): where AI fits. Every sentence is
+        `docs/case-study.md` §7's or one of the agent contracts'
+        (`docs/frontend-agent-contract.md`, `docs/modeling-agent-contract.md`),
+        and the section opens by saying there is no AI in this site.
+      */}
+      <section className="case-study-ai" aria-labelledby="ai-heading">
+        <p className="eyebrow">Where AI fits</p>
+        <h2 id="ai-heading">AI helped build the project, under contract. It is not in this site.</h2>
+        <p className="case-study-ai__lede">
+          There is no AI in the deployed site, and none is planned. No page calls a model: every
+          number on these pages is computed in Python from frozen event data and read from a
+          published file.
+        </p>
+        <div className="case-study-ai__grid">
+          <article className="case-study-ai__card">
+            <h3>A governed engineering team</h3>
+            <p>
+              AI coding agents worked on the repository under written contracts, one for the
+              frontend and one for the modeling, that bind every agent before it touches a file.
+            </p>
+            <ul>
+              <li>One tracked issue, one branch, one pull request, with the gates the issue names run and their real output quoted.</li>
+              <li>Each contract lists the files an agent may edit, the ones that need a named reviewer, and denies everything it does not list.</li>
+              <li>An agent may change how a value is presented, never the value, its rounding, a caveat or the order the artifact supplies.</li>
+              <li>If a contract and an issue disagree, the issue loses and the agent stops.</li>
+            </ul>
+            <p className="case-study-ai__links">
+              <a href={repositoryHref("docs/frontend-agent-contract.md")}>Frontend agent contract</a>
+              <a href={repositoryHref("docs/modeling-agent-contract.md")}>Modeling agent contract</a>
+            </p>
+          </article>
+          <article className="case-study-ai__card">
+            <h3>What a model would be allowed to say</h3>
+            <p>
+              Outside the site there is a local, provider-neutral explanation toolkit. It runs
+              offline by default, and that is enforced, not promised: without{" "}
+              <code>--online</code> the process refuses to open a socket.
+            </p>
+            <ul>
+              <li>Every claim must cite evidence IDs from a closed set.</li>
+              <li>Every number must equal the published one, compared numerically, not as a rendered string.</li>
+              <li>A feature-contribution claim may only rest on weighted evidence.</li>
+              <li>A refused output is never shown: the toolkit returns a typed deterministic fallback instead.</li>
+            </ul>
+            <p>
+              No demonstration model has been evaluated. The live gate records{" "}
+              <code>not_run</code>, deliberately distinct from a pass, and this project makes no
+              claim about any model&apos;s behaviour.
+            </p>
+            <p className="case-study-ai__links">
+              <a href={repositoryHref("docs/ai-explanation-contract.md")}>Explanation contract</a>
+              <a href={repositoryHref("docs/ai-eval-method.md")}>Evaluation method</a>
+            </p>
+          </article>
+        </div>
+      </section>
+
       <section className="case-study-engineering" aria-labelledby="engineering-heading">
         <p className="eyebrow">Engineering</p>
         <h2 id="engineering-heading">No backend. Every number comes from a file you can inspect.</h2>
