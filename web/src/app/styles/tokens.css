@@ -11,10 +11,14 @@
    Each colour token states its WCAG contrast against every background it was
    measured on. Text needs 4.5:1; large text (24px, or 18.66px bold) and
    non-text UI need 3:1. Some backgrounds are not tokens but literals in the
-   layer files, named here by value: #fff5df (warning surfaces), #18241f (the
-   headline experiment card) and its 5% white metric boxes (#242f2a), the
-   cream metric boxes (#f9f7f2; #f9f3e5 on a warning card), the caveat tints,
-   the lime wash on <body>, and the lime glow in the Lab's profile header.
+   layer files, named here by value: #fff5df (warning surfaces), the 5%
+   white metric boxes on the headline experiment card (#69385c over
+   --signal-dark), the cream metric boxes (#f9f7f2; #f9f3e5 on a warning
+   card) and the caveat tints. Until `scoutlens-rdz.11`, `scoutlens-rdz.20`
+   and `scoutlens-rdz.21` the headline card was the old green-black and the
+   body and the Lab's profile header carried a lime glow; the figures below
+   that named them are restated on the surfaces that replaced them, computed
+   from the token values (`scoutlens-rdz.25`).
    How it was measured: Chromium, axe's colour-contrast data, on /, /science/
    and /lab/ (featured, ?player, every ?challenge state, the neighbour
    drawer, the v2 max-content fixture) at 1280 and 360 px. Figures are axe's,
@@ -48,17 +52,15 @@
   --paper: #f3f4f4;
   --paper-deep: #e6e2e5;
   /* The card surface, and the text on dark surfaces: 13.96 on --ink-950,
-     7.75 on --teal, 10.45 on --signal-dark, 16.01 on #18241f, 13.76 on the
-     critical-caveat tint over it (#2a2f20), 6.83 under the Lab glow's worst
-     (24.1%, the profile name). */
+     7.75 on --teal, 10.45 on --signal-dark, 9.05 on the headline card's 5%
+     white metric boxes over it (#69385c). */
   --white: #ffffff;
   /* Pink, for text on dark surfaces: the design's #f2b8cb. 8.30 on
-     --ink-950, 9.53 on #18241f, 8.24 on #242f2a, measured per element
-     (`scoutlens-rdz.23`: 264 elements, every route and state above at 1280,
-     360 and 340 px; the lowest is 8.24). It was #f8d8e2 while the Lab's
-     profile header carried a lime glow, where this pink gave 3.69; that glow
-     is gone (`scoutlens-rdz.20`). As the halo round period B's mark it is
-     decorative; the mark's fill identifies it. */
+     --ink-950, 6.22 on --signal-dark, 5.38 on its 5% white metric boxes
+     (#69385c). It was #f8d8e2 while the Lab's profile header carried a
+     glow, where this pink gave 3.69; that glow is gone (`scoutlens-rdz.20`).
+     As the halo round period B's mark it is decorative; the mark's fill
+     identifies it. */
   --signal: #f2b8cb;
   /* Plum: period B's mark and values. As text: 10.45 on --white. As UI: the
      mark 8.15 on --paper-deep, the fingerprint track. As a surface: --white
@@ -70,8 +72,7 @@
      worst. As UI: period A's mark 6.04 on --paper-deep; the focus ring 6.04
      or more on every light surface. As a surface: --white 7.75.
      Below 3:1, and no value of this token can fix it: the focus ring on a
-     dark surface, 1.80 on --ink-950 and 2.06 on #18241f (the old teal gave
-     2.63 and 2.37). A wine light enough for 3:1 on graphite falls below
+     dark surface, 1.80 on --ink-950 and 1.35 on --signal-dark. A wine light enough for 3:1 on graphite falls below
      4.5:1 as text on --paper-deep. The ring needs its own rule there. */
   --teal: #853953;
   /* Decorative separators and card edges: 1.38 on --white. It is also the
