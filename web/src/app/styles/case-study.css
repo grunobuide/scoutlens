@@ -241,6 +241,8 @@
 }
 
 .case-study-ai__card code {
+  /* `--online` would otherwise break after its dashes. */
+  white-space: nowrap;
   padding: 0.05rem 0.35rem;
   border-radius: 0.35rem;
   background: rgb(255 255 255 / 14%);
