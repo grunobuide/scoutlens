@@ -3374,3 +3374,48 @@ the new copy has had no blind read.
 **How to apply:** `scoutlens-rdz.28` aligns the two AI sections and adds a
 test that holds them together. The LinkedIn link and the CHANGELOG entry come
 before `scoutlens-rdz.18`. `scoutlens-rdz.17` depends on `scoutlens-rdz.18`.
+
+## D078 — 2026-11-25 — The StatsBomb replication carries StatsBomb's logo on every route, served from the repository
+
+**Decision:** the site meets the StatsBomb logo obligation by rendering
+StatsBomb's own logo, not by recording that the text badge is enough.
+(`scoutlens-jtt.25`)
+
+The StatsBomb Public Data User Agreement (clause 1.4) says published analysis
+of StatsBomb data must be accredited with the StatsBomb brand logo, and the
+open-data README asks users to state the source as StatsBomb and use the
+logo. D014 left open how the site would meet this. Since 1.0.0 it has shown
+only a CSS text badge, and no record said that sufficed. The clause is
+explicit, so a decision that the wordmark suffices is rejected. The owner
+decided on 2026-11-25 that the logo lands after the redesign's deploy (#210)
+and before the LinkedIn post that announces it.
+
+1. **Where.** In `ProviderBoundary`'s replication card, which every route
+   renders, and in the provenance drawer's StatsBomb source mark on the
+   landing. Both sit beside the statement that the replication is
+   aggregate-only.
+2. **The file.** The Media Pack logo, unmodified, under
+   `web/src/assets/attribution/`. It is imported statically, so the export
+   fingerprints it, the GitHub Pages base path applies, and the page makes
+   no third-party request. The owner downloads it: the Media Pack now
+   redirects to Hudl's asset portal, which asks for a download reason.
+3. **The contract.** `docs/frontend-agent-contract.md` gains a row for
+   `web/src/assets/attribution/**`, **Conditional** on `scoutlens-jtt`. A
+   provider's mark is stored as the provider supplies it; a frontend bead
+   may place it but not redraw or recolour it.
+4. **The licence file.** `DATA_LICENSES.md` gains a StatsBomb section: the
+   pinned source, the User Agreement, and per clause what it forbids or
+   requires and what ScoutLens does about it. It also says the logo is
+   StatsBomb's mark, which this repository's MIT licence does not cover.
+
+**What stays frozen.** No StatsBomb number, caveat or claim changes, and the
+replication stays aggregate-only (showcase contract invariant 12).
+
+**Trade-off.** The repository now carries a third-party mark under the
+provider's terms rather than its own licence, and a later change to
+StatsBomb's brand (now Hudl's) would leave a stale logo until someone
+replaces it. Both are cheaper than publishing analysis that does not meet
+the agreement it was obtained under.
+
+**How to apply:** `scoutlens-jtt.25` ships the logo, the contract row, the
+licence section and the tests in one pull request to `main`.

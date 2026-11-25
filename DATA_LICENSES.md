@@ -83,7 +83,10 @@ and it is stricter than CC BY 4.0. The per-clause audit is in
 | Analysis may be published, accredited with the StatsBomb brand logo; the README asks that the source be stated as StatsBomb | 1.4, README | Every route names StatsBomb as the replication's source and shows the StatsBomb logo beside it (`scoutlens-jtt.25`). |
 
 **Attribution.** Any publication of the replication results must state the
-data source as StatsBomb and carry the StatsBomb logo from their Media Pack.
+data source as StatsBomb and carry the StatsBomb logo from their Media Pack
+(`D078`). The logo file under `web/src/assets/attribution/` is StatsBomb's
+mark, used under their terms; this repository's MIT licence does not cover
+it.
 
 ## Artifacts explicitly not covered here
 
