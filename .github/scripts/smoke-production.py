@@ -59,6 +59,7 @@ ROUTES = (
     "",
     "lab/",
     "science/",
+    "case-study/",
     "lab/?player=wy-8287-c-795",
 )
 
@@ -73,8 +74,12 @@ ROUTES = (
 #: on a host that served the home page at every path. The check that exists to
 #: catch "a 200 that served the wrong page" could not have caught it.
 #:
-#: These four phrases were measured on the live site and form a clean diagonal:
-#: each appears twice on its own route and zero times on the other two.
+#: These phrases were measured on the live site and form a clean diagonal:
+#: each appears twice on its own route and zero times on the others. The
+#: redesign rewrote the home `h1` and added `/case-study/` (`D075`); both were
+#: re-measured on 2026-11-25 against the deployed redesign (`scoutlens-rdz.30`).
+#: The home phrase carries the feature count the `h1` reads from the catalogue,
+#: so a new count rewrites the `h1` and this gate fails, as it should.
 #:
 #: They are also load-bearing elsewhere, so they cannot drift silently:
 #: `web/scripts/check-static-output.mjs` asserts the home phrase and
@@ -84,9 +89,10 @@ ROUTES = (
 #: new route-specific phrase — never a shorter one, and never a header or
 #: footer string that every route would satisfy.
 EXPECTED_TEXT = {
-    "": "A player leaves a reproducible fingerprint",
+    "": "Can 32 numbers recognise a footballer?",
     "lab/": "Compare one player with himself.",
     "science/": "The science is the sequence, not one headline number.",
+    "case-study/": "How I built Yumusarái Labs",
     "lab/?player=wy-8287-c-795": "Compare one player with himself.",
 }
 

@@ -77,6 +77,7 @@ def _page(*, heading: str, brand: str = "ScoutLens", monogram: str = "SL") -> st
         '<li><a href="/scoutlens/">Overview</a></li>'
         '<li><a href="/scoutlens/lab/">Fingerprint Lab</a></li>'
         '<li><a href="/scoutlens/science/">How it works</a></li>'
+        '<li><a href="/scoutlens/case-study/">Case study</a></li>'
         "</ul></nav></header>"
         '<main id="main-content"><h1>' + heading + "</h1></main>"
         "<footer>Evidence-first football analytics.</footer>"
@@ -84,14 +85,16 @@ def _page(*, heading: str, brand: str = "ScoutLens", monogram: str = "SL") -> st
     )
 
 
-HOME_H1 = "A player leaves a reproducible fingerprint—and it still identifies them half a season later."
+HOME_H1 = "Can 32 numbers recognise a footballer?"
 LAB_H1 = "Compare one player with himself."
 SCIENCE_H1 = "The science is the sequence, not one headline number."
+CASE_STUDY_H1 = "How I built Yumusarái Labs"
 
 HEADINGS = {
     "": HOME_H1,
     "lab/": LAB_H1,
     "science/": SCIENCE_H1,
+    "case-study/": CASE_STUDY_H1,
     "lab/?player=wy-8287-c-795": LAB_H1,
 }
 
@@ -150,7 +153,8 @@ def test_a_healthy_site_passes_every_check(monkeypatch: pytest.MonkeyPatch) -> N
         *smoke.check_no_secrets(BASE, home),
     ]
     assert _failures(results) == []
-    assert len(results) == 9, "the gate lost a check"
+    # HTTPS, five routes (`/case-study/` since `scoutlens-rdz.30`), assets, two caching, secrets.
+    assert len(results) == 10, "the gate lost a check"
 
 
 def test_renaming_the_wordmark_changes_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -202,7 +206,7 @@ def test_the_old_sentinels_would_have_passed_the_wrong_page() -> None:
 # --- 2. serving the wrong page must still fail ---------------------------
 
 
-@pytest.mark.parametrize("wrong", ["lab/", "science/"])
+@pytest.mark.parametrize("wrong", ["lab/", "science/", "case-study/"])
 def test_the_home_page_served_at_another_route_fails(
     monkeypatch: pytest.MonkeyPatch, wrong: str
 ) -> None:
