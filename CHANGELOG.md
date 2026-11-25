@@ -10,6 +10,46 @@ surface being versioned is the **published artifact contract**
 (`scoutlens.explanation`), and the command-line entry points — not the internal
 Python API, which is free to move.
 
+## [Unreleased] — the redesigned site
+
+The public site is redesigned as Yumusarái Labs, under
+[`D075`, `D076` and `D077`](docs/decisions-log.md). The research did not move:
+no artifact, value, rounding, metric id, caveat or artifact order changed, and
+the thesis and its boundary are rendered verbatim and adjacent (`D066`).
+
+### Added
+
+- **`/case-study/`, "How I built Yumusarái Labs"** — the research as six
+  decisions, each with the numbers it rests on read from the published
+  artifacts, the caveats of every experiment it quotes, and the document behind
+  it; where AI fits (coding agents under written contracts, the offline
+  explanation toolkit, and no AI in the site); and the engineering pipeline.
+  "Case study" is the fourth navigation item (`scoutlens-rdz.13`,
+  `scoutlens-rdz.14`).
+- **Gates for the new route** — the static-export check, every route-crossing
+  end-to-end suite, Lighthouse and the initial-JavaScript budget now cover
+  `/case-study/` (`scoutlens-rdz.15`, `scoutlens-rdz.26`).
+
+### Changed
+
+- **The landing** opens with a question-led h1 whose count is the feature
+  catalogue's length, read at build time. A facts strip and "The idea in 30
+  seconds" follow the hero, the fingerprint preview draws each family as an
+  A/B dumbbell on one 0–100 axis, the four evidence tests share one 0–1 scale,
+  and "Behind the project" links to the case study.
+- **Palette and type** — the old green-black and lime are gone. Every text
+  colour's contrast is measured and recorded in its style layer.
+- **`/science/` and `/case-study/` tell one AI story**: no AI in the site and
+  none planned, and the machine learning is offline, in the Fingerprint Lab's
+  learned weights (`D077`, `scoutlens-rdz.28`).
+
+### Known limitations
+
+- **The redesigned copy has had no blind read.** The reader test
+  (`scoutlens-rdz.17`) runs after launch, against the live site (`D077`), so
+  comprehension of the new pages is not claimed. The comprehension disclosure
+  under 1.0.0 stands unchanged.
+
 ## [1.0.0] — unreleased
 
 First release candidate. Frozen and audited under `scoutlens-jtt.7.1`; the
