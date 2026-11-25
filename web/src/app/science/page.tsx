@@ -67,12 +67,22 @@ export default async function SciencePage() {
           </article>
           <article>
             <h3>Governed AI</h3>
+            {/*
+              D077 (`scoutlens-rdz.28`): the same AI story as `/case-study/`'s
+              "Where AI fits", and the same sentence on the learned weights.
+            */}
             <p>
-              AI may narrate deterministic evidence in the future, but only under a fail-closed
-              evidence-bundle contract: every factual sentence must cite evidence IDs, unknown
-              entities are rejected, and invalid output falls back to deterministic content.
-              AI never recomputes a value, invents a metric, softens a caveat, or makes a
-              recommendation. No live LLM is required for any current page.
+              There is no AI in this site, and none is planned. No live LLM is required for any
+              current page. Outside the site, a local explanation toolkit can narrate the stored
+              evidence, but only under a fail-closed evidence-bundle contract: every factual
+              sentence must cite evidence IDs, unknown entities are rejected, and invalid output
+              falls back to deterministic content. AI never recomputes a value, invents a metric,
+              softens a caveat, or makes a recommendation.
+            </p>
+            <p>
+              The machine learning is offline: the Fingerprint Lab ranks with one non-negative
+              weight per measurement, fitted on the frozen Wyscout training split and published
+              with the results.
             </p>
           </article>
         </div>

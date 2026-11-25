@@ -815,6 +815,23 @@ test.describe("without JavaScript", () => {
     await expect(main).toContainText("No live LLM is required for any current page");
     await expect(main).toContainText("AI never recomputes a value");
   });
+
+  // D077 (`scoutlens-rdz.28`): /science/ said AI "may narrate … in the
+  // future" while /case-study/ said none is planned. Q6 is answerable from
+  // either page, so both tell one story, and both say where the machine
+  // learning is: offline, in the Lab's weights.
+  test("/science/ and /case-study/ tell the same AI story, machine learning included", async ({ page }) => {
+    const LEARNED_WEIGHTS =
+      "The machine learning is offline: the Fingerprint Lab ranks with one non-negative weight per " +
+      "measurement, fitted on the frozen Wyscout training split and published with the results.";
+    for (const route of ["/science/", "/case-study/"]) {
+      await page.goto(route);
+      const main = page.locator("main");
+      await expect(main, route).toContainText("and none is planned");
+      await expect(main, route).toContainText(LEARNED_WEIGHTS);
+      await expect(main, route).not.toContainText("in the future");
+    }
+  });
 });
 
 /**
