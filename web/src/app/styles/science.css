@@ -157,7 +157,7 @@
 .research-stage__confound-note {
   margin-top: 1.5rem;
   padding: 1rem 1.25rem;
-  border-left: 3px solid var(--warning, #c47d00);
+  border-left: 3px solid #c78e2d;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: #fff5df;
   color: var(--ink-700);
@@ -249,7 +249,8 @@
   font-weight: 550;
 }
 
-/* `scoutlens-uze.27`: the signal card is dark (#18241f), and its explanation's
+/* `scoutlens-uze.27`: the signal card is dark (--signal-dark since
+   `scoutlens-rdz.11`), and its explanation's
    summary was given a light colour above - but the prose it opens kept the
    light-card inks, --ink-600 and --ink-700, near-invisible on that background
    (axe color-contrast, serious). Every axe run audited these disclosures

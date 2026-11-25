@@ -183,14 +183,22 @@ field, never from a duplicated constant.
 
 ### 6.1 Navigation labels (frozen)
 
+Amended by [D075](decisions-log.md) (`scoutlens-rdz.1`): the top navigation
+gains **Case study** as its fourth item, after the three frozen labels, which
+do not change, and the `/case-study/` route is added.
+
 | Route | Label | Notes |
 |---|---|---|
 | `/` | **Overview** | Wordmark "ScoutLens" links here. |
 | `/lab/` | **Fingerprint Lab** | Interactive evidence surface. |
 | `/science` | **How it works** | URL retained; label changes from "Science" on implementation (per D034). |
-| `/` (footer) | Provenance links | Audit trail lives on landing and `/science`; no separate `/about` route is added. |
+| `/case-study/` | **Case study** | Fourth top-nav item ([D075](decisions-log.md)); what it may render is §6.2's. Same static-check obligations as the other routes: one h1, the landmarks, the "not current scouting information" notice and the provenance markers. |
+| `/` (footer) | Provenance links | Audit trail lives on landing and `/science`; apart from `/case-study/` ([D075](decisions-log.md)), no separate `/about` route is added. |
 
 ### 6.2 Messages and owners
+
+Amended by [D075](decisions-log.md): the case study may also render on the
+`/case-study/` route.
 
 | Message | Single owner | Places it may render |
 |---|---|---|
@@ -206,14 +214,21 @@ field, never from a duplicated constant.
 | Provenance chain + licences | `manifest`, `experiments[].source_artifact`, `report_url`, `DATA_LICENSES.md` | Provenance drawer (landing + `/science`) |
 | Uncertainty status | `uncertainty_status` fields (future `scoutlens-jtt.5`) | `/lab` (replaces "pending" chips) |
 | AI explanation | Evidence bundle per `scoutlens-jtt.6.1` | `/lab` (future, allowlisted per §8) |
-| Case study | This spec §9 + future `docs/case-study.md` | Release narrative only |
+| Case study | This spec §9 + future `docs/case-study.md` | Release narrative; the `/case-study/` route ([D075](decisions-log.md)), its prose from `docs/case-study.md` and every number from the showcase artifacts through `requireMetric`, never copied from the document |
 
 ### 6.3 Call-to-action order (frozen)
 
+Amended by [D076](decisions-log.md) (`scoutlens-rdz.19`): item 3 admits the
+landing's case-study block (§7.1 item 9). The CTA labels and their order do
+not change.
+
 1. **Primary:** "Explore every fingerprint" → `/lab/` (data behavior: search).
 2. **Secondary:** "How the science was checked" → `/science` ("How it works").
-3. **Tertiary (footer / provenance only):** case study link when published
-   (`docs/case-study.md`), licence and repository links.
+3. **Tertiary (footer / provenance, and the landing's case-study block):** case
+   study link when published (`docs/case-study.md`), licence and repository
+   links. The landing's case-study block carries the case-study link only; the
+   licence and repository links stay in the footer and provenance
+   ([D076](decisions-log.md)).
 
 The hero renders a maximum of two CTAs (primary + secondary). No CTA may imply
 recruitment, comparison shopping, or "who should a club sign".
@@ -230,30 +245,66 @@ Order as `web/src/app/page.tsx` renders it. Corrected by `scoutlens-9a3.29`:
 since `scoutlens-9a3.12` the supported claim lives only in the hero, so the
 claim matrix is one-sided and comes before the fingerprint preview.
 
+Amended by [D075](decisions-log.md) for the redesign (`scoutlens-rdz`): the h1
+becomes a question, a line naming both halves of the season sits between it
+and the thesis, and the landing gains a case-study block (item 9). `page.tsx`
+reaches this order with `scoutlens-rdz.8` (the h1 and the line) and
+`scoutlens-rdz.12` (the block).
+
+Amended by [D076](decisions-log.md) (`scoutlens-rdz.19`): the hero aside opens
+with a proof card, before the supported claim (item 2), and a facts strip and
+"The idea in 30 seconds" sit between the hero and the claim matrix (items 3
+and 4). `page.tsx` reaches this order with `scoutlens-rdz.8` (the card) and
+`scoutlens-rdz.9` (the two sections).
+
 1. **Hero** — data-vintage chip (**I**: purpose, provider, season, competition
    scope, population threshold, licence, licence boundary, dataset pin —
    [D067](decisions-log.md), [D069](decisions-log.md)) · eyebrow
-   "Player Fingerprint Lab" · h1 (the route headline, carrying both periods —
-   `scoutlens-9a3.14`) · thesis (**I**) · boundary sentence (**I**) · CTAs
-   primary + secondary. Only the chip, the eyebrow and the h1 sit above the
-   thesis.
-2. **Supported claim** (**I**, hero aside) — `research.supported_claim`, then
-   the critical-confound paragraph (the role + team + minutes control against
-   the fingerprint, both MRR values from artifact metrics) with its link to the
-   team-continuity control on `/science`.
-3. **Claim matrix** (**I**) — one-sided: "Not supported" / "Where the evidence
+   "Player Fingerprint Lab" · h1 (the route headline: the question
+   [D075](decisions-log.md) sets; the number in it is the length of
+   `feature-catalog.json` `features`, read when the page is built, never
+   typed) · one line naming both halves of the season (**I**; it carries the
+   two periods `scoutlens-9a3.14` put into the headline, [D075](decisions-log.md))
+   · thesis (**I**) · boundary sentence (**I**) · CTAs primary + secondary.
+   Only the chip, the eyebrow, the h1 and that line sit above the thesis.
+2. **Proof card and supported claim** (**I**, hero aside) — first the proof
+   card: the featured profile's ranks, the fingerprint's
+   (`retrieval.global.self_rank`) and the role-and-minutes guess's
+   (`retrieval.baseline_role_minutes.self_rank`), each out of its candidate
+   count, read from the profile artifact of `manifest.featured_profile` and
+   shown with its editorial reason; that profile is never swapped for one that
+   ranks better ([D076](decisions-log.md)). Then `research.supported_claim`,
+   then the critical-confound paragraph (the role + team + minutes control
+   against the fingerprint, both MRR values from artifact metrics) with its
+   link to the team-continuity control on `/science`.
+3. **Facts strip** (**I**) — facts about the population and the data that the
+   manifest or `research-summary.json` publishes, among them the licence and
+   the dataset pin, in place of the "100% open" strip [D075](decisions-log.md)
+   cut. It shows no result value; a fact no artifact publishes is left out,
+   never computed in the page ([D076](decisions-log.md)).
+4. **The idea in 30 seconds** (**I**) — the method as §3 tells it: the season
+   split into two halves, each half described with the catalogue's
+   measurements, and the second-half profiles ranked by their similarity to the
+   first half. It says nothing §3 does not and claims no more than the §2
+   thesis: no reading of style, quality or recruitment. Every number in it
+   comes from the artifacts ([D076](decisions-log.md)).
+5. **Claim matrix** (**I**) — one-sided: "Not supported" / "Where the evidence
    stops", the `research.unsupported_claims` list; it needs no expansion. The
    supported side is item 2 and is not restated here (`scoutlens-9a3.12`).
-4. **Featured fingerprint preview** (**I**) — editorially selected profile
+6. **Featured fingerprint preview** (**I**) — editorially selected profile
    (`manifest.featured_profile` with `editorial: true` and its quoted reason);
    footnote that family averages are descriptive features, not quality scores.
-5. **Evidence band** (**I**) — headline card pair (fingerprint + team control),
+7. **Evidence band** (**I**) — headline card pair (fingerprint + team control),
    with the confound caveat chip rendered inside the cards; the "replication and
    restraint" pair below (**I**). Caveat detail is readable inline or via one
    expand step (**E**); never behind a link to another route.
-6. **Provenance strip** (**I**, both cards visible) — source + licence cards;
+8. **Provenance strip** (**I**, both cards visible) — source + licence cards;
    full audit drawer collapsed (**E**); "Dataset pin" text visible.
-7. **Footer** (global) — case study link when published, repository links.
+9. **Case-study block** (**I**) — the landing's own block for the release case
+   study, linking to `/case-study/` ([D075](decisions-log.md); §6.3 item 3
+   admits the link, [D076](decisions-log.md)). It carries the case-study link
+   only, and it is not a third hero CTA: §6.3 allows the hero two.
+10. **Footer** (global) — case study link when published, repository links.
 
 ### 7.2 `/science` ("How it works") — audit surface
 

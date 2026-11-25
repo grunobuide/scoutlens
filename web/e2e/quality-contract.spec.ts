@@ -7,7 +7,7 @@ import {
   MESSI_PROFILE_KEY,
 } from "./helpers";
 
-for (const route of ["/", "/lab/", "/science/"]) {
+for (const route of ["/", "/lab/", "/science/", "/case-study/"]) {
   test(`${route} has no serious or critical automated accessibility violations`, async ({ page }) => {
     await page.goto(route);
     await waitForStablePage(page);
@@ -29,7 +29,7 @@ test("all rendered local links and static assets resolve", async ({ page, reques
     `${SHOWCASE_BASE}feature-catalog.json`,
     `${SHOWCASE_BASE}players.index.json`,
   ]);
-  for (const route of ["/", "/lab/", "/science/"]) {
+  for (const route of ["/", "/lab/", "/science/", "/case-study/"]) {
     await page.goto(route);
     const discovered = await page.locator("a[href], link[href], script[src]").evaluateAll((elements) =>
       elements.map((element) => element.getAttribute("href") ?? element.getAttribute("src")),

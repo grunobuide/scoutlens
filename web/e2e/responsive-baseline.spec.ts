@@ -185,9 +185,15 @@ async function probeProviderBoundaryTargets(page: Page): Promise<Array<{ text: s
  * shared-shell and stage pairs.
  */
 const TEXT_PAIRS: Record<string, TextPair[]> = {
-  "/": [{ name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" }],
+  "/": [
+    { name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" },
+    // `scoutlens-rdz.7`: the descriptor under the wordmark is outside `.wordmark`.
+    { name: "site nav vs brand descriptor", a: ".site-nav", b: ".site-brand__descriptor" },
+  ],
   "/science/": [
     { name: "site nav vs wordmark", a: ".site-nav", b: ".wordmark" },
+    // `scoutlens-rdz.7`: the descriptor under the wordmark is outside `.wordmark`.
+    { name: "site nav vs brand descriptor", a: ".site-nav", b: ".site-brand__descriptor" },
     {
       name: "stage marker vs stage heading",
       a: ".research-stage > header > .research-step__marker",
@@ -282,7 +288,7 @@ async function auditRoute(page: Page, route: string): Promise<void> {
   await expectNoTextCollision(page, TEXT_PAIRS[route] ?? [], `${route} at ${width}`);
 }
 
-for (const route of ["/", "/science/"]) {
+for (const route of ["/", "/science/", "/case-study/"]) {
   // `scoutlens-uze.26`: every width of the frozen matrix, not three of them.
   // 375, 1024 and 1440 had no standing gate on these routes; the only evidence
   // at those widths was the 2026-08-04 manual audit, which predates the Science

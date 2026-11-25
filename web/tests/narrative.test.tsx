@@ -67,7 +67,12 @@ describe("the shared thesis and boundary", () => {
       .map((entry) => join(entry.parentPath, entry.name));
     expect(pages.length).toBeGreaterThanOrEqual(3);
     for (const page of pages) {
-      const source = await readFile(page, "utf8");
+      // `scoutlens-rdz.8`: the landing renders its thesis through
+      // `LandingHero`, so that component's source is part of the route's.
+      let source = await readFile(page, "utf8");
+      if (source.includes("<LandingHero")) {
+        source += await readFile(resolve(__dirname, "..", "src", "components", "landing-hero.tsx"), "utf8");
+      }
       for (const wording of retired) {
         expect(source, `${page} words its own thesis or boundary`).not.toContain(wording);
       }

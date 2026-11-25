@@ -27,6 +27,9 @@ test("complete selected-player flow works by keyboard at desktop and 360 px", as
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "How it works" })).toBeFocused();
   await page.keyboard.press("Tab");
+  // `scoutlens-rdz.13` (D075): the nav's fourth item.
+  await expect(page.getByRole("link", { name: "Case study" })).toBeFocused();
+  await page.keyboard.press("Tab");
   // `scoutlens-9a3.18`: the intro states the supported claim and links to the
   // claims it does not support, before the challenge begins.
   await expect(page.getByRole("link", { name: "Where the evidence stops →" })).toBeFocused();

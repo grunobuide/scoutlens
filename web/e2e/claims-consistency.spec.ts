@@ -35,7 +35,7 @@ import { SHOWCASE_BASE, waitForStablePage } from "./helpers";
 const REPOSITORY_ROOT = join(__dirname, "..", "..");
 
 /** Routes that render provenance and claim surfaces. */
-const ROUTES = ["/", "/science/", "/lab/"] as const;
+const ROUTES = ["/", "/science/", "/lab/", "/case-study/"] as const;
 
 interface Metric {
   metric_id: string;
@@ -237,6 +237,50 @@ test("a metric shown on two routes shows the same value on both", async ({ page 
   }
 
   expect(conflicts, "the same metric renders differently on different routes").toEqual([]);
+});
+
+/**
+ * `scoutlens-rdz.15`: metrics quoted outside an experiment card. The landing
+ * hero's confound and every number on /case-study/ are spans tagged
+ * `data-metric="<experiment_id>:<metric_id>"`, which the card reader above
+ * never sees. The tag is the identity, so the check needs no label.
+ */
+test("every metric quoted in running text is the artifact's, and the same on every route", async ({
+  page,
+  request,
+}) => {
+  const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
+  const expected = new Map<string, string>(
+    research.experiments.flatMap((experiment) =>
+      experiment.metrics.map((metric) => [`${experiment.experiment_id}:${metric.metric_id}`, formatMetric(metric)] as const),
+    ),
+  );
+
+  const mismatches: string[] = [];
+  const seen = new Map<string, Set<string>>();
+  for (const route of ROUTES) {
+    await page.goto(route);
+    await waitForStablePage(page);
+    const quoted = await page
+      .locator("main span[data-metric]")
+      .evaluateAll((spans) => spans.map((span) => [span.getAttribute("data-metric") ?? "", (span.textContent ?? "").trim()]));
+    for (const [tag, text] of quoted) {
+      const value = expected.get(tag!);
+      if (value === undefined) {
+        mismatches.push(`${route} quotes ${tag}, which the artifact does not define`);
+      } else if (value !== text) {
+        mismatches.push(`${route} quotes ${tag} = ${text}, the artifact says ${value}`);
+      }
+      seen.set(tag!, (seen.get(tag!) ?? new Set()).add(text!));
+    }
+  }
+  expect(mismatches, "a quoted metric disagrees with the artifact").toEqual([]);
+  expect(
+    [...seen.entries()].filter(([, texts]) => texts.size > 1).map(([tag, texts]) => `${tag}: ${[...texts].join(" / ")}`),
+    "a quoted metric reads differently on two routes",
+  ).toEqual([]);
+  // The case study quotes the trail's numbers; an empty sweep would pass vacuously.
+  expect(seen.size, "no route quotes a metric in running text").toBeGreaterThanOrEqual(15);
 });
 
 test("every rendered confidence interval matches the artifact", async ({ page, request }) => {
@@ -445,6 +489,9 @@ const RESULT_SELECTOR = [
   "main [data-quantity]",
   "main [data-challenge-rank]",
   "main [data-challenge-result]",
+  // `scoutlens-rdz.15`: a metric quoted in running text - the landing hero's
+  // confound, every number on /case-study/.
+  "main [data-metric]",
 ].join(", ");
 
 test("the provider and the population threshold come before the first result on every route", async ({
@@ -694,11 +741,15 @@ test.describe("without JavaScript", () => {
     // is scored on what a reader sees, not on what eventually loads.
     const research = await fetchArtifact<ResearchSummary>(request, "research-summary.json");
     const manifest = await fetchArtifact<Manifest>(request, "manifest.json");
+    // `scoutlens-rdz.8`, D075: the headline is the owner's question, its number
+    // the catalogue's length. Read here, not typed, as `landing-hero.spec.ts` does.
+    const catalog = await fetchArtifact<{ features: unknown[] }>(request, "feature-catalog.json");
 
     await page.goto("/");
     const main = page.locator("main");
 
-    await expect(main).toContainText("A player leaves a reproducible fingerprint");
+    await expect(main.locator("h1")).toHaveText(`Can ${catalog.features.length} numbers recognise a footballer?`);
+    await expect(main.locator(".hero__halves")).toContainText(manifest.source.season);
     await expect(main).toContainText(research.supported_claim);
     for (const claim of research.unsupported_claims) {
       await expect(main).toContainText(claim);
@@ -763,6 +814,23 @@ test.describe("without JavaScript", () => {
     // page that had not finished loading, and they would not be wrong to.
     await expect(main).toContainText("No live LLM is required for any current page");
     await expect(main).toContainText("AI never recomputes a value");
+  });
+
+  // D077 (`scoutlens-rdz.28`): /science/ said AI "may narrate … in the
+  // future" while /case-study/ said none is planned. Q6 is answerable from
+  // either page, so both tell one story, and both say where the machine
+  // learning is: offline, in the Lab's weights.
+  test("/science/ and /case-study/ tell the same AI story, machine learning included", async ({ page }) => {
+    const LEARNED_WEIGHTS =
+      "The machine learning is offline: the Fingerprint Lab ranks with one non-negative weight per " +
+      "measurement, fitted on the frozen Wyscout training split and published with the results.";
+    for (const route of ["/science/", "/case-study/"]) {
+      await page.goto(route);
+      const main = page.locator("main");
+      await expect(main, route).toContainText("and none is planned");
+      await expect(main, route).toContainText(LEARNED_WEIGHTS);
+      await expect(main, route).not.toContainText("in the future");
+    }
   });
 });
 
@@ -875,18 +943,27 @@ test.describe("the team-continuity confound", () => {
  * time-free claim.
  */
 test.describe("the hero's temporal framing", () => {
-  test("the headline locates the claim in time", async ({ page }) => {
+  test("the headline and the line under it locate the claim in time", async ({ page }) => {
     await page.goto("/");
     await waitForStablePage(page);
 
+    // D075 (`scoutlens-rdz.8`): the h1 became the owner's question, which
+    // carries no time, and the two periods moved to one line directly under
+    // it, inside the headline's reading context. So the property is held
+    // over the h1 and that line together, and the line must name both halves.
     const heading = (await page.locator("main h1").innerText()).replace(/\s+/g, " ").trim();
+    const line = page.locator("main h1 + p");
+    await expect(line, "nothing directly under the h1").toHaveCount(1);
+    const lineText = (await line.innerText()).replace(/\s+/g, " ").trim();
 
     // Pattern, not the exact sentence. The regression is a headline with no
     // temporal relation in it, which is what run 1 read back.
     expect(
-      /half a season|second half|later|two chronological halves|across two/i.test(heading),
-      `the headline states no temporal relation: "${heading}"`,
+      /half a season|second half|later|two chronological halves|across two/i.test(`${heading} ${lineText}`),
+      `the headline and its line state no temporal relation: "${heading}" / "${lineText}"`,
     ).toBe(true);
+    expect(lineText, "the line under the h1 does not name the first half").toMatch(/first half/i);
+    expect(lineText, "the line under the h1 does not name the second half").toMatch(/second half/i);
   });
 
   test("the lede still names the same-player question and both periods", async ({ page }) => {

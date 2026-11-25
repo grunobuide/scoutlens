@@ -8,13 +8,14 @@ import { findForbiddenClaims, findForbiddenCurrentness, scannableText } from "./
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(scriptDirectory, "..");
-const routes = ["index.html", "lab/index.html", "science/index.html"];
+const routes = ["index.html", "lab/index.html", "science/index.html", "case-study/index.html"];
 const landmarks = ["<header", "<nav", "<main", "<footer"];
 const fixtureMarkers = [...FIXTURE_MARKERS, ...SYNTHETIC_PROFILE_KEYS];
 const provenanceMarkers = ["Historical reproducible benchmark", "What these numbers describe"];
 const meaningfulStaticContent = {
+  // The landing h1 is checked on its own, below: its number comes from the
+  // published catalogue (`scoutlens-rdz.8`, D075).
   "index.html": [
-    "A player leaves a reproducible fingerprint",
     "Critical confound",
     "StatsBomb Open Data",
     "Not supported",
@@ -28,6 +29,18 @@ const meaningfulStaticContent = {
     "First chronological half",
     "Keep a useful correction out",
     "Audit the full provenance chain",
+  ],
+  // `scoutlens-rdz.13` (D075): the route's headline, its two section headings
+  // and the decisions log the trail ends on.
+  "case-study/index.html": [
+    "How I built Yumusarái Labs",
+    "Each test made the claim smaller",
+    "No backend. Every number comes from a file you can inspect.",
+    "Every decision, in order",
+    // `scoutlens-rdz.14`: the AI section opens with case-study.md §7's first
+    // sentence, and states that no model has been evaluated.
+    "There is no AI in the deployed site",
+    "No demonstration model has been evaluated",
   ],
   "lab/index.html": [
     "Compare one player with himself.",
@@ -79,6 +92,24 @@ if (!Array.isArray(unsupportedClaims) || unsupportedClaims.length === 0) {
   throw new Error("research-summary.json published no unsupported_claims to except");
 }
 
+/**
+ * The landing h1 (`scoutlens-rdz.8`, D075): the owner's question, whose number
+ * is the length of `feature-catalog.json` `features`, read when the page is
+ * built. The expectation reads the catalogue the build shipped, so a "32"
+ * typed into the page and one typed here cannot agree by accident.
+ *
+ * This replaces the old substring check ("A player leaves a reproducible
+ * fingerprint", anywhere in the page) and is stricter: it is the whole text of
+ * the route's one h1.
+ */
+const catalogFeatures = JSON.parse(
+  await readFile(resolve(webRoot, "out", "showcase", `v${showcaseMajor}`, "feature-catalog.json"), "utf8"),
+).features;
+if (!Array.isArray(catalogFeatures) || catalogFeatures.length === 0) {
+  throw new Error("feature-catalog.json published no features to count");
+}
+const landingHeadline = `Can ${catalogFeatures.length} numbers recognise a footballer?`;
+
 // `forbiddenClaims` and `forbiddenCurrentness` live in `forbidden-copy.mjs`
 // (`scoutlens-9a3.29`), so the vitest and e2e that scan the client-rendered
 // challenge states read the same list this check does.
@@ -95,6 +126,12 @@ for (const route of routes) {
   }
   if ((html.match(/<h1[ >]/g) ?? []).length !== 1) {
     throw new Error(`${route} must contain exactly one h1`);
+  }
+  if (route === "index.html") {
+    const headline = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<!-- -->/g, "").trim();
+    if (headline !== landingHeadline) {
+      throw new Error(`${route} h1 must read "${landingHeadline}", found "${headline}"`);
+    }
   }
   for (const expected of meaningfulStaticContent[route] ?? []) {
     if (!html.includes(expected)) {

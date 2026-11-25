@@ -32,7 +32,7 @@ import { SHOWCASE_BASE, waitForStablePage } from "./helpers";
  * without guessing anyone's intent.
  */
 
-const ROUTES = ["/", "/science/", "/lab/"] as const;
+const ROUTES = ["/", "/science/", "/lab/", "/case-study/"] as const;
 
 interface Manifest {
   dataset_version: string;

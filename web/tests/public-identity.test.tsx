@@ -51,7 +51,8 @@ describe("the frozen display identity", () => {
     const markup = renderToStaticMarkup(<SiteHeader />);
     expect(markup).toContain(SHORT_DESCRIPTOR);
 
-    const landing = await readFile(resolve("src", "app", "page.tsx"), "utf8");
+    // `scoutlens-rdz.8`: the landing eyebrow lives in the hero component.
+    const landing = await readFile(resolve("src", "components", "landing-hero.tsx"), "utf8");
     expect(landing).toContain(`<p className="eyebrow">${DESCRIPTOR}</p>`);
 
     const lab = await readFile(resolve("src", "app", "lab", "page.tsx"), "utf8");
@@ -67,6 +68,18 @@ describe("the frozen display identity", () => {
     expect(layout).toContain(`template: "%s — ${BRAND}",`);
     expect(layout).toContain(`applicationName: "${BRAND}",`);
     expect(layout).not.toContain(RETIRED);
+  });
+
+  it("sets the full descriptor under the wordmark, outside the home link (scoutlens-rdz.7)", () => {
+    // D075: "Player Fingerprint Lab" under the wordmark, not the design's
+    // "Player Fingerprints". Outside the link, so the link's accessible name
+    // is still the brand alone and the wordmark's own markup is unchanged.
+    const markup = renderToStaticMarkup(<SiteHeader />);
+    expect(markup).toContain(`<p class="site-brand__descriptor">${DESCRIPTOR}</p>`);
+    expect(markup).not.toContain("Player Fingerprints<");
+    const homeLink = markup.match(/<a class="wordmark"[^>]*>([\s\S]*?)<\/a>/)?.[1] ?? "";
+    expect(homeLink, "the home link was not rendered").not.toBe("");
+    expect(homeLink).not.toContain(DESCRIPTOR);
   });
 
   it("leaves the description alone: it describes the work, not the publisher", async () => {

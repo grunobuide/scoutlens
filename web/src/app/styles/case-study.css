@@ -1,0 +1,423 @@
+/* case-study.css — layer 9 (docs/frontend-agent-contract.md section 4.1).
+
+   Everything only /case-study/ renders. Created by `scoutlens-rdz.13` (D075).
+   The caveats reuse research-story.css's `.caveat` rules and the glossary
+   reuses lab.css's `.quantity-glossary`; only the glossary's width and
+   margin inside a step are set here.
+
+   Contrast, WCAG, measured on the token values: --ink-950 on --white 13.97,
+   on --paper 12.67, on --paper-deep 10.89, on --signal 8.31; --ink-800 on
+   --white 12.15; --ink-700 on --white 9.50 and on --paper 8.62; --ink-600 on
+   --white 6.12 and on --paper 5.55; --signal-dark on --white 10.46 and on
+   --paper 9.49; --white on --ink-950 13.97. */
+
+.case-study__short {
+  max-width: 46rem;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
+.case-study__short-label {
+  margin-bottom: 0.6rem;
+  color: var(--ink-600);
+  font-size: 0.76rem;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.case-study__thesis {
+  margin-bottom: 0.75rem;
+  color: var(--ink-950);
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.case-study__boundary {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--teal);
+  color: var(--ink-800);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+/* The research trail: one row per decision, the prose on the left and the
+   step's number and status on the right. The DOM holds the prose first, so a
+   screen reader hears the decision before its number. */
+.case-study-trail {
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+
+.case-study-trail h2,
+.case-study-engineering h2 {
+  max-width: 20ch;
+  margin-bottom: 2.5rem;
+}
+
+.trail {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+  counter-reset: trail-step;
+}
+
+.trail-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(11rem, 14rem);
+  gap: 1.5rem 2.5rem;
+  padding: 2rem 0 2rem 4.5rem;
+  border-bottom: 1px solid var(--line);
+  counter-increment: trail-step;
+}
+
+/* Generated, with empty alternative text: the ordered list already says
+   which step this is. */
+.trail-step::before {
+  content: counter(trail-step, decimal-leading-zero) / "";
+  position: absolute;
+  top: 2.2rem;
+  left: 0;
+  color: var(--ink-600);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.trail-step h3 {
+  margin-bottom: 0.6rem;
+  font-size: 1.3rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.trail-step__body > p {
+  max-width: 44rem;
+  color: var(--ink-700);
+  line-height: 1.6;
+}
+
+.trail-step__body [data-metric] {
+  color: var(--ink-950);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 0.94em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.trail-step__caveats {
+  max-width: 44rem;
+  margin-top: 1rem;
+}
+
+.trail-step__doc {
+  margin-top: 1rem;
+  font-weight: 650;
+}
+
+.trail-step__doc a {
+  color: var(--signal-dark);
+}
+
+.trail-step .quantity-glossary {
+  max-width: 44rem;
+  margin-top: 0.75rem;
+}
+
+.trail-step__figure {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  justify-items: start;
+}
+
+.trail-step__value {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.trail-step__value [data-metric] {
+  color: var(--signal-dark);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.trail-step__value-label {
+  color: var(--ink-600);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.trail-step__status {
+  margin: 0;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: var(--paper-deep);
+  color: var(--ink-950);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.trail-step--narrowed .trail-step__status {
+  background: var(--signal);
+}
+
+.case-study-trail__log {
+  margin-top: 1.75rem;
+  font-weight: 650;
+}
+
+.case-study-trail__log a {
+  color: var(--signal-dark);
+}
+
+/* `scoutlens-rdz.14`: where AI fits, a plum panel between the trail and the
+   engineering. Contrast on --signal-dark: --white 10.46, --signal 6.22. The
+   cards are 8% white over the plum: --white 8.32, --signal (links) 4.95, and
+   --white on the code chips (14% more) 5.76. */
+.case-study-ai {
+  margin-block: clamp(2rem, 5vw, 4rem);
+  padding: clamp(2rem, 5vw, 3.5rem);
+  border-radius: var(--radius-lg);
+  background: var(--signal-dark);
+  color: var(--white);
+}
+
+.case-study-ai .eyebrow {
+  color: var(--signal);
+}
+
+.case-study-ai h2 {
+  max-width: 22ch;
+  margin-bottom: 1.25rem;
+  color: var(--white);
+}
+
+.case-study-ai__lede {
+  max-width: 46rem;
+  margin-bottom: 2rem;
+  color: var(--white);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.case-study-ai__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.case-study-ai__card {
+  min-width: 0;
+  padding: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 8%);
+}
+
+.case-study-ai__card h3 {
+  margin-bottom: 0.75rem;
+  color: var(--white);
+  font-size: 1.15rem;
+}
+
+.case-study-ai__card p,
+.case-study-ai__card li {
+  color: var(--white);
+  line-height: 1.55;
+}
+
+.case-study-ai__card ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding-left: 1.2rem;
+}
+
+.case-study-ai__card code {
+  /* `--online` would otherwise break after its dashes. */
+  white-space: nowrap;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.35rem;
+  background: rgb(255 255 255 / 14%);
+  color: var(--white);
+}
+
+.case-study-ai__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin: 0;
+  font-weight: 650;
+}
+
+.case-study-ai__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--signal);
+}
+
+/* Engineering: the four stages of the pipeline as one row, the last one, the
+   site the reader is on, set dark. */
+.case-study-engineering {
+  padding-block: clamp(3rem, 6vw, 5rem);
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 0 2rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: pipeline-stage;
+}
+
+.pipeline li {
+  min-width: 0;
+  padding: 1.25rem 1.25rem 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  counter-increment: pipeline-stage;
+}
+
+.pipeline li::before {
+  content: counter(pipeline-stage) / "";
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--ink-600);
+  font-family: var(--font-mono), ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.pipeline li:last-child {
+  border-color: var(--ink-950);
+  background: var(--ink-950);
+  color: var(--white);
+}
+
+.pipeline li:last-child::before,
+.pipeline li:last-child p {
+  color: var(--white);
+}
+
+.pipeline h3 {
+  margin-bottom: 0.4rem;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.pipeline p {
+  margin: 0;
+  color: var(--ink-700);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.pipeline code {
+  overflow-wrap: anywhere;
+  font-size: 0.85em;
+}
+
+.case-study-engineering__lede,
+.case-study-engineering__list {
+  max-width: 46rem;
+  color: var(--ink-700);
+  line-height: 1.6;
+}
+
+.case-study-engineering__list {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.2rem;
+}
+
+.case-study-engineering__list strong {
+  color: var(--ink-950);
+}
+
+.case-study-engineering__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.5rem;
+  font-weight: 650;
+}
+
+.case-study-engineering__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--signal-dark);
+}
+
+/* Contact (`scoutlens-rdz.29`, D077): one link, set apart from the engineering
+   links by a rule above it. */
+.case-study-contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding-block: clamp(2rem, 5vw, 3rem);
+  border-top: 1px solid var(--line);
+}
+
+.case-study-contact h2 {
+  margin: 0;
+}
+
+.case-study-contact p {
+  margin: 0;
+}
+
+@media (max-width: 64rem) {
+  .pipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48rem) {
+  .trail-step {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding-left: 0;
+  }
+
+  .trail-step::before {
+    position: static;
+  }
+
+  .trail-step__figure {
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: start;
+    gap: 1rem;
+  }
+
+  .trail-step__value {
+    grid-auto-flow: column;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  .trail-step__value [data-metric] {
+    font-size: 1.5rem;
+  }
+
+  .pipeline {
+    grid-template-columns: 1fr;
+  }
+
+  .case-study-ai__grid {
+    grid-template-columns: 1fr;
+  }
+}

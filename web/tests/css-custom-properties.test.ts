@@ -24,6 +24,8 @@ const WEB = resolve(__dirname, "..");
  */
 const RUNTIME_DEFINED: Readonly<Record<string, { file: string; why: string }>> = {
   "--font-inter": { file: "src/app/layout.tsx", why: "next/font's `variable` class on <body>" },
+  "--font-display": { file: "src/app/layout.tsx", why: "next/font's `variable` class on <body>" },
+  "--font-mono": { file: "src/app/layout.tsx", why: "next/font's `variable` class on <body>" },
   "--period-a-position": { file: "src/components/lab-explorer.tsx", why: "inline style on each fingerprint track" },
   "--period-b-position": { file: "src/components/lab-explorer.tsx", why: "inline style on each fingerprint track" },
 };

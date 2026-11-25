@@ -148,6 +148,85 @@ describe("evidence-first research story", () => {
     expect(html).not.toContain(research.supported_claim);
   });
 
+  it("draws a scaled score as a bar on the shared 0-1 axis, and only when asked (scoutlens-rdz.11)", () => {
+    const experiment = experimentWith(0.375);
+    const research = researchWith(experiment);
+    const scaled = renderToStaticMarkup(
+      <ExperimentCard experiment={experiment} scaledMetricIds={["fingerprint_mrr"]} research={research} />,
+    );
+    const plain = renderToStaticMarkup(<ExperimentCard experiment={experiment} research={research} />);
+
+    // The bar's length is the value itself, on an axis that runs 0 to 1.
+    expect(scaled).toContain("experiment-card--scaled");
+    expect(scaled).toContain('<span style="width:37.5%"></span>');
+    expect(scaled).toMatch(/class="experiment-scale" aria-hidden="true" data-context="scale"/);
+    for (const tick of [">0<", ">0.25<", ">0.50<", ">0.75<", ">1<"]) {
+      expect(scaled).toContain(tick);
+    }
+    // The bar is a picture of the printed value, so the value is still printed.
+    expect(scaled).toContain('<dd class="experiment-metric__value">0.3750</dd>');
+
+    // /science passes no scale and keeps its boxes.
+    expect(plain).not.toContain("experiment-card--scaled");
+    expect(plain).not.toContain("experiment-metric__bar");
+    expect(plain).not.toContain("experiment-scale");
+  });
+
+  it("refuses to scale a metric it does not show, or one that is not an MRR in [0, 1] (scoutlens-rdz.11)", () => {
+    const experiment = experimentWith(0.375);
+    const withRank = {
+      ...experiment,
+      metrics: [
+        ...experiment.metrics,
+        { metric_id: "median_rank", label: "Median rank", value: 16, ci_95: null, unit: "median_rank", display_precision: 0 },
+      ],
+    } as ResearchExperiment;
+    const outOfRange = experimentWith(1.25);
+
+    // Not shown on the card.
+    expect(() =>
+      renderToStaticMarkup(
+        <ExperimentCard
+          experiment={withRank}
+          metricIds={["median_rank"]}
+          scaledMetricIds={["fingerprint_mrr"]}
+          research={researchWith(withRank)}
+        />,
+      ),
+    ).toThrow(/not shown/);
+    // Not a reciprocal rank.
+    expect(() =>
+      renderToStaticMarkup(
+        <ExperimentCard experiment={withRank} scaledMetricIds={["median_rank"]} research={researchWith(withRank)} />,
+      ),
+    ).toThrow(/not an MRR in \[0, 1\]/);
+    // Outside the axis.
+    expect(() =>
+      renderToStaticMarkup(
+        <ExperimentCard experiment={outOfRange} scaledMetricIds={["fingerprint_mrr"]} research={researchWith(outOfRange)} />,
+      ),
+    ).toThrow(/not an MRR in \[0, 1\]/);
+    // Missing from the experiment altogether, as `requireMetric` says.
+    expect(() =>
+      renderToStaticMarkup(
+        <ExperimentCard experiment={experiment} scaledMetricIds={["no_such_metric"]} research={researchWith(experiment)} />,
+      ),
+    ).toThrow(/Required metric no_such_metric is missing/);
+  });
+
+  it("never puts a difference or a rank on the landing's 0-1 scale (scoutlens-rdz.11)", async () => {
+    // The artifact gives `mrr_delta` the same `mrr` unit as a score, so the
+    // fail-closed check in the card cannot catch it. The landing's own lists
+    // are the only place that keeps a difference off the axis.
+    const page = await readFile(resolve("src", "app", "page.tsx"), "utf8");
+    const lists = [...page.matchAll(/scaledMetricIds=\{\[([^\]]*)\]\}/g)].map((match) => match[1]!);
+
+    expect(lists).toHaveLength(4);
+    for (const list of lists) {
+      expect(list).not.toMatch(/delta|rank|count|recall/);
+    }
+  });
+
   it("does not duplicate frozen production metric literals in page source", async () => {
     const sources = await Promise.all(
       ["src/app/page.tsx", "src/app/science/page.tsx", "src/components/research-story.tsx"].map(

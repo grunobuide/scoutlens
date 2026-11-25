@@ -1,122 +1,95 @@
 import Link from "next/link";
 
-import { DataVintageBadge, ProviderBoundary } from "@/components/data-provenance";
+import { ProviderBoundary } from "@/components/data-provenance";
+import { LandingHero } from "@/components/landing-hero";
 import {
   ClaimsMatrix,
   ExperimentCard,
   FingerprintPreview,
   ProvenanceDrawer,
 } from "@/components/research-story";
-import { ThesisStatement } from "@/components/thesis-statement";
 import { loadShowcaseStory } from "@/content/load-showcase-story";
-import { MetricGlossary, metricTag } from "@/components/quantity-glossary";
-import { formatMetric, requireMetric } from "@/content/showcase-story";
+import { eligibilityRule } from "@/content/provenance";
+import { createServerShowcaseRepository } from "@/content/showcase-server";
 
 export default async function HomePage() {
-  const story = await loadShowcaseStory();
-  const { experiments, research } = story;
-  const teamControl = { experiment: experiments.teamControl, metric: requireMetric(experiments.teamControl, "baseline_c_mrr") };
-  const teamControlMrr = formatMetric(teamControl.metric);
-  // `scoutlens-9a3.13`: the confound is only legible next to the number it beats.
-  // Both come from the same 1,257-unit Wyscout population, so the comparison is
-  // like for like — the bead's stop condition forbids comparing unlike ones.
-  const fingerprint = { experiment: experiments.global, metric: requireMetric(experiments.global, "fingerprint_mrr") };
-  const fingerprintMrr = formatMetric(fingerprint.metric);
+  const [story, catalog] = await Promise.all([
+    loadShowcaseStory(),
+    // D075: the h1's number is the catalogue's length, read at build time.
+    createServerShowcaseRepository().getFeatureCatalog(),
+  ]);
+  const { experiments, research, manifest } = story;
+  const { population, source } = manifest;
+  const competitionCount = population.domestic_competition_ids.length;
+  const eligible = eligibilityRule(population.minutes_threshold_per_period);
 
   return (
     <main id="main-content">
-      <section className="hero shell">
-        <div className="hero__copy">
-          <DataVintageBadge manifest={story.manifest} competitions={story.competitions} />
-          <p className="eyebrow">Player Fingerprint Lab</p>
-          {/*
-            `scoutlens-9a3.14`. The h1 is the sentence a reader repeats back, and
-            it used to end at "in the shape of their actions" — no time in it at
-            all. Run 1's reader gave exactly that back: "an experiment showing how
-            a player can be identified by their actions in the game", graded
-            PARTIAL for dropping the two periods. The lede below has always
-            carried them; the headline did not, and the headline is what was
-            recalled.
+      <LandingHero story={story} featureCount={catalog.features.length} />
 
-            The opening clause is unchanged on purpose: `check-static-output.mjs`
-            asserts "A player leaves a reproducible fingerprint" and that file is
-            outside this bead's ownership boundary. Extending the sentence rather
-            than rewriting it keeps the change inside the boundary.
-          */}
-          <h1>
-            A player leaves a reproducible fingerprint—and it still identifies them half a
-            season later.
-          </h1>
-          {/*
-            `scoutlens-9a3.18` (D066): the lede and the boundary are the frozen
-            thesis and boundary sentence, shared with /science and /lab. The h1
-            above stays the route's headline - an abbreviation section 2
-            allows - and still carries the two periods 9a3.14 put into it.
-          */}
-          <ThesisStatement thesisClassName="lede" boundaryClassName="hero__boundary" />
-          <div className="actions" aria-label="Explore Yumusarái Labs">
-            <Link className="button button--primary" href="/lab/">
-              Explore every fingerprint
-            </Link>
-            <Link className="button button--secondary" href="/science/">
-              Audit the science
-            </Link>
-          </div>
-        </div>
-        <aside className="hero__signal" aria-label="Supported result">
-          {/*
-            The dial is a circle with `overflow: hidden`, holding text at 68% of
-            its width — about thirty characters a line. The old one-sentence
-            confound already nearly filled it, so `scoutlens-9a3.13`'s plain-
-            language rewrite clipped "Supported claim" to "…ED CLAIM" and cut the
-            evidence link off at both ends. Every automated gate stayed green;
-            §4.2's "read the image" is what caught it.
+      {/*
+        `scoutlens-rdz.9` (D076, narrative §7.1 item 3): facts about the
+        population and the data, in place of the "100% open" strip D075 cut.
+        Every value is the manifest's, read at build time. It shows no result
+        value, and a fact no artifact publishes is left out rather than
+        computed here: the design's provider count is one of them.
+      */}
+      <section className="facts-strip" aria-label="About the data">
+        <ul className="facts-strip__list shell">
+          <li>
+            <span className="facts-strip__value">{population.profile_count.toLocaleString("en-US")}</span>{" "}
+            <span className="facts-strip__label">{`profiles of ${eligible}`}</span>
+          </li>
+          <li>
+            <span className="facts-strip__value">{competitionCount}</span>{" "}
+            <span className="facts-strip__label">
+              {`domestic competition${competitionCount === 1 ? "" : "s"} in the ${source.season} season`}
+            </span>
+          </li>
+          <li>
+            <span className="facts-strip__value">{population.feature_count}</span>{" "}
+            <span className="facts-strip__label">measurements describe each half</span>
+          </li>
+          <li>
+            <span className="facts-strip__value">{source.licence}</span>{" "}
+            <span className="facts-strip__label">licence of the source data</span>
+          </li>
+          <li className="facts-strip__pin">
+            <code className="facts-strip__value">{manifest.dataset_version}</code>{" "}
+            <span className="facts-strip__label">dataset pin</span>
+          </li>
+        </ul>
+      </section>
 
-            So the confound moved out of the dial rather than being squeezed back
-            into one line. The circle keeps the claim it was designed around, and
-            the caveat gets room directly beneath it.
-          */}
-          <div className="signal-dial">
-            <span className="signal-orbit signal-orbit--outer" aria-hidden="true" />
-            <span className="signal-orbit signal-orbit--inner" aria-hidden="true" />
-            <div>
-              <p className="signal-label">Supported claim</p>
-              <p className="signal-copy">{research.supported_claim}</p>
-            </div>
-          </div>
-          {/*
-            This previously read "a role + team + minutes control reaches
-            {teamControlMrr} MRR, so same-season context can make identity
-            retrieval easier" — true, and unreadable without already knowing what
-            MRR is and what the fingerprint scores. Run 1's reader came away with
-            "it could be biased": they took that a limit exists, but not which
-            one. The shortcut is now named in plain language before any number,
-            the comparison it loses is stated rather than left for the reader to
-            assemble, and the evidence is one link away.
-          */}
-          {/*
-            `scoutlens-9a3.32`: the hero quotes two metrics before anything on
-            the page has said what MRR is - the experiment cards that explain
-            them are further down. Each value carries its tag, and the two
-            explanations are one disclosure away, here.
-          */}
-          <div className="signal-confound" data-quantity-scope>
-            <p className="signal-caveat">
-              <strong>Critical confound:</strong> most players stayed at the same club across both
-              halves, so who they played alongside is itself a clue to who they are. A control
-              given only role, team and minutes—nothing about how a player acts—identifies them
-              better than the fingerprint does:{" "}
-              <span data-metric={metricTag(teamControl)}>{teamControlMrr}</span> against{" "}
-              <span data-metric={metricTag(fingerprint)}>{fingerprintMrr}</span> MRR, measured the
-              same way on the same players. That narrows what the result means; it does not
-              retract it.
+      {/*
+        `scoutlens-rdz.9` (D076, narrative §7.1 item 4): the method as the
+        narrative's §3 tells it, and nothing §3 does not say. The heading is
+        §3's question; the three steps are its second sentence, split where
+        D076 splits the method. The numbers are the manifest's.
+      */}
+      <section className="idea shell" aria-labelledby="idea-heading">
+        <p className="eyebrow">The idea in 30 seconds</p>
+        <h2 id="idea-heading">Can a player&apos;s statistical profile identify them?</h2>
+        <ol className="idea__steps">
+          <li>
+            <h3>Split the season in two</h3>
+            <p>
+              {`We take public football event data from the ${source.season} season and split every player's play time into two chronological halves. Only ${eligible} count.`}
             </p>
-            <MetricGlossary items={[teamControl, fingerprint]} />
-            <Link className="signal-evidence" href="/science/#stage-03">
-              See the team-continuity control
-            </Link>
-          </div>
-        </aside>
+          </li>
+          <li>
+            <h3>{`Describe each half with ${population.feature_count} measurements`}</h3>
+            <p>
+              {`Each half becomes a profile of ${population.feature_count} simple measurements of how the player acts.`}
+            </p>
+          </li>
+          <li>
+            <h3>Look for the same player again</h3>
+            <p>
+              {`All ${population.profile_count.toLocaleString("en-US")} second-half profiles are ranked by how similar each is to one player's first half. The test is how high that same player lands.`}
+            </p>
+          </li>
+        </ol>
       </section>
 
       <div className="shell initial-boundaries">
@@ -137,16 +110,24 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="experiment-grid experiment-grid--headline">
+            {/*
+              `scoutlens-rdz.11`: the four tests share one 0–1 scale. Only
+              MRR scores are drawn on it; the difference and the median rank
+              stay numbers, because the artifact gives a difference the same
+              unit as a score and only its id tells them apart.
+            */}
             <ExperimentCard
               emphasis="signal"
               experiment={experiments.global}
               metricIds={["baseline_a_mrr", "fingerprint_mrr", "mrr_delta"]}
+              scaledMetricIds={["baseline_a_mrr", "fingerprint_mrr"]}
               research={research}
             />
             <ExperimentCard
               emphasis="warning"
               experiment={experiments.teamControl}
               metricIds={["baseline_c_mrr", "median_rank"]}
+              scaledMetricIds={["baseline_c_mrr"]}
               research={research}
             />
           </div>
@@ -167,11 +148,13 @@ export default async function HomePage() {
           <ExperimentCard
             experiment={experiments.replication}
             metricIds={["baseline_a_mrr", "fingerprint_mrr", "median_rank"]}
+            scaledMetricIds={["baseline_a_mrr", "fingerprint_mrr"]}
             research={research}
           />
           <ExperimentCard
             experiment={experiments.shrinkage}
             metricIds={["raw_global_mrr", "shrunk_global_mrr"]}
+            scaledMetricIds={["raw_global_mrr", "shrunk_global_mrr"]}
             research={research}
           />
         </div>
@@ -181,6 +164,48 @@ export default async function HomePage() {
         <ProviderBoundary manifest={story.manifest} research={research} competitions={story.competitions} />
         <ProvenanceDrawer story={story} />
       </div>
+
+      {/*
+        `scoutlens-rdz.12` (narrative §7.1 item 9, D075, D076): the landing's
+        case-study block. It carries the case-study link only - not a third
+        hero CTA, and the repository link stays in the footer and provenance
+        (D076). Every line is docs/case-study.md's: §1-§5 for the trail, §6
+        for the engineering, §7 for the AI boundary.
+      */}
+      <section className="behind shell" aria-labelledby="behind-heading">
+        <div className="behind__copy">
+          <p className="eyebrow">Behind the project</p>
+          <h2 id="behind-heading">A question that can be wrong, and the machinery to check the answer.</h2>
+          <p>
+            The question was frozen before the result was read. Then came a baseline to beat, a
+            control that narrowed the claim, a replication on another provider and a published null,
+            and the engineering that keeps every number on this site tied to the file it came from.
+          </p>
+          <p className="behind__action">
+            <Link className="button button--primary" href="/case-study/">
+              Read the case study
+            </Link>
+          </p>
+        </div>
+        <dl className="behind__facets">
+          <div>
+            <dt>Data science</dt>
+            <dd>A frozen question, baselines, a team control, a second provider</dd>
+          </div>
+          <div>
+            <dt>Engineering</dt>
+            <dd>Python, then immutable JSON, then a typed static site</dd>
+          </div>
+          <div>
+            <dt>AI</dt>
+            <dd>An offline explanation toolkit, kept out of this site</dd>
+          </div>
+          <div>
+            <dt>Guardrails</dt>
+            <dd>A model may only cite published evidence, and a refused output is never shown</dd>
+          </div>
+        </dl>
+      </section>
     </main>
   );
 }
