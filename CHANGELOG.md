@@ -29,6 +29,9 @@ the thesis and its boundary are rendered verbatim and adjacent (`D066`).
 - **Gates for the new route** — the static-export check, every route-crossing
   end-to-end suite, Lighthouse and the initial-JavaScript budget now cover
   `/case-study/` (`scoutlens-rdz.15`, `scoutlens-rdz.26`).
+- **A LinkedIn link** closes `/case-study/`, before the provider boundary. It
+  is the site's only personal link, and no email is published (`D077`,
+  `scoutlens-rdz.29`).
 
 ### Changed
 

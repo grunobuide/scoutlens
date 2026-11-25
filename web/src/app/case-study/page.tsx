@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 };
 
 const repositoryRoot = "https://github.com/grunobuide/scoutlens/blob/main/";
+// D077 item 2 (`scoutlens-rdz.29`): the owner's one personal link, as the owner gave it.
+const LINKEDIN_HREF = "https://www.linkedin.com/in/brunofguide/";
 
 function repositoryHref(path: string): string {
   return `${repositoryRoot}${path}`;
@@ -401,6 +403,21 @@ export default async function CaseStudyPage() {
           <a href={repositoryHref("docs/architecture.md")}>Architecture</a>
           <a href={repositoryHref("docs/case-study.md")}>The full case study</a>
           <a href="https://github.com/grunobuide/scoutlens">Source</a>
+        </p>
+      </section>
+
+      {/*
+        `scoutlens-rdz.29` (D077 item 2): one link to the owner's LinkedIn
+        profile. No email is published, and the rest of the design's contact
+        block is not built. Like the site's other external links, it opens in
+        the same tab.
+      */}
+      <section className="case-study-contact" aria-labelledby="contact-heading">
+        <h2 id="contact-heading">Questions about the method?</h2>
+        <p>
+          <a className="button button--primary" href={LINKEDIN_HREF}>
+            Find me on LinkedIn
+          </a>
         </p>
       </section>
 
