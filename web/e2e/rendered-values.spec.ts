@@ -85,6 +85,22 @@ test("no rendered rank statistic prints a raw binary expansion", async ({ page }
   expect(medians, "an unrounded median rank is rendered").toEqual([]);
 });
 
+test("the case study prints every decimal at the artifact's precision, never a raw expansion", async ({ page }) => {
+  // `scoutlens-rdz.15`: /case-study/ quotes MRRs, differences and intervals
+  // in running text. The published precision is four places; five or more is
+  // an unformatted float, the D046 class on a new route.
+  await page.goto("/case-study/");
+  await waitForStablePage(page);
+  const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+  expect(text.match(/\d\.\d{5,}/g) ?? [], "an unformatted float is rendered").toEqual([]);
+  // Every median rank the page quotes is a whole number, as published.
+  const medians = await page
+    .locator('main [data-metric$=":median_rank"]')
+    .evaluateAll((spans) => spans.map((span) => (span.textContent ?? "").trim()));
+  expect(medians.length, "the case study quotes no median rank").toBeGreaterThan(0);
+  expect(medians.filter((median) => !/^\d+$/.test(median)), "a fractional median rank is rendered").toEqual([]);
+});
+
 test("the served dataset is the major the pin names", async ({ page }) => {
   await openLab(page);
 

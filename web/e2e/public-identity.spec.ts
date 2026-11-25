@@ -28,7 +28,7 @@ const DESCRIPTOR = "Player Fingerprint Lab";
 const RETIRED = "ScoutLens";
 const PROFILE = "wy-8287-c-795";
 
-const ROUTES = ["/", "/lab/", "/science/"] as const;
+const ROUTES = ["/", "/lab/", "/science/", "/case-study/"] as const;
 
 /** Widths the contract's verification matrix names. 769 is the interesting one. */
 const WIDTHS = [320, 360, 769, 1280] as const;

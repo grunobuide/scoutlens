@@ -37,6 +37,10 @@ const meaningfulStaticContent = {
     "Each test made the claim smaller",
     "No backend. Every number comes from a file you can inspect.",
     "Every decision, in order",
+    // `scoutlens-rdz.14`: the AI section opens with case-study.md §7's first
+    // sentence, and states that no model has been evaluated.
+    "There is no AI in the deployed site",
+    "No demonstration model has been evaluated",
   ],
   "lab/index.html": [
     "Compare one player with himself.",
